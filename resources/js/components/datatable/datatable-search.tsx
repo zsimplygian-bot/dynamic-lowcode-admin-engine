@@ -1,115 +1,59 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo, memo } from "react"
 import { Search, RotateCcw, Check } from "lucide-react"
 import { SmartDropdown, SDItem } from "@/components/smart-dropdown"
 import { SmartButton } from "@/components/smart-button"
 import { FormGroup, FieldConfig } from "@/components/form-group"
 
 interface DataTableSearchDropdownProps {
-  columns: any[]
-  appliedSearchValues: Record<string, any>
-  setFilters: (filters: Record<string, any>) => void
+  fields: FieldConfig[]
+  appliedValues: Record<string, any>
+  activeCount: number
+  onApply: (filters: Record<string, any>) => void
+  onClear: () => void
 }
 
-export function DataTableSearchDropdown({ columns, appliedSearchValues, setFilters }: DataTableSearchDropdownProps) {
-  const [localValues, setLocalValues] = useState<Record<string, any>>(appliedSearchValues || {})
+const SearchFormContent = memo(function SearchFormContent({ fields, appliedValues, onApply, onClear }: Omit<DataTableSearchDropdownProps, "activeCount">) {
+  const [localValues, setLocalValues] = useState<Record<string, any>>(appliedValues || {})
 
   useEffect(() => {
-    setLocalValues(appliedSearchValues || {})
-  }, [appliedSearchValues])
-
-  const searchFields: FieldConfig[] = useMemo(() => {
-    return (columns || [])
-      .filter((col: any) => col.accessor && !col.hidden && col.searchable !== false)
-      .map((col: any) => {
-        const fieldLabel = col.header || col.label || col.accessor
-        return {
-          id: col.accessor,
-          name: col.accessor,
-          label: fieldLabel,
-          type: col.type || "text",
-          placeholder: `${fieldLabel}...`,
-          defaultValue: localValues[col.accessor] ?? "",
-        }
-      })
-  }, [columns, localValues])
-
-  const activeFiltersCount = useMemo(() => {
-    return Object.values(appliedSearchValues || {}).filter(v => v !== undefined && v !== null && v !== "").length
-  }, [appliedSearchValues])
+    setLocalValues(appliedValues || {})
+  }, [appliedValues])
 
   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    if (name) {
-      setLocalValues((prev) => ({ ...prev, [name]: value }))
-    }
+    if (name) setLocalValues((prev) => ({ ...prev, [name]: value }))
   }, [])
 
-  const handleApply = useCallback(() => {
-    setFilters(localValues)
-  }, [localValues, setFilters])
+  const handleApply = useCallback(() => onApply(localValues), [localValues, onApply])
 
-  const handleClearAll = useCallback(() => {
-    const cleared = Object.keys(localValues || {}).reduce((acc, key) => {
-      acc[key] = ""
-      return acc
-    }, {} as Record<string, string>)
-    setLocalValues(cleared)
-    setFilters(cleared)
-  }, [localValues, setFilters])
+  const handleClear = useCallback(() => {
+    setLocalValues({})
+    onClear()
+  }, [onClear])
 
-  const items: SDItem[] = useMemo(() => {
-    if (searchFields.length === 0) {
-      return [{ type: "custom", custom: <span {...{ className: "text-xs text-muted-foreground px-2 py-2" }}>No hay campos disponibles</span> }]
-    }
-
-    return [
-      {
-        type: "custom" as const,
-        custom: (
-          <div {...{ className: "px-2 py-1 w-full max-h-[500px] overflow-y-auto" }} onChange={handleFormChange}>
-            <FormGroup {...{ fields: searchFields, errors: {} }} />
-          </div>
-        ),
-      },
-      "-",
-      {
-        type: "custom" as const,
-        custom: (
-          <div {...{ className: "flex items-center gap-2 px-2 py-1.5 w-full" }}>
-            <SmartButton {...{
-              variant: "default",
-              size: "xs",
-              icons: Check,
-              iconSize: 12,
-              className: "flex-1 justify-center",
-              onClick: handleApply,
-              label: "Aplicar"
-            }} />
-            <SmartButton {...{
-              variant: "ghost",
-              size: "xs",
-              icons: RotateCcw,
-              iconSize: 12,
-              className: "flex-1 justify-center text-muted-foreground hover:text-foreground",
-              onClick: handleClearAll,
-              label: "Limpiar"
-            }} />
-          </div>
-        ),
-      },
-    ]
-  }, [searchFields, handleFormChange, handleApply, handleClearAll])
+  if (fields.length === 0) {
+    return <span { ...{ className: "text-xs text-muted-foreground px-2 py-2" } }>No hay campos disponibles</span>
+  }
 
   return (
-    <SmartDropdown {...{
-      triggerIcon: Search,
-      triggerVariant: "default",
-      triggerBadge: activeFiltersCount > 0 ? activeFiltersCount : undefined,
-      align: "start",
-      closeOnSelect: false,
-      items,
-      label: "Búsqueda Avanzada",
-      disableHover: true
-    }} />
+    <div { ...{ className: "flex flex-col gap-2 p-1" } }>
+      <div { ...{ className: "px-1 py-1 w-full max-h-[400px] overflow-y-auto" } }>
+        <FormGroup { ...{ fields, values: localValues, onChange: handleFormChange } } />
+      </div>
+      <div { ...{ className: "flex items-center gap-2 pt-2 border-t" } }>
+        <SmartButton { ...{ variant: "default", size: "xs", icons: Check, iconSize: 12, className: "flex-1 justify-center", onClick: handleApply, label: "Aplicar" } } />
+        <SmartButton { ...{ variant: "ghost", size: "xs", icons: RotateCcw, iconSize: 12, className: "flex-1 justify-center text-muted-foreground hover:text-foreground", onClick: handleClear, label: "Limpiar" } } />
+      </div>
+    </div>
+  )
+})
+
+export function DataTableSearchDropdown({ fields, appliedValues, activeCount, onApply, onClear }: DataTableSearchDropdownProps) {
+  const items: SDItem[] = useMemo(() => [
+    { type: "custom" as const, custom: <SearchFormContent { ...{ fields, appliedValues, onApply, onClear } } /> },
+  ], [fields, appliedValues, onApply, onClear])
+
+  return (
+    <SmartDropdown { ...{ triggerIcon: Search, triggerVariant: "default", triggerBadge: activeCount > 0 ? activeCount : undefined, align: "start", closeOnSelect: false, items, label: "Búsqueda Avanzada", disableHover: true } } />
   )
 }

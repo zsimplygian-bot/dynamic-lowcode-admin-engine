@@ -19,7 +19,7 @@ const getInitialVisibility = (columns: any[]) =>
 export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, columns = [] }: UseDataTableOptions) => {
   const STORAGE_KEY = `datatable_params_${tableName}`
 
-  const effectiveColumns = useMemo(() => (columns && columns.length > 0) ? columns : [], [columns])
+  const effectiveColumns = useMemo(() => ((columns && columns.length > 0) ? columns : []), [columns])
   const defaultVisibility = useMemo(() => getInitialVisibility(effectiveColumns), [effectiveColumns])
 
   const initialStorageValue = useMemo(() => ({
@@ -50,13 +50,18 @@ export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, colum
 
   const searchValuesString = JSON.stringify(query.appliedSearchValues)
   const apiConfig = useMemo(() => {
-    const filters = Object.entries(query.appliedSearchValues)
+    const { date_from, date_to, ...otherFilters } = query.appliedSearchValues as Record<string, any>
+
+    const filters = Object.entries(otherFilters)
       .filter(([, v]) => Boolean(v))
       .reduce((acc, [k, v]) => ({ ...acc, [`filters[${k}]`]: v }), {})
+
     return {
       params: {
         page: query.pageIndex + 1, per_page: query.pageSize,
         ...(query.sortBy && { sort_by: query.sortBy, sort_order: query.sortOrder }),
+        ...(date_from && { date_from }),
+        ...(date_to && { date_to }),
         ...filters, _r: refreshIndex,
       },
     }
@@ -75,8 +80,27 @@ export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, colum
     [tableData.columns, columnVisibility]
   )
 
+  const searchFields = useMemo(() => (
+    (tableData.columns ?? [])
+      .filter((col: any) => col.accessor && col.searchable === true)
+      .map((col: any) => ({
+        id: col.accessor, name: col.accessor, label: col.header || col.label || col.accessor,
+        type: col.type || "text", placeholder: "", defaultValue: "",
+      }))
+  ), [tableData.columns])
+
+  const activeFiltersCount = useMemo(() => (
+    Object.values(query.appliedSearchValues || {}).filter((v) => v !== undefined && v !== null && v !== "").length
+  ), [query.appliedSearchValues])
+
+  // Cuenta únicamente las llaves aplicadas que pertenecen a los campos definidos en searchFields
+  const activeSearchCount = useMemo(() => {
+    const validKeys = new Set(searchFields.map((f: any) => f.id))
+    return Object.entries(query.appliedSearchValues || {}).filter(([k, v]) => validKeys.has(k) && v !== undefined && v !== null && v !== "").length
+  }, [query.appliedSearchValues, searchFields])
+
   const isFiltered = useMemo(() => {
-    const hasQueryChanges = 
+    const hasQueryChanges =
       query.pageIndex !== DEFAULT_QUERY.pageIndex ||
       query.pageSize !== DEFAULT_QUERY.pageSize ||
       query.sortBy !== DEFAULT_QUERY.sortBy ||
@@ -94,9 +118,7 @@ export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, colum
     setQuery((q: any) => ({ ...q, sortBy: accessor, sortOrder: q.sortBy === accessor && q.sortOrder === "asc" ? "desc" : "asc", pageIndex: 0 }))
   }, [setQuery])
 
-  const resetAll = useCallback(() => {
-    clearStorage()
-  }, [clearStorage])
+  const resetAll = useCallback(() => clearStorage(), [clearStorage])
 
   const setPageIndex = useCallback((pageIndex: number) => {
     setQuery((q: any) => ({ ...q, pageIndex: Math.min(Math.max(pageIndex, 0), Math.max(0, Math.ceil(tableData.totalRows / q.pageSize) - 1)) }))
@@ -117,12 +139,18 @@ export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, colum
     })
   }, [setQuery])
 
+  const clearFilters = useCallback(() => {
+    setQuery((q: any) => ({ ...q, appliedSearchValues: {}, pageIndex: 0 }))
+  }, [setQuery])
+
   const fetchData = useCallback(() => {
     if (typeof refetch === "function") refetch()
     else setRefreshIndex((prev) => prev + 1)
   }, [refetch])
 
-  const getRowKey = useCallback((row: any, index: number) => row?.id ?? row?.[`id_${tableName?.toLowerCase()}`] ?? index, [tableName])
+  const getRowKey = useCallback((row: any, index: number) => (
+    row?.id ?? row?.[`id_${tableName?.toLowerCase()}`] ?? index
+  ), [tableName])
 
   const pagination = useMemo(() => ({
     pageIndex: query.pageIndex, pageSize: query.pageSize, totalRows: tableData.totalRows, totalPages,
@@ -138,8 +166,8 @@ export const useDataTable = ({ tableName, endpoint = `/crud/${tableName}`, colum
   const isTableLoading = isLoading || !apiResponse
 
   return useMemo(() => ({
-    ...query, ...tableData, visibleColumns, pagination, getRowKey, isFiltered,
+    ...query, ...tableData, visibleColumns, searchFields, activeFiltersCount, activeSearchCount, pagination, getRowKey, isFiltered,
     loading: isTableLoading, isReady: !isTableLoading, error, tableName, endpoint, columnVisibility, totalPages,
-    handleSort, resetAll, setColumnVisibility, setFilters, fetchData, setApiResponse,
-  }), [query, tableData, visibleColumns, pagination, getRowKey, isFiltered, isTableLoading, error, tableName, endpoint, columnVisibility, totalPages, handleSort, resetAll, setColumnVisibility, setFilters, fetchData, setApiResponse])
+    handleSort, resetAll, setColumnVisibility, setFilters, clearFilters, fetchData, setApiResponse,
+  }), [query, tableData, visibleColumns, searchFields, activeFiltersCount, activeSearchCount, pagination, getRowKey, isFiltered, isTableLoading, error, tableName, endpoint, columnVisibility, totalPages, handleSort, resetAll, setColumnVisibility, setFilters, clearFilters, fetchData, setApiResponse])
 }

@@ -3,58 +3,74 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 trait HasTableMetadata
 {
-    use HasSchemaCache;
+    use HasSchemaCache, InfersColumnDefinition;
 
-    protected array $hiddenByDefault = ['creater_id', 'updated_at', 'updater_id'];
+    protected array $hiddenByDefault = [
+        'creater_id' => true,
+        'updated_at' => true,
+        'updater_id' => true,
+    ];
 
-    protected function ensureTableExists(string $table): void
+    protected array $nonSearchableColumns = [
+        'creater_id' => true,
+        'created_at' => true,
+        'updater_id' => true,
+        'updated_at' => true,
+    ];
+
+    protected array $nonSearchableTypes = [
+        'file'  => true,
+        'image' => true,
+    ];
+
+    public function getTableColumns(string $table): array
     {
-        if (!Schema::hasTable($table)) {
-            abort(404, "La tabla '{$table}' no existe.");
-        }
-    }
-
-    protected function getTableColumns(string $table): array
-    {
-        return Cache::rememberForever("schema_metadata_columns_{$table}", function () use ($table) {
+        // Cambiamos el prefijo de la clave a 'schema_metadata_v2_' para invalidar caché vieja automáticamente
+        return Cache::rememberForever("schema_metadata_v2_{$table}", function () use ($table) {
             $rawColumns = $this->getRawTableColumns($table);
-            if (empty($rawColumns)) {
-                return [];
+            if (empty($rawColumns)) return [];
+
+            $pkName = "id_{$table}";
+            $columns = [];
+
+            foreach ($rawColumns as $col) {
+                $base = $this->buildBaseColumnDefinition($col, $table);
+                $name = $base['name'];
+
+                $isForeign = ($name !== $pkName) && str_starts_with($name, 'id_');
+
+                // 1. Inyecta la columna base (FK)
+                $columns[] = [
+                    'accessor'   => $name,
+                    'header'     => $base['label'],
+                    'type'       => $base['type'],
+                    'searchable' => !isset($this->nonSearchableColumns[$name]) && !isset($this->nonSearchableTypes[$base['type']]),
+                    'hidden'     => $isForeign || isset($this->hiddenByDefault[$name]),
+                ];
+
+                // 2. Inyecta la columna descriptiva asociada justo después (ej: 'id_cliente' -> 'cliente')
+                if ($isForeign) {
+                    $relatedName = substr($name, 3);
+                    $columns[] = [
+                        'accessor'   => $relatedName,
+                        'header'     => strtoupper($relatedName),
+                        'type'       => 'text',
+                        'searchable' => false,
+                        'hidden'     => false,
+                    ];
+                }
             }
 
-            $primaryKeyPattern = "id_{$table}";
-
-            return array_map(function ($col) use ($primaryKeyPattern) {
-                $columnName = is_array($col) ? ($col['name'] ?? '') : $col;
-                $comment = is_array($col) ? ($col['comment'] ?? null) : null;
-
-                $isPrimaryId = $columnName === 'id' || $columnName === $primaryKeyPattern;
-
-                $header = match (true) {
-                    !empty($comment) && preg_match("/label:\s*['\"]([^'\"]+)['\"]/i", $comment, $matches) => Str::upper($matches[1]),
-                    !empty($comment) => Str::upper(str_replace('_', ' ', $comment)),
-                    $columnName === 'created_at' => 'FECHA CREACIÓN',
-                    $isPrimaryId => 'ID',
-                    default => Str::upper(str_replace('_', ' ', $columnName)),
-                };
-
-                return [
-                    'accessor' => $columnName,
-                    'header'   => $header,
-                    'hidden'   => in_array($columnName, $this->hiddenByDefault),
-                ];
-            }, $rawColumns);
+            return $columns;
         });
     }
 
-    protected function clearTableMetadataCache(string $table): void
+    public function clearTableMetadataCache(string $table): void
     {
         $this->clearSchemaCache($table);
-        Cache::forget("schema_metadata_columns_{$table}");
+        Cache::forget("schema_metadata_v2_{$table}");
     }
 }

@@ -1,4 +1,4 @@
-interface ListaCache {
+export interface ListaCache {
   options: Array<{ id: any; label: string }>
   viewConfig: { view: string; title: string; fields: Array<any> } | null
   isFullLoaded: boolean

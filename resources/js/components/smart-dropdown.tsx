@@ -75,11 +75,11 @@ export const SmartDropdown = memo(
       IconComp ? <IconComp {...{ style: { width: iconSize, height: iconSize }, className: cn("shrink-0", className) }} /> : null
 
     const renderItem = (it: SDItem, key: number) => {
-      if (it === "-" || ("separator" in it && it.separator)) return <DropdownMenuSeparator {...{ key }} />
-      
+      if (it === "-" || ("separator" in it && it.separator)) return <DropdownMenuSeparator key={key} />
+
       if (typeof it === "object" && "custom" in it && it.custom !== undefined) {
         return (
-          <div {...{ key, onClick: (e) => e.stopPropagation(), className: "w-full" }}>
+          <div key={key} {...{ onClick: (e) => e.stopPropagation(), className: "w-full" }}>
             {it.custom}
           </div>
         )
@@ -92,30 +92,34 @@ export const SmartDropdown = memo(
           disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
         )
         return (
-          <DropdownMenuCheckboxItem {...{ key, checked, disabled, onCheckedChange, onSelect: prevent, className: checkboxClassName }}>
+          <DropdownMenuCheckboxItem key={key} {...{ checked, disabled, onCheckedChange, onSelect: prevent, className: checkboxClassName }}>
             {renderIcon(icon, "mr-2 opacity-80")}
-            <span {...{}}>{text}</span>
+            <span>{text}</span>
           </DropdownMenuCheckboxItem>
         )
       }
+
       const content = (
         <>
           {renderIcon(it.icon, "opacity-80")}
-          <span {...{ className: it.color }}>{it.label}</span>
+          <span className={it.color}>{it.label}</span>
         </>
       )
+
       const wrapped = !it.to ? content : (
         <Link {...{ href: it.to, ...(it.external ? { as: "a", target: "_blank", rel: "noreferrer" } : {}), className: "flex w-full items-center gap-2" }}>
           {content}
         </Link>
       )
+
       const { disabled, variant: itemVariant, action: onClick } = it
       const itemClassName = cn(
         "cursor-pointer",
         disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
       )
+
       return (
-        <DropdownMenuItem {...{ key, disabled, variant: itemVariant, onClick, onSelect: prevent, className: itemClassName }}>
+        <DropdownMenuItem key={key} {...{ disabled, variant: itemVariant, onClick, onSelect: prevent, className: itemClassName }}>
           {wrapped}
         </DropdownMenuItem>
       )
@@ -126,20 +130,20 @@ export const SmartDropdown = memo(
       !triggerLabel && Icon ? sizeStyles[size].icon : sizeStyles[size].text,
       triggerButtonClassName
     )
-    
+
     const badgeClass = cn(
       "absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] leading-none bg-secondary text-secondary-foreground font-medium",
       triggerBadgeClassName
     )
 
     return (
-      <DropdownMenu {...{}}>
+      <DropdownMenu>
         <DropdownMenuTrigger {...{ asChild: true }}>
           <Button {...{ ref, variant, className: buttonClassName }}>
             {renderIcon(Icon)}
             {triggerLabel}
             {!!triggerBadge && (
-              <Badge {...{ className: badgeClass }}>
+              <Badge className={badgeClass}>
                 {triggerBadge}
               </Badge>
             )}
@@ -148,11 +152,11 @@ export const SmartDropdown = memo(
         <DropdownMenuContent {...{ align }}>
           {(label || labelExtra) && (
             <>
-              <DropdownMenuLabel {...{ className: "flex items-center justify-between gap-2" }}>
-                {label && <span {...{}}>{label}</span>}
+              <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                {label && <span>{label}</span>}
                 {labelExtra && <div {...{ onClick: (e) => e.stopPropagation(), className: "font-normal" }}>{labelExtra}</div>}
               </DropdownMenuLabel>
-              <DropdownMenuSeparator {...{}} />
+              <DropdownMenuSeparator />
             </>
           )}
           <div {...{ className: cn(itemsMaxHeight && "overflow-y-auto"), style: { maxHeight: itemsMaxHeight } }}>
