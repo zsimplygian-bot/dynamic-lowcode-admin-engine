@@ -6,7 +6,9 @@ import { CalendarIcon } from "lucide-react"
 import { format, parse, isValid, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+
 export interface DateRange { from?: Date; to?: Date }
+
 interface DatePickerProps {
   mode?: "single" | "range"
   variant?: "field" | "button"
@@ -27,7 +29,7 @@ const parseStr = (s?: string) => {
 const fmtStr = (d?: Date) => (d ? format(d, "yyyy-MM-dd") : undefined)
 
 export function DatePicker({
-  mode = "single", variant = "field", value, onChange, placeholder = "-", disabled = false, className, iconSize = 20,
+  mode = "range", variant = "button", value, onChange, placeholder = "-", disabled = false, className, iconSize = 20,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
 
@@ -69,10 +71,10 @@ export function DatePicker({
   const isField = variant === "field"
 
   return (
-    <Popover {...{ open, onOpenChange: setOpen }}>
-      <PopoverTrigger {...{ asChild: true }}>
+    <Popover { ...{ open, onOpenChange: setOpen } }>
+      <PopoverTrigger { ...{ asChild: true } }>
         <SmartButton
-          {...{
+          { ...{
             icons: CalendarIcon,
             iconPosition: isField ? "right" : "left",
             iconSize: isField ? 16 : iconSize,
@@ -84,11 +86,11 @@ export function DatePicker({
               isField && !label && "text-muted-foreground",
               className
             ),
-          }}
+          } }
         />
       </PopoverTrigger>
-      <PopoverContent {...{ align: isField ? "start" : "end", className: "w-auto p-0 z-50" }}>
-        <Calendar {...{ mode: mode as any, selected, onSelect: handleSelect, disabled, locale: es, fixedWeeks: mode === "single" }} />
+      <PopoverContent { ...{ align: isField ? "start" : "end", className: "w-auto p-0 z-50" } }>
+        <Calendar { ...{ mode: mode as any, selected, onSelect: handleSelect, disabled, locale: es, fixedWeeks: mode === "single" } } />
       </PopoverContent>
     </Popover>
   )

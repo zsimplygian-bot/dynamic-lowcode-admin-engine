@@ -20,7 +20,7 @@ class DynamicTableController extends Controller
             return response()->json(['message' => "La tabla '{$table}' no existe."], 404);
         }
         $columns = $this->getTableColumns($table);
-        $perPage = (int) $request->input('per_page', 15);
+        $perPage = (int) $request->input('per_page', 10);
         $data    = $this->buildTableQuery($request, $table, $columns)->paginate($perPage);
         return response()->json([
             'columns'  => $columns,
