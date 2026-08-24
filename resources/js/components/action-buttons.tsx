@@ -1,23 +1,19 @@
-import { memo, useState, useCallback, useMemo } from "react"
+import { memo, useState } from "react"
 import { CopyIcon, EyeIcon, EditIcon, TrashIcon, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
 import { SmartDropdown } from "@/components/smart-dropdown"
 import { SmartModal } from "@/components/smart-modal"
-import { SmartButton } from "@/components/smart-button"
 import { DynamicForm } from "@/components/form/dynamic-form"
 
 interface ActionButtonsProps {
   row_id?: string | number
   tableName?: string
-  title?: string
   endpoint?: string
   updateEndpoint?: string
   deleteEndpoint?: string
-  icon?: any
   fields?: any[]
   initialValues?: Record<string, any>
   onSuccess?: (id?: any) => void
-  eye?: boolean
   size?: "xs" | "sm" | "md" | "lg"
   [key: string]: any
 }
@@ -30,67 +26,38 @@ const DeleteWarning = () => (
   </div>
 )
 
-export const ActionButtons = memo(({ row_id, tableName, title, endpoint, updateEndpoint, deleteEndpoint, icon, fields = [], initialValues = {}, onSuccess, eye, size, ...props }: ActionButtonsProps) => {
+const ACTIONS: Record<ActionMode, { label: string; icon: any; color: string; prefix: string; description: React.ReactNode }> = {
+  info: { label: "Detalle", icon: EyeIcon, color: "text-blue-500", prefix: "DETALLE", description: "Consulta los datos del registro." },
+  update: { label: "Editar", icon: EditIcon, color: "text-green-500", prefix: "EDITAR", description: "Actualiza los datos del registro." },
+  delete: { label: "Eliminar", icon: TrashIcon, color: "text-red-500", prefix: "ELIMINAR", description: <DeleteWarning /> }
+}
+
+const getEndpoint = (m: ActionMode, id?: string | number, base?: string, up?: string, del?: string) => {
+  const url = (m === "update" ? up : m === "delete" ? del : undefined) || base
+  return url && id !== undefined ? `${url}/${id}` : url
+}
+
+export const ActionButtons = memo(({ row_id, tableName, endpoint, updateEndpoint, deleteEndpoint, fields, initialValues, onSuccess, size = "md", ...props }: ActionButtonsProps) => {
   const [action, setAction] = useState<ActionMode | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
+  const resolvedId = row_id ?? initialValues?.id ?? (tableName ? initialValues?.[`id_${tableName.toLowerCase().trim()}`] : undefined)
 
-  const rawTableName = tableName || title || "registro"
-  const resolvedId = row_id ?? initialValues?.id ?? initialValues?.[`id_${rawTableName.toLowerCase().trim()}`]
-  const upperTableName = rawTableName.toUpperCase()
+  const dropdownItems = [
+    { key: "copy", label: "Copiar ID", icon: CopyIcon, action: () => { if (resolvedId) { navigator.clipboard.writeText(String(resolvedId)); toast.success("ID copiado") } } },
+    { key: "info", label: ACTIONS.info.label, icon: ACTIONS.info.icon, color: ACTIONS.info.color, action: () => setAction("info") },
+    { key: "update", label: ACTIONS.update.label, icon: ACTIONS.update.icon, color: ACTIONS.update.color, action: () => setAction("update") },
+    { key: "delete", label: ACTIONS.delete.label, icon: ACTIONS.delete.icon, color: ACTIONS.delete.color, action: () => setAction("delete") }
+  ]
 
-  const copyId = useCallback(() => {
-    if (!resolvedId) return
-    navigator.clipboard.writeText(String(resolvedId))
-    toast.success("ID copiado")
-  }, [resolvedId])
-
-  const handleOpenAction = useCallback((mode: ActionMode) => {
-    setAction(mode)
-    setIsOpen(true)
-  }, [])
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    setIsOpen(open)
-    if (!open) {
-      // Retardamos la limpieza del estado 'action' para permitir que complete la animación de salida de Radix
-      setTimeout(() => setAction(null), 200)
-    }
-  }, [])
-
-  const actionsMap = useMemo(() => {
-    const baseEndpoint = endpoint ?? ""
-    return {
-      info: { key: "info", label: "Detalle", icon: EyeIcon, color: "text-blue-500", mode: "info" as const, title: `DETALLE ${upperTableName}`, description: "Consulta los datos del registro.", endpoint: baseEndpoint },
-      update: { key: "update", label: "Editar", icon: EditIcon, color: "text-green-500", mode: "update" as const, title: `EDITAR ${upperTableName}`, description: "Actualiza los datos del registro.", endpoint: updateEndpoint ?? baseEndpoint },
-      delete: { key: "delete", label: "Eliminar", icon: TrashIcon, color: "text-red-500", mode: "delete" as const, title: `ELIMINAR ${upperTableName}`, description: <DeleteWarning />, endpoint: deleteEndpoint ?? baseEndpoint }
-    }
-  }, [upperTableName, endpoint, updateEndpoint, deleteEndpoint])
-
-  const dropdownItems = useMemo(() => [
-    { label: "Copiar ID", icon: CopyIcon, action: copyId },
-    ...Object.values(actionsMap).map(cfg => ({ key: cfg.key, label: cfg.label, icon: cfg.icon, color: cfg.color, action: () => handleOpenAction(cfg.key as ActionMode) }))
-  ], [copyId, actionsMap, handleOpenAction])
-
-  if (eye) {
-    const eyeCfg = actionsMap.info
-    return (
-      <SmartModal {...{ title: eyeCfg.title, description: eyeCfg.description, trigger: <SmartButton {...{ icons: EyeIcon, variant: "ghost", tooltip: "Ver detalle", size: "sm", ...props }} /> }}>
-        {({ close }) => (
-          <DynamicForm {...{ mode: eyeCfg.mode, endpoint: eyeCfg.endpoint, recordId: resolvedId, tableName: rawTableName, fields, initialValues, onSuccess: (id: any) => { onSuccess?.(id); close() } }} />
-        )}
-      </SmartModal>
-    )
-  }
-
-  const activeConfig = action ? actionsMap[action] : null
+  const activeConfig = action ? ACTIONS[action] : null
+  const modalTitle = activeConfig ? `${activeConfig.prefix} ${(tableName || "registro").toUpperCase()}` : ""
 
   return (
     <div {...{ className: "flex items-center gap-1" }}>
-      <SmartDropdown {...{ label: "Acciones", triggerIcon: MoreVertical, triggerVariant: "ghost", items: dropdownItems, size: size ?? "md", ...props }} />
-      {activeConfig && (
-        <SmartModal {...{ open: isOpen, onOpenChange: handleOpenChange, title: activeConfig.title, description: activeConfig.description }}>
+      <SmartDropdown {...{ label: "Acciones", icon: MoreVertical, variant: "ghost", items: dropdownItems, size, ...props }} />
+      {action && activeConfig && (
+        <SmartModal {...{ open: true, onOpenChange: (o) => { if (!o) setAction(null) }, title: modalTitle, description: activeConfig.description }}>
           {({ close }) => (
-            <DynamicForm {...{ mode: activeConfig.mode, endpoint: activeConfig.endpoint, recordId: resolvedId, tableName: rawTableName, fields, initialValues, onSuccess: (id: any) => { onSuccess?.(id); close() } }} />
+            <DynamicForm {...{ mode: action, recordId: resolvedId, endpoint: getEndpoint(action, resolvedId, endpoint, updateEndpoint, deleteEndpoint), tableName, fields, initialValues, onSuccess: (id: any) => { onSuccess?.(id); close() } }} />
           )}
         </SmartModal>
       )}

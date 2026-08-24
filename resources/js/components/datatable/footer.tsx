@@ -12,16 +12,16 @@ export const DataTableFooter = ({
   return (
     <div {...{ className: "flex flex-wrap sm:flex-nowrap items-center justify-end gap-4 mt-2 text-sm" }}>
       <div {...{ className: "flex items-center gap-2" }}> Filas:
-        <SmartDropdown {...{ triggerLabel: String(pageSize), items, labelExtra: (
+        <SmartDropdown {...{ buttonLabel: String(pageSize), items, labelExtra: (
           <Input {...{ type: "number", min: 1, placeholder: "Personalizado...", className: "w-36 h-8 text-xs", 
             onKeyDown: (e) => { e.stopPropagation(); if (e.key === "Enter") { changePageSize(+e.currentTarget.value); e.currentTarget.value = "" } } }} />
         ) }} />
       </div>
       <div {...{ className: "flex items-center gap-1" }}>
-        <SmartButton {...{ icons: ChevronsLeft, tooltip: "Primera página", disabled: isFirstPage, onClick: goToFirstPage }} />
-        <SmartButton {...{ icons: ChevronLeft, tooltip: "Página anterior", disabled: isFirstPage, onClick: goToPreviousPage }} />
-        <SmartButton {...{ icons: ChevronRight, tooltip: "Página siguiente", disabled: isLastPage, onClick: goToNextPage }} />
-        <SmartButton {...{ icons: ChevronsRight, tooltip: "Última página", disabled: isLastPage, onClick: goToLastPage }} />
+        <SmartButton {...{ icon: ChevronsLeft, tooltip: "Primera página", disabled: isFirstPage, onClick: goToFirstPage }} />
+        <SmartButton {...{ icon: ChevronLeft, tooltip: "Página anterior", disabled: isFirstPage, onClick: goToPreviousPage }} />
+        <SmartButton {...{ icon: ChevronRight, tooltip: "Página siguiente", disabled: isLastPage, onClick: goToNextPage }} />
+        <SmartButton {...{ icon: ChevronsRight, tooltip: "Última página", disabled: isLastPage, onClick: goToLastPage }} />
       </div>
       <div {...{ className: "flex items-center gap-2 text-right" }}> Página
         <Input key={pageIndex} {...{ type: "number", min: 1, max: totalPages, defaultValue: pageIndex + 1, className: "w-16 h-8 text-xs", 

@@ -6,7 +6,7 @@ trait HasAuditFields
     protected function applyCreationAudit(array $data, Request $request): array
     {
         $userId = $request->user()?->id;
-        return array_merge($data, [ 'creator_id' => $userId, 'updater_id' => $userId ]);
+        return array_merge($data, [ 'creater_id' => $userId, 'updater_id' => $userId ]);
     }
     protected function applyUpdateAudit(array $data, Request $request): array
     {

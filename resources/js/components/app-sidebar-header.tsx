@@ -3,6 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { FullscreenButton } from '@/components/fullscreen-button';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import AppearanceToggleDropdown from "@/components/appearance-dropdown";
+import CitasDropdown from "@/components/sidebar_cita";
 export function AppSidebarHeader({
     breadcrumbs = [],
 }: {
@@ -15,6 +16,7 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2 ml-auto">
+                <CitasDropdown />
                 <AppearanceToggleDropdown />
                 <FullscreenButton />
             </div>

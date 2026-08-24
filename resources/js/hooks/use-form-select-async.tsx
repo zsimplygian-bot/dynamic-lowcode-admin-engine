@@ -3,17 +3,10 @@ import { getListaSync, setListaCache, resetLista, subscribeCache } from "@/hooks
 import { useApi } from "@/hooks/use-api"
 
 interface UseFormSelectAsyncProps {
-  id?: string
-  valueProp?: string | number
-  defaultValue?: string | number
-  openProp?: boolean
-  setOpenProp?: (open: boolean) => void
-  onSelect?: (value: string) => void
-  lista?: string
-  name?: string
+  id?: string; valueProp?: string | number; defaultValue?: string | number
+  openProp?: boolean; setOpenProp?: (open: boolean) => void; onSelect?: (value: string) => void
+  lista?: string; name?: string
 }
-
-const EMPTY_ARRAY: any[] = []
 
 export const useFormSelectAsync = ({ id, valueProp, defaultValue, openProp, setOpenProp, onSelect, lista, name }: UseFormSelectAsyncProps) => {
   const [internalValue, setInternalValue] = useState<string>(() => {
@@ -35,6 +28,12 @@ export const useFormSelectAsync = ({ id, valueProp, defaultValue, openProp, setO
   const [forceFetchCount, setForceFetchCount] = useState(0)
 
   const campoLista = lista ?? id ?? name ?? ""
+
+  // Extrae el nombre de tabla eliminando el prefijo 'id_' inicial
+  const tableName = useMemo(() => {
+    const raw = name ?? id ?? lista ?? ""
+    return raw.replace(/^id_/, "").toLowerCase().trim()
+  }, [name, id, lista])
 
   const subscribe = useCallback((cb: () => void) => subscribeCache(campoLista, cb), [campoLista])
   const getSnapshot = useCallback(() => getListaSync(campoLista), [campoLista])
@@ -61,8 +60,6 @@ export const useFormSelectAsync = ({ id, valueProp, defaultValue, openProp, setO
     if (rawSingleData && !rawFullData) setListaCache(campoLista, rawSingleData, false)
   }, [rawSingleData, rawFullData, campoLista])
 
-  const entityName = useMemo(() => (cacheState.viewConfig?.view || campoLista || "").toLowerCase().trim(), [cacheState.viewConfig?.view, campoLista])
-
   const handleRefresh = useCallback(() => {
     if (!campoLista) return
     resetLista(campoLista)
@@ -87,12 +84,11 @@ export const useFormSelectAsync = ({ id, valueProp, defaultValue, openProp, setO
     setSearch("")
   }, [onSelect, setOpen, value])
 
-  const crudEndpoint = useMemo(() => (entityName ? `/crud/${entityName}` : ""), [entityName])
+  const crudEndpoint = useMemo(() => (tableName ? `/crud/${tableName}` : ""), [tableName])
   const preparedInitialValues = useMemo(() => (value ? selectedOption ?? { id: value } : {}), [value, selectedOption])
-  const viewFields = useMemo(() => cacheState.viewConfig?.fields ?? EMPTY_ARRAY, [cacheState.viewConfig?.fields])
 
   return {
     value, open, setOpen, search, setSearch, cacheState, loadingLista, selectedLabel, filteredOptions,
-    entityName, crudEndpoint, preparedInitialValues, viewFields, handleRefresh, handleSelectOption
+    tableName, crudEndpoint, preparedInitialValues, handleRefresh, handleSelectOption
   }
 }

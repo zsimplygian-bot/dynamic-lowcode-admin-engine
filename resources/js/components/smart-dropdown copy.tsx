@@ -14,6 +14,7 @@ const sizeStyles: Record<Size, { icon: string; text: string }> = {
 }
 
 type BaseItem = {
+  key?: string
   label?: string
   icon?: LucideIcon
   color?: string
@@ -24,7 +25,7 @@ type BaseItem = {
 
 export type SDItem =
   | "-"
-  | { separator: true }
+  | { separator: true; key?: string }
   | (BaseItem & { type?: "item"; custom?: React.ReactNode })
   | (BaseItem & { type: "checkbox"; checked: boolean; onChange: (v: boolean) => void })
 
@@ -58,11 +59,7 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
   if (item === "-" || ("separator" in item && item.separator)) return <DropdownMenuSeparator />
 
   if (typeof item === "object" && "custom" in item && item.custom !== undefined) {
-    return (
-      <div {...{ onClick: stopPropagation, className: "w-full" }}>
-        {item.custom}
-      </div>
-    )
+    return <div {...{ onClick: stopPropagation, className: "w-full" }}>{item.custom}</div>
   }
 
   const hoverClass = disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
@@ -107,32 +104,18 @@ export const SmartDropdown = memo(
       disableHover = false,
     } = props
 
-    const prevent = useCallback((e: Event) => {
-      if (!closeOnSelect) e.preventDefault()
-    }, [closeOnSelect])
+    const prevent = useCallback((e: Event) => { if (!closeOnSelect) e.preventDefault() }, [closeOnSelect])
 
-    const buttonClassName = cn(
-      "relative inline-flex items-center justify-center gap-2 rounded-full",
-      !buttonLabel && Icon ? sizeStyles[size].icon : sizeStyles[size].text,
-      btnClassName
-    )
-
-    const badgeClass = cn(
-      "absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] leading-none bg-secondary text-secondary-foreground font-medium",
-      badgeClassName
-    )
+    const btnClass = cn("relative inline-flex items-center justify-center gap-2 rounded-full", !buttonLabel && Icon ? sizeStyles[size].icon : sizeStyles[size].text, btnClassName)
+    const badgeClass = cn("absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] leading-none bg-secondary text-secondary-foreground font-medium", badgeClassName)
 
     return (
       <DropdownMenu>
         <DropdownMenuTrigger {...{ asChild: true }}>
-          <Button {...{ ref, variant, className: buttonClassName }}>
+          <Button {...{ ref, variant, className: btnClass }}>
             <RenderIcon {...{ icon: Icon, size: iconSize }} />
             {buttonLabel}
-            {badge !== undefined && badge !== null && (
-              <Badge {...{ className: badgeClass }}>
-                {badge}
-              </Badge>
-            )}
+            {badge !== undefined && badge !== null && <Badge {...{ className: badgeClass }}>{badge}</Badge>}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent {...{ align }}>
@@ -146,9 +129,10 @@ export const SmartDropdown = memo(
             </>
           )}
           <div {...{ className: cn(itemsMaxHeight && "overflow-y-auto"), style: { maxHeight: itemsMaxHeight } }}>
-            {items.map((it, idx) => (
-              <DropdownItemRow {...{ key: idx, item: it, iconSize, disableHover, prevent }} />
-            ))}
+            {items.map((it, idx) => {
+              const itemKey = typeof it === "object" ? it.key || ("label" in it ? it.label : undefined) : undefined
+              return <DropdownItemRow {...{ key: itemKey ?? `sd_item_${idx}`, item: it, iconSize, disableHover, prevent }} />
+            })}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>

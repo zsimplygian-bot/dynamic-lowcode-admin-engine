@@ -1,112 +1,90 @@
-import { forwardRef } from "react"
-import { Link } from "@inertiajs/react"
+import { forwardRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SmartTooltip } from "@/components/smart-tooltip"
+import { SmartModal } from "@/components/smart-modal"
 import { Loader2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-type Size = "xs" | "sm" | "md" | "lg"
 export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icons?: LucideIcon | LucideIcon[]
-  iconPosition?: "left" | "right"
+  icon?: LucideIcon | React.ComponentType<any>
   iconSize?: number
   label?: React.ReactNode
   loadingLabel?: React.ReactNode
   tooltip?: React.ReactNode
   tooltipSide?: "top" | "right" | "bottom" | "left"
   variant?: "default" | "outline" | "ghost" | "secondary" | "destructive"
-  size?: Size
+  size?: "xs" | "sm" | "md" | "lg"
   buttonColor?: "green" | "red" | "blue" | "gray"
   isLoading?: boolean
-  href?: string
-  isExternal?: boolean
+  confirmation?: { title?: React.ReactNode; description?: React.ReactNode; confirmText?: string; cancelText?: string }
 }
-const sizeClasses: Record<Size, { padding: string; iconOnly: string }> = {
-  xs: { padding: "h-6 px-2 text-xs", iconOnly: "h-6 w-6 px-0" },
-  sm: { padding: "h-8 px-3 text-sm", iconOnly: "h-8 w-8 px-0" },
-  md: { padding: "h-9 px-4 text-sm", iconOnly: "h-9 w-9 px-0" },
-  lg: { padding: "h-12 px-6 text-base", iconOnly: "h-12 w-12 px-0" },
+const sizeClasses: Record<NonNullable<SmartButtonProps["size"]>, { btn: string; iconOnly: string; iconSize: number }> = {
+  xs: { btn: "h-6 px-2 text-xs", iconOnly: "h-6 w-6 p-0", iconSize: 14 },
+  sm: { btn: "h-8 px-3 text-sm", iconOnly: "h-8 w-8 p-0", iconSize: 16 },
+  md: { btn: "h-9 px-4 text-sm", iconOnly: "h-9 w-9 p-0", iconSize: 18 },
+  lg: { btn: "h-12 px-6 text-base", iconOnly: "h-12 w-12 p-0", iconSize: 22 },
 }
-const colorClasses: Record<string, string> = {
-  green: "bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700",
-  red: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
-  blue: "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700",
-  gray: "bg-gray-800 text-white hover:bg-gray-900 dark:bg-gray-800 dark:hover:bg-gray-900",
+const colorClasses: Record<NonNullable<SmartButtonProps["buttonColor"]>, string> = {
+  green: "bg-green-600 hover:bg-green-700 text-white",
+  red: "bg-red-600 hover:bg-red-700 text-white",
+  blue: "bg-blue-600 hover:bg-blue-700 text-white",
+  gray: "bg-gray-800 hover:bg-gray-900 text-white",
 }
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(
-  (
-    {
-      icons,
-      iconPosition = "left",
-      iconSize = 18,
-      label,
-      loadingLabel,
-      tooltip,
-      tooltipSide = "top",
-      children,
-      className,
-      variant = "default",
-      disabled = false,
-      size = "md",
-      buttonColor,
-      isLoading = false,
-      onClick,
-      type = "button",
-      href,
-      isExternal = false,
-      ...props
-    },
-    ref
-  ) => {
-    const iconsArray = (Array.isArray(icons) ? icons : icons ? [icons] : []).filter(Boolean)
-    const hasText = !!(label || children)
-    const isIconOnly = !hasText && iconsArray.length === 1
-    const IconsEl = iconsArray.length > 0 && (
-      <span className="inline-flex items-center gap-1.5 shrink-0">
-        {iconsArray.map((Icon, i) => (
-          <Icon key={i} style={{ width: iconSize, height: iconSize }} />
-        ))}
-      </span>
-    )
-    const innerContent = isLoading ? (
-      <span className="inline-flex items-center gap-2">
-        <Loader2 className="animate-spin shrink-0" style={{ width: iconSize, height: iconSize }} />
-        {hasText && <span>{loadingLabel ?? label ?? children}</span>}
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-2">
-        {iconPosition === "left" && IconsEl}
-        {hasText && <span>{label ?? children}</span>}
-        {iconPosition === "right" && IconsEl}
-      </span>
-    )
-    const sharedClasses = cn(
-      "rounded-full inline-flex items-center justify-center font-medium transition-colors cursor-pointer",
-      isIconOnly ? sizeClasses[size].iconOnly : sizeClasses[size].padding,
-      buttonColor && variant === "default" && colorClasses[buttonColor],
-      className
-    )
-    const shouldBeExternal = isExternal || (href ? /^https?:\/\//.test(href) : false)
-    const buttonContent = href ? (
-      <Button {...{ variant, className: sharedClasses, asChild: true }} disabled={disabled || isLoading}>
-        {shouldBeExternal ? (
-          <a {...{ href, target: "_blank", rel: "noopener noreferrer" }}>
-            {innerContent}
-          </a>
-        ) : (
-          <Link {...{ href }}>
-            {innerContent}
-          </Link>
-        )}
-      </Button>
-    ) : (
-      <Button {...{ ref, type, variant, onClick, disabled: disabled || isLoading, className: sharedClasses, ...props }}>
-        {innerContent}
+  ({ icon: Icon, iconSize, label, loadingLabel, tooltip, tooltipSide = "top", children, className, variant = "default", disabled, size = "md", buttonColor, isLoading, type = "button", onClick, confirmation, ...props }, ref) => {
+    const [openConfirm, setOpenConfirm] = useState(false)
+    const [isConfirmLoading, setIsConfirmLoading] = useState(false)
+    const text = label ?? children
+    const busy = isLoading || isConfirmLoading
+    const isDisabled = disabled || busy
+    const config = sizeClasses[size]
+    const finalIconSize = iconSize ?? config.iconSize
+    const buttonEl = (
+      <Button {...{ ref, type, variant, disabled: isDisabled, className: cn("rounded-full inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0", !text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], className), onClick: confirmation ? (e) => { e.preventDefault(); setOpenConfirm(true) } : onClick, ...props }}>
+        <span {...{ className: "inline-flex items-center gap-2" }}>
+          {busy ? <Loader2 {...{ style: { width: finalIconSize, height: finalIconSize }, className: "animate-spin shrink-0" }} /> : Icon && <Icon {...{ style: { width: finalIconSize, height: finalIconSize }, className: "shrink-0" }} />}
+          {text && <span>{busy ? (loadingLabel ?? text) : text}</span>}
+        </span>
       </Button>
     )
-    return tooltip ? (
-      <SmartTooltip {...{ content: tooltip, side: tooltipSide }}>{buttonContent}</SmartTooltip>
-    ) : buttonContent
+    const rendered = tooltip ? <SmartTooltip {...{ content: tooltip, side: tooltipSide }}>{buttonEl}</SmartTooltip> : buttonEl
+    if (!confirmation) return rendered
+    return (
+      <>
+        {rendered}
+        <SmartModal {...{ open: openConfirm, onOpenChange: setOpenConfirm, title: confirmation.title ?? "Confirmar acción", description: confirmation.description, size: "sm" }}>
+          {({ close }) => (
+            <div {...{ className: "flex justify-end gap-2 pt-4" }}>
+              <Button {...{ variant: "outline", size: "sm", disabled: isConfirmLoading, onClick: close }}>
+                {confirmation.cancelText ?? "Cancelar"}
+              </Button>
+              <Button {...{
+                variant, size: "sm", disabled: isConfirmLoading,
+                className: cn("rounded-full", buttonColor && variant === "default" && colorClasses[buttonColor]),
+                onClick: async (e) => {
+                  try {
+                    setIsConfirmLoading(true)
+                    await onClick?.(e)
+                    close()
+                  } finally {
+                    setIsConfirmLoading(false)
+                  }
+                }
+              }}>
+                {isConfirmLoading ? (
+                  <span {...{ className: "inline-flex items-center gap-2" }}>
+                    <Loader2 {...{ className: "w-3.5 h-3.5 animate-spin shrink-0" }} />
+                    <span>Cargando...</span>
+                  </span>
+                ) : (
+                  confirmation.confirmText ?? "Confirmar"
+                )}
+              </Button>
+            </div>
+          )}
+        </SmartModal>
+      </>
+    )
   }
 )
 SmartButton.displayName = "SmartButton"

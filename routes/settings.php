@@ -11,26 +11,22 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
+    // Importación y Exportación (RUTAS ESTÁTICAS PRIMERO)
+    Route::get('/tables/export', [DatabaseIEController::class, 'export'])->name('tables.export');
+    Route::post('/tables/import', [DatabaseIEController::class, 'import'])->name('tables.import');
+
     // Gestión de tablas
     Route::get('/tables', [TableController::class, 'index'])->name('tables.index');
-    Route::get('/tables/create', [TableController::class, 'create'])->name('tables.create');
     Route::post('/tables', [TableController::class, 'store'])->name('tables.store');
-    
     Route::get('/tables/{table}', [TableController::class, 'show'])->name('tables.fields');
-    Route::get('/tables/{table}/edit', [TableController::class, 'edit'])->name('tables.edit');
     Route::put('/tables/{table}', [TableController::class, 'update'])->name('tables.update');
     Route::delete('/tables/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
 
     // CRUD de campos de una tabla
-    // ⚠️ ATENCIÓN: Se quitó el prefijo "/settings" para evitar duplicación y se colocó ARRIBA de {field}
     Route::post('/tables/{table}/fields/reorder', [TableFieldController::class, 'reorder'])->name('tables.fields.reorder');
     Route::post('/tables/{table}/fields', [TableFieldController::class, 'store'])->name('tables.fields.store');
     Route::put('/tables/{table}/fields/{field}', [TableFieldController::class, 'update'])->name('tables.fields.update');
     Route::delete('/tables/{table}/fields/{field}', [TableFieldController::class, 'destroy'])->name('tables.fields.destroy');
-
-    // Importación y Exportación
-    Route::get('/tables/export', [DatabaseIEController::class, 'export'])->name('tables.export');
-    Route::post('/tables/import', [DatabaseIEController::class, 'import'])->name('tables.import');
 });
 
 Route::middleware(['auth'])->group(function () {

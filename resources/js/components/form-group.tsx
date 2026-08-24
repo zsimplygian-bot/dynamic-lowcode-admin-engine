@@ -1,115 +1,112 @@
-import React, { memo, useState, useCallback } from "react"
+import { memo, useCallback } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FormSelectAsync } from "@/components/form-select-async"
+import { FormSelectSimple } from "@/components/form-select-simple"
+import { DatePicker } from "@/components/ui/datepicker"
+import { Clock } from "@/components/ui/clock"
 import { FormImagePicker } from "@/components/form-image-picker"
 import InputError from "@/components/input-error"
-import { DatePicker } from "@/components/ui/datepicker"
-import { Clock } from "lucide-react"
 
-export interface FieldConfig {
-  id: string
-  name?: string
-  label: string
-  type?: "text" | "number" | "email" | "password" | "select" | "textarea" | "checkbox" | "date" | "time" | "file" | "image" | "hidden" | string
-  defaultValue?: string | number | boolean
-  placeholder?: string
-  required?: boolean
-  lista?: string
-  rows?: number
-  disabled?: boolean
-  accept?: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-}
+const FieldRenderer = memo(({ field, error, value, isReadonly, onChange }: any) => {
+  const name = field.name ?? field.id
+  const disabled = field.disabled || isReadonly
 
-interface FormGroupProps {
-  fields: FieldConfig[]
-  errors?: Record<string, string | undefined>
-  values?: Record<string, any>
-  onChange?: (e: any) => void
-}
+  const fieldValue = value !== undefined && value !== null && value !== "" ? value : (field.defaultValue ?? field.value ?? "")
 
-const DateFieldControl = memo(({ id, name, strVal, placeholder, disabled, onChange }: { id: string; name: string; strVal: string; placeholder?: string; disabled?: boolean; onChange?: (e: any) => void }) => {
-  const [currentVal, setCurrentVal] = useState<string>(strVal)
-
-  const handleDateChange = useCallback((val: string) => {
-    const newVal = val || ""
-    setCurrentVal(newVal)
-    if (onChange) onChange({ target: { name, value: newVal } })
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    onChange?.(name, e.target.value)
   }, [name, onChange])
 
-  return (
-    <React.Fragment key={`date-group-${id}`}>
-      <Input { ...{ type: "hidden", name, value: currentVal } } />
-      <DatePicker { ...{ id, value: currentVal, onChange: handleDateChange, placeholder, disabled } } />
-    </React.Fragment>
-  )
-})
-DateFieldControl.displayName = "DateFieldControl"
+  const handleDateChange = useCallback((dateStr: string) => {
+    const timePart = typeof fieldValue === "string" && fieldValue.includes(" ") ? fieldValue.split(" ")[1] : "00:00"
+    onChange?.(name, dateStr ? `${dateStr} ${timePart}` : "")
+  }, [name, fieldValue, onChange])
 
-const renderControl = (field: FieldConfig, value: any, globalOnChange?: (e: any) => void) => {
-  const { id, name = id, type = "text", rows = 3, placeholder, disabled, lista, accept, onChange: fieldOnChange, defaultValue, label, required } = field
-  const currentVal = value ?? defaultValue ?? ""
+  const handleTimeChange = useCallback((timeStr: string) => {
+    const datePart = typeof fieldValue === "string" && fieldValue.includes(" ") ? fieldValue.split(" ")[0] : fieldValue || ""
+    onChange?.(name, datePart ? `${datePart} ${timeStr}` : timeStr)
+  }, [name, fieldValue, onChange])
 
-  const handleChange = (e: any) => {
-    if (fieldOnChange) fieldOnChange(e)
-    if (globalOnChange) globalOnChange(e)
+  if (field.type === "hidden") {
+    return <Input {...{ type: "hidden", id: field.id, name, value: String(fieldValue) }} />
   }
 
-  switch (type) {
-    case "textarea": return <Textarea { ...{ id, name, value: String(currentVal), onChange: handleChange, placeholder, rows, disabled } } />
-    case "select": return <FormSelectAsync { ...{ id, name, value: String(currentVal), onSelect: (val) => handleChange({ target: { name, value: val } }), lista, placeholder, disabled } } />
-    case "file":
-    case "image": return <FormImagePicker { ...{ id, name, defaultValue: String(currentVal), accept, disabled, onChange: handleChange } } />
-    case "date": return <DateFieldControl { ...{ id, name, strVal: String(currentVal), placeholder, disabled, onChange: handleChange } } />
-    case "time": return (
-      <div { ...{ className: "relative flex items-center" } }>
-        <Input { ...{ id, name, type: "time", value: String(currentVal), onChange: handleChange, placeholder, disabled, className: "pr-9 [&::-webkit-calendar-picker-indicator]:opacity-0" } } />
-        <Clock { ...{ className: "absolute right-3 w-4 h-4 text-muted-foreground pointer-events-none" } } />
+  if (field.type === "checkbox") {
+    const isChecked = fieldValue === true || fieldValue === "1" || fieldValue === 1
+    return (
+      <div {...{ className: "grid gap-1.5" }}>
+        <div {...{ className: "flex items-center space-x-2 pt-1" }}>
+          <Input {...{ type: "hidden", name, value: isChecked ? "1" : "0" }} />
+          <Checkbox {...{ id: field.id, defaultChecked: isChecked, disabled, onCheckedChange: (checked) => onChange?.(name, checked ? "1" : "0") }} />
+          <Label {...{ htmlFor: field.id, className: "cursor-pointer text-sm font-medium flex items-center gap-1" }}>
+            {field.label}
+            {field.required && <span {...{ className: "text-red-500 font-bold" }}>*</span>}
+          </Label>
+        </div>
+        {error && <InputError {...{ message: error }} />}
       </div>
     )
-    case "checkbox": return (
-      <div { ...{ className: "flex items-center space-x-2 pt-1" } }>
-        <Input { ...{ type: "hidden", name, value: currentVal ? "1" : "0" } } />
-        <Checkbox { ...{ id, checked: Boolean(currentVal), onCheckedChange: (checked) => handleChange({ target: { name, value: checked ? "1" : "0" } }), disabled } } />
-        <Label { ...{ htmlFor: id, className: "cursor-pointer text-sm font-medium flex items-center gap-1" } }>
-          {label}
-          {required && <span { ...{ className: "text-red-500 font-bold" } }>*</span>}
-        </Label>
-      </div>
-    )
-    default: return <Input { ...{ id, name, type, value: String(currentVal), onChange: handleChange, placeholder, disabled } } />
   }
-}
 
-const FormFieldItem = memo(({ field, error, value, onChange }: { field: FieldConfig; error?: string; value?: any; onChange?: (e: any) => void }) => {
-  const { id, label, type = "text", required, defaultValue, name = id } = field
-  const currentVal = value ?? defaultValue ?? ""
+  const [dateVal = "", timeVal = ""] = typeof fieldValue === "string" && fieldValue.includes(" ") ? fieldValue.split(" ") : [String(fieldValue ?? ""), ""]
 
-  if (type === "hidden") return <Input { ...{ type: "hidden", id, name, value: String(currentVal) } } />
+  const hasStaticOptions = Array.isArray(field.options) && field.options.length > 0
 
   return (
-    <div { ...{ className: "grid gap-1.5" } }>
-      {type !== "checkbox" && (
-        <Label { ...{ htmlFor: id, className: "flex items-center gap-1 text-sm font-medium" } }>
-          {label}
-          {required && <span { ...{ className: "text-red-500 font-bold" } }>*</span>}
-        </Label>
+    <div {...{ className: "grid gap-1.5" }}>
+      <Label {...{ htmlFor: field.id, className: "flex items-center gap-1 text-sm font-medium" }}>
+        {field.label}
+        {field.required && <span {...{ className: "text-red-500 font-bold" }}>*</span>}
+      </Label>
+
+      {field.type === "textarea" ? (
+        <Textarea {...{ id: field.id, name, value: String(fieldValue), placeholder: field.placeholder, disabled, rows: field.rows ?? 3, onChange: handleInputChange }} />
+      ) : field.type === "select" ? (
+        hasStaticOptions ? (
+          <FormSelectSimple {...{ id: field.id, name, value: String(fieldValue), disabled, options: field.options, placeholder: field.placeholder, onSelect: (val) => onChange?.(name, val) }} />
+        ) : (
+          <FormSelectAsync {...{ id: field.id, name, value: String(fieldValue), disabled, lista: field.lista, placeholder: field.placeholder, onSelect: (val) => onChange?.(name, val) }} />
+        )
+      ) : field.type === "date" ? (
+        <>
+          <Input {...{ type: "hidden", name, value: String(fieldValue) }} />
+          <DatePicker {...{ value: String(fieldValue), disabled, placeholder: field.placeholder, onChange: (val) => onChange?.(name, val) }} />
+        </>
+      ) : field.type === "time" ? (
+        <>
+          <Input {...{ type: "hidden", name, value: String(fieldValue) }} />
+          <Clock {...{ value: String(fieldValue), disabled, placeholder: field.placeholder ?? "00:00", onChange: (val) => onChange?.(name, val) }} />
+        </>
+      ) : field.type === "datetime-local" ? (
+        <>
+          <Input {...{ type: "hidden", name, value: String(fieldValue) }} />
+          <div {...{ className: "grid grid-cols-2 gap-2" }}>
+            <DatePicker {...{ value: dateVal, disabled, placeholder: "-", onChange: handleDateChange }} />
+            <Clock {...{ value: timeVal, disabled, placeholder: "Hora", onChange: handleTimeChange }} />
+          </div>
+        </>
+      ) : field.type === "file" || field.type === "image" ? (
+        <FormImagePicker {...{ id: field.id, name, defaultValue: String(fieldValue), accept: field.accept, disabled, onChange: (e) => onChange?.(name, e.target.files?.[0]) }} />
+      ) : (
+        <Input {...{ id: field.id, name, type: field.type || "text", value: String(fieldValue), placeholder: field.placeholder, disabled, onChange: handleInputChange }} />
       )}
-      {renderControl(field, currentVal, onChange)}
-      {error && <InputError { ...{ className: "mt-1", message: error } } />}
+
+      {error && <InputError {...{ message: error }} />}
     </div>
   )
 })
-FormFieldItem.displayName = "FormFieldItem"
+FieldRenderer.displayName = "FieldRenderer"
 
-export const FormGroup: React.FC<FormGroupProps> = ({ fields, errors = {}, values = {}, onChange }) => (
-  <div { ...{ className: "space-y-4" } }>
-    {fields.map((field) => {
-      const fieldKey = field.name ?? field.id
-      return <FormFieldItem key={field.id} { ...{ field, error: errors[fieldKey], value: values[fieldKey], onChange } } />
+export const FormGroup = memo(({ fields, errors = {}, values = {}, isReadonly = false, onChange }: any) => (
+  <div {...{ className: "space-y-4" }}>
+    {fields.map((field: any) => {
+      const name = field.name ?? field.id
+      const val = values[name] ?? field.defaultValue ?? field.value ?? ""
+      return <FieldRenderer {...{ key: name, field, error: errors[name], value: val, isReadonly, onChange }} />
     })}
   </div>
-)
+))
+FormGroup.displayName = "FormGroup"

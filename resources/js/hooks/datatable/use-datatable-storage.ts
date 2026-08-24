@@ -1,13 +1,18 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 
 export function useDataTableStorage<T extends Record<string, any>>(key: string, initialValue: T) {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === "undefined") return initialValue
+  // Inicializa siempre con initialValue para coincidir exactamente con el HTML generado en SSR
+  const [storedValue, setStoredValue] = useState<T>(initialValue)
+
+  // Sincroniza con localStorage únicamente cuando el componente ya está montado en el cliente
+  useEffect(() => {
     try {
       const item = localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
-    } catch { return initialValue }
-  })
+      if (item) setStoredValue(JSON.parse(item))
+    } catch (e) {
+      console.error(e)
+    }
+  }, [key])
 
   const setStorage = useCallback((value: T | ((prev: T) => T)) => {
     setStoredValue((prev) => {

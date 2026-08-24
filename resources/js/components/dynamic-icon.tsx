@@ -1,32 +1,34 @@
-import * as Icons from 'lucide-react';
+import { lazy, memo, Suspense } from 'react';
 import type { LucideProps } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 
 interface DynamicIconProps extends LucideProps {
     name?: string;
 }
 
-// Mapa auxiliar en memoria para resolver nombres en kebab-case o minúsculas al nombre exacto de Lucide
-const iconNameMap = new Map<string, string>();
+// Cache global en memoria para almacenar los componentes lazy ya creados
+const iconCache = new Map<string, React.LazyExoticComponent<React.ComponentType<LucideProps>>>();
 
-Object.keys(Icons).forEach((key) => {
-    // Guarda variantes en minúsculas y sin guiones para tolerar 'paw-print', 'pawprint' o 'PawPrint'
-    iconNameMap.set(key.toLowerCase(), key);
-    iconNameMap.set(key.toLowerCase().replace(/-/g, ''), key);
-});
-
-export function DynamicIcon({ name = 'LayoutGrid', ...props }: DynamicIconProps) {
-    const iconsRecord = Icons as unknown as Record<string, React.ComponentType<LucideProps>>;
-
-    // 1. Intento directo por nombre exacto (ej. "PawPrint", "LayoutGrid")
-    let resolvedName = name;
-
-    // 2. Si no coincide directo, busca coincidencia tolerante a minúsculas / kebab-case (ej. "paw-print" -> "PawPrint")
-    if (!iconsRecord[resolvedName]) {
-        const normalized = name.toLowerCase();
-        resolvedName = iconNameMap.get(normalized) || iconNameMap.get(normalized.replace(/-/g, '')) || 'LayoutGrid';
+function getLazyIcon(name: string) {
+    if (!iconCache.has(name)) {
+        const LazyComponent = lazy(() =>
+            import('lucide-react')
+                .then((module) => ({
+                    default: (module as Record<string, React.ComponentType<LucideProps>>)[name] || LayoutGrid,
+                }))
+                .catch(() => ({ default: LayoutGrid }))
+        );
+        iconCache.set(name, LazyComponent);
     }
-
-    const IconComponent = iconsRecord[resolvedName] || Icons.LayoutGrid;
-
-    return <IconComponent {...props} />;
+    return iconCache.get(name)!;
 }
+
+export const DynamicIcon = memo(function DynamicIcon({ name = 'LayoutGrid', ...props }: DynamicIconProps) {
+    const IconComponent = getLazyIcon(name);
+
+    return (
+        <Suspense {...{ fallback: <LayoutGrid {...props} /> }}>
+            <IconComponent {...props} />
+        </Suspense>
+    );
+});

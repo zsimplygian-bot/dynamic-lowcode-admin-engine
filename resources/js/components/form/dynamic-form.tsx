@@ -1,84 +1,76 @@
-import React, { useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import axios from 'axios'
 import { Form } from '@inertiajs/react'
-import { DialogFooter } from '@/components/ui/dialog'
 import { SmartButton } from '@/components/smart-button'
-import { FormGroup, FieldConfig } from '@/components/form-group'
+import { FormGroup } from '@/components/form-group'
 import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
-import { useApi } from '@/hooks/use-api'
-
-export interface DynamicFormField {
-  name: string
-  label: string
-  type?: string
-  placeholder?: string
-  required?: boolean
-}
-
-interface DynamicFormProps {
-  mode?: 'store' | 'update' | 'info' | 'delete'
-  tableName: string
-  endpoint?: string
-  recordId?: number | string
-  initialValues?: Record<string, any>
-  formAction?: { action: string; method: 'post' | 'put' | 'delete' | 'get' }
-  onSuccess?: (id?: number) => void
-}
-
 const MODE_CONFIG = {
   store: { label: 'Crear', loadingLabel: 'Creando...', buttonColor: 'blue', method: 'post' as const, icon: Plus, variant: 'default' as const },
   update: { label: 'Actualizar', loadingLabel: 'Actualizando...', buttonColor: 'green', method: 'put' as const, icon: Pencil, variant: 'default' as const },
   delete: { label: 'Eliminar', loadingLabel: 'Eliminando...', buttonColor: 'red', method: 'delete' as const, icon: Trash2, variant: 'destructive' as const },
   info: { label: '', loadingLabel: '', buttonColor: undefined, method: 'get' as const, icon: undefined, variant: 'outline' as const },
 }
-
-export const DynamicForm: React.FC<DynamicFormProps> = ({ mode = 'store', tableName, recordId, initialValues = {}, formAction, onSuccess }) => {
+interface DynamicFormProps {
+  mode?: 'store' | 'update' | 'info' | 'delete'
+  tableName?: string
+  endpoint?: string
+  recordId?: number | string
+  fields?: any[]
+  initialValues?: Record<string, any>
+  onSuccess?: (pageProps?: any) => void
+}
+export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fields: passedFields, initialValues = {}, onSuccess }: DynamicFormProps) => {
   const config = MODE_CONFIG[mode]
-  const resolvedId = recordId ?? initialValues.id ?? initialValues[`id_${tableName?.toLowerCase()}`]
-  const isReadonlyMode = mode === 'info' || mode === 'delete'
-
-  const { data: schemaData, isLoading: loadingSchema } = useApi(tableName ? `/schema/${tableName}/fields` : null)
-  const { data: formData, isLoading: loadingRecord } = useApi(
-    mode !== 'store' && resolvedId ? `/crud/${tableName}/${resolvedId}` : null,
-    { initialData: initialValues }
-  )
-
-  const isLoading = loadingSchema || loadingRecord
-  const fields: DynamicFormField[] = useMemo(() => schemaData?.fields ?? [], [schemaData])
-  const formGroupFields: FieldConfig[] = useMemo(
-    () => fields.map(({ name, label, type, required, ...rest }) => ({
-      id: name, name, label, type,
-      required: isReadonlyMode ? false : required,
-      defaultValue: formData?.[name] ?? initialValues[name] ?? '',
-      disabled: isReadonlyMode,
-      ...rest
-    })),
-    [fields, formData, initialValues, isReadonlyMode]
-  )
-
-  const action = formAction ?? {
-    action: mode === 'store' || !resolvedId ? `/crud/${tableName}` : `/crud/${tableName}/${resolvedId}`,
-    method: config.method
+  const isReadonly = mode === 'info' || mode === 'delete'
+  const [fields, setFields] = useState<any[]>(passedFields ?? [])
+  const [fetchedValues, setFetchedValues] = useState<Record<string, any>>({})
+  const [customValues, setCustomValues] = useState<Record<string, any>>({})
+  const [isLoading, setIsLoading] = useState(!passedFields)
+  useEffect(() => {
+    let isMounted = true
+    const shouldFetchSchema = !passedFields && Boolean(tableName)
+    const shouldFetchRecord = Boolean(recordId && tableName && mode !== 'store' && Object.keys(initialValues).length === 0)
+    if (!shouldFetchSchema && !shouldFetchRecord) {
+      if (passedFields) setFields(passedFields)
+      setIsLoading(false)
+      return
+    }
+    setIsLoading(true)
+    const reqSchema = shouldFetchSchema ? axios.get(`/schema/${tableName}/fields`) : Promise.resolve({ data: null })
+    const reqData = shouldFetchRecord ? axios.get(`/crud/${tableName}/${recordId}`) : Promise.resolve({ data: null })
+    Promise.all([reqSchema, reqData])
+      .then(([resFields, resRecord]) => {
+        if (!isMounted) return
+        if (resFields.data) setFields(resFields.data?.fields ?? resFields.data ?? [])
+        if (resRecord.data?.data) setFetchedValues(resRecord.data.data)
+      })
+      .catch((err) => console.error('Error al cargar datos:', err))
+      .finally(() => { if (isMounted) setIsLoading(false) })
+    return () => { isMounted = false }
+  }, [tableName, recordId, mode, passedFields, initialValues])
+  const handleCustomChange = useCallback((name: string, value: any) => {
+    setCustomValues((prev) => ({ ...prev, [name]: value }))
+  }, [])
+  const action = endpoint ?? (mode === 'store' || !recordId ? `/crud/${tableName}` : `/crud/${tableName}/${recordId}`)
+  const formValues = useMemo(() => ({ ...initialValues, ...fetchedValues, ...customValues }), [initialValues, fetchedValues, customValues])
+  if (isLoading) {
+    return (
+      <div {...{ className: 'flex-1 flex items-center justify-center p-6 min-h-[150px]' }}>
+        <Loader2 {...{ className: 'w-6 h-6 animate-spin text-muted-foreground' }} />
+      </div>
+    )
   }
-
-  const formKey = `${tableName}-${resolvedId ?? 'new'}-${mode}-${isLoading ? 'loading' : 'ready'}`
-
   return (
-    <Form key={formKey} {...{ ...action, options: { preserveScroll: true, onSuccess: (page: any) => onSuccess?.(page?.props?.flash?.created_id) }, className: 'flex flex-col h-full min-h-0' }}>
+    <Form {...{ action, method: config.method, options: { preserveScroll: true, onSuccess: (p: any) => onSuccess?.(p?.props) }, className: 'flex flex-col h-full min-h-0' }}>
       {({ processing, errors }) => (
         <>
-          {isLoading ? (
-            <div {...{ className: 'flex-1 flex items-center justify-center p-6' }}>
-              <Loader2 {...{ className: 'w-6 h-6 animate-spin text-muted-foreground' }} />
-            </div>
-          ) : (
-            <div {...{ className: 'flex-1 overflow-y-auto space-y-2 pr-1' }}>
-              <FormGroup {...{ fields: formGroupFields, errors }} />
-            </div>
-          )}
+          <div {...{ className: 'flex-1 overflow-y-auto space-y-2 pr-1' }}>
+            <FormGroup {...{ fields, errors, values: formValues, isReadonly, onChange: handleCustomChange }} />
+          </div>
           {mode !== 'info' && (
-            <DialogFooter {...{ className: 'pt-4 flex items-center justify-end shrink-0 w-full' }}>
-              <SmartButton {...{ type: 'submit', label: config.label, loadingLabel: config.loadingLabel, variant: config.variant, buttonColor: config.buttonColor, icons: config.icon, isLoading: processing || isLoading, disabled: processing || isLoading }} />
-            </DialogFooter>
+            <div {...{ className: 'pt-4 flex items-center justify-end shrink-0 w-full gap-2' }}>
+              <SmartButton {...{ type: 'submit', label: config.label, loadingLabel: config.loadingLabel, variant: config.variant, buttonColor: config.buttonColor, icon: config.icon, isLoading: processing, disabled: processing }} />
+            </div>
           )}
         </>
       )}

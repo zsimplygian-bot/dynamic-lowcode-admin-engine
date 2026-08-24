@@ -1,12 +1,10 @@
-import { useState, useMemo, memo, useEffect } from 'react';
-import { Form, Head } from '@inertiajs/react';
-import { Columns, ArrowLeft, Type, Key } from 'lucide-react';
+import { memo } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, Key, Type } from 'lucide-react';
 import Heading from '@/components/heading';
-import { NewRecordButton } from '@/components/new-record-button';
-import { ActionButtons } from '@/components/action-buttons';
-import { SearchInput } from '@/components/search-input';
 import { SmartButton } from '@/components/smart-button';
-import { SortableList } from '@/components/sortable-list';
+import { SimpleList, FieldConfig } from '@/components/simple-list';
+
 export interface FieldItem {
     id: string;
     name: string;
@@ -15,95 +13,83 @@ export interface FieldItem {
     is_primary?: boolean;
     default_value?: string | null;
 }
+
 interface TableFieldsProps {
     tableName?: string;
     fieldsList?: FieldItem[];
 }
-const FIELD_FORM_CONFIG = [
+
+const FIELD_FORM_CONFIG: FieldConfig[] = [
     { name: 'name', label: 'Nombre del campo', placeholder: 'Ej. user_id', required: true },
     { 
-        name: 'type', 
-        label: 'Tipo de dato', 
-        type: 'select', 
-        required: true,
+        name: 'type', label: 'Tipo de dato', type: 'select', required: true,
         options: [
-            { label: 'Texto corto (string / varchar)', value: 'string' },
-            { label: 'Texto largo (text)', value: 'text' },
-            { label: 'Entero (integer)', value: 'integer' },
-            { label: 'Entero Grande (bigInteger)', value: 'bigInteger' },
-            { label: 'Booleano (boolean)', value: 'boolean' },
-            { label: 'Fecha y hora (datetime)', value: 'datetime' },
-            { label: 'Fecha (date)', value: 'date' },
-            { label: 'Decimal / Flotante (decimal)', value: 'decimal' },
-            { label: 'JSON (json)', value: 'json' },
+            { id: 'varchar', label: 'Texto corto (varchar)' },
+            { id: 'text', label: 'Texto largo (text)' },
+            { id: 'int', label: 'Entero (int)' },
+            { id: 'bigint', label: 'Entero Grande (bigint)' },
+            { id: 'tinyint', label: 'Booleano / Tinyint' },
+            { id: 'datetime', label: 'Fecha y hora (datetime)' },
+            { id: 'date', label: 'Fecha (date)' },
+            { id: 'decimal', label: 'Decimal (decimal)' },
+            { id: 'json', label: 'JSON (json)' },
         ]
     },
-    { name: 'nullable', label: 'Permitir valores nulos (NULL)', type: 'checkbox' },
-    { name: 'default_value', label: 'Valor por defecto (Opcional)', placeholder: 'Ej. active, 0, null' }
+    { name: 'raw_type', label: 'Definición / Longitud', placeholder: 'Ej. varchar(255) o decimal(10,2)' },
+    { name: 'default_value', label: 'Valor por defecto', placeholder: 'Ej. active, 0, null' },
+    { name: 'comment', label: 'Comentario / Descripción', placeholder: 'Descripción o propósito de este campo' },
+    { name: 'order', label: 'Ubicación / Campo previo (AFTER)', placeholder: 'Ej. id_navigation (o escribe "FIRST" para el inicio)' },
+    { name: 'is_nullable', label: 'Permitir valores nulos (NULL)', type: 'checkbox' },
+    { name: 'auto_increment', label: 'Autoincrementable (AUTO_INCREMENT)', type: 'checkbox' },
 ];
-const FieldItemRow = memo(({ field, tableName }: { field: FieldItem; tableName: string }) => {
-    const initialValues = useMemo(() => ({ ...field, nullable: field.is_nullable }), [field]);
-    return (
-        <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-                {field.is_primary ? <Key className="size-4" /> : <Type className="size-4" />}
-                <span className="font-mono text-sm">{field.name}</span>
-                {field.is_primary && <span className="text-xs font-bold">PK</span>}
-            </div>
-            <div className="flex items-center gap-2 text-xs font-mono">
-                <span>{field.type}</span>
-                {Boolean(field.is_nullable) && <span>NULL</span>}
-                <ActionButtons {...{ row_id: field.id, endpoint: `/settings/tables/${tableName}/fields`, title: "Campo de la Tabla", fields: FIELD_FORM_CONFIG, initialValues }} />
+
+const FieldRowContent = memo(({ field }: { field: any }) => (
+    <div {...{ className: "flex items-center justify-between min-w-0 pr-2" }}>
+        <div {...{ className: "flex items-center gap-2 min-w-0" }}>
+            {field.is_primary ? <Key {...{ className: "size-4 text-amber-500 shrink-0" }} /> : <Type {...{ className: "size-4 text-muted-foreground shrink-0" }} />}
+            <div {...{ className: "flex flex-col min-w-0" }}>
+                <div {...{ className: "flex items-center gap-1.5" }}>
+                    <span {...{ className: "font-mono text-sm font-medium truncate" }}>{field.name}</span>
+                    {field.is_primary && <span {...{ className: "text-[10px] font-bold bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0" }}>PK</span>}
+                    {Boolean(field.auto_increment) && <span {...{ className: "text-[10px] font-bold bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded border border-blue-500/20 shrink-0" }}>AI</span>}
+                </div>
+                {field.comment && <span {...{ className: "text-xs text-muted-foreground truncate" }}>{field.comment}</span>}
             </div>
         </div>
-    );
-});
-FieldItemRow.displayName = 'FieldItemRow';
+        <div {...{ className: "flex items-center gap-2 text-xs font-mono text-muted-foreground shrink-0" }}>
+            <span>{field.raw_type ?? field.type}</span>
+            {Boolean(field.is_nullable) && <span {...{ className: "bg-muted px-1.5 py-0.5 rounded text-[10px]" }}>NULL</span>}
+        </div>
+    </div>
+));
+FieldRowContent.displayName = 'FieldRowContent';
+
 export default function TableFieldsManager({ tableName = "tabla_desconocida", fieldsList = [] }: TableFieldsProps) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [items, setItems] = useState<FieldItem[]>(fieldsList);
-    useEffect(() => {
-        setItems(fieldsList);
-    }, [fieldsList]);
-    const filteredFields = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        if (!query) return items;
-        return items.filter((f) => f.name.toLowerCase().includes(query) || f.type.toLowerCase().includes(query));
-    }, [items, searchQuery]);
-    const isSearching = Boolean(searchQuery.trim());
+    const endpoint = `/settings/tables/${tableName}/fields`;
+    
     return (
         <>
-            <Head {...{ title: `Campos - ${tableName}` }} />
-            <Form {...{ action: `/settings/tables/${tableName}/fields/reorder`, method: "post", options: { preserveScroll: true }, transform: () => ({ fields: items.map((f) => f.name) }), className: "max-w-4xl mx-auto space-y-2" }}>
-                {({ processing }) => (
-                    <>
-                        <div className="flex items-center gap-4">
-                            <SmartButton {...{ href: "/settings/tables", icons: ArrowLeft, variant: "outline", size: "sm" }} />
-                            <Heading {...{ title: `Estructura de: ${tableName}`, description: "Administra los campos, reordena las columnas y configura restricciones." }} />
-                        </div>
-                        <div className="flex items-center justify-between gap-4">
-                            <SearchInput {...{ value: searchQuery, onChange: setSearchQuery,  }} />
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <Columns className="size-4" />
-                                    <span>{filteredFields.length} de {items.length} columnas</span>
-                                </div>
-                                <NewRecordButton {...{ endpoint: `/settings/tables/${tableName}/fields`, title: "Campo", fields: FIELD_FORM_CONFIG }} />
-                            </div>
-                        </div>
-                        <SortableList {...{ items: filteredFields, onReorder: (reordered) => { if (!isSearching) setItems(reordered); }, getItemKey: (item) => item.id, emptyMessage: isSearching ? `No se encontraron columnas que coincidan con "${searchQuery}".` : 'Esta tabla no tiene columnas registradas.', renderItem: (field) => <FieldItemRow {...{ field, tableName }} /> }} />
-                        <div className="flex justify-end">
-                            <SmartButton {...{ type: "submit", isLoading: processing, disabled: isSearching, label: processing ? 'Guardando orden...' : 'Guardar Cambios' }} />
-                        </div>
-                    </>
-                )}
-            </Form>
+            <Head {...{ title: `Campos de ${tableName}` }} />
+            <div {...{ className: "max-w-4xl mx-auto space-y-0" }}>
+                <div {...{ className: "flex items-center gap-2" }}>
+                    <Link {...{ href: "/settings/tables" }}>
+                        <SmartButton {...{ icon: ArrowLeft, variant: "outline", size: "sm" }} />
+                    </Link>
+                    <Heading {...{ title: `Estructura de: ${tableName}`, description: "Administra los campos y tipos de datos pertenecientes a esta tabla." }} />
+                </div>
+                <SimpleList {...{ 
+                    items: fieldsList, 
+                    searchKey: "name", 
+                    endpoint, 
+                    fields: FIELD_FORM_CONFIG,
+                    emptyText: "Esta tabla no posee columnas configuradas.", 
+                    renderRowContent: (field) => <FieldRowContent {...{ field }} />
+                }} />
+            </div>
         </>
     );
 }
-TableFieldsManager.layout = {
-    breadcrumbs: [
-        { title: 'Configuración de Tablas', href: '/settings/tables' },
-        { title: 'Campos de Tabla', href: '#' }
-    ],
+
+TableFieldsManager.layout = { 
+    breadcrumbs: [{ title: 'Configuración de Tablas', href: '/settings/tables' }, { title: 'Campos de Tabla', href: '#' }] 
 };

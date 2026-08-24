@@ -39,25 +39,26 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    // Obtenemos los props globales compartidos desde Laravel / Inertia
     const { props } = usePage<{ mainNavItems?: any[] }>();
-    
-    // Mapeamos los iconos de texto (string) a componentes de Lucide si es necesario, 
-    // o dejamos que NavMain maneje los componentes transformados.
+
     const resolvedMainNavItems = props.mainNavItems && props.mainNavItems.length > 0
         ? props.mainNavItems.map(item => ({
             ...item,
-            icon: item.icon ? () => <DynamicIcon name={item.icon} className="size-4" /> : LayoutGrid,
+            icon: () => <DynamicIcon {...{ name: item.icon || 'LayoutGrid', className: "size-4" }} />,
+            items: item.items?.map((subItem: any) => ({
+                ...subItem,
+                icon: () => <DynamicIcon {...{ name: subItem.icon || 'LayoutGrid', className: "size-4" }} />,
+            })),
         }))
         : defaultMainNavItems;
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar {...{ collapsible: "icon", variant: "inset" }}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                        <SidebarMenuButton {...{ size: "lg", asChild: true }}>
+                            <Link {...{ href: dashboard(), prefetch: true }}>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -66,11 +67,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={resolvedMainNavItems} />
+                <NavMain {...{ items: resolvedMainNavItems }} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavFooter {...{ items: footerNavItems, className: "mt-auto" }} />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
