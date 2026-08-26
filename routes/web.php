@@ -5,6 +5,7 @@ use App\Http\Controllers\DynamicCrudController;
 use App\Http\Controllers\DynamicTableController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\HistoriaController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas
@@ -25,6 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
+
+    // PDF de Historia Clínica
+    Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
 
     // Endpoints del CRUD dinámico
     Route::controller(DynamicCrudController::class)->prefix('crud/{tabla}')->name('crud.')->group(function () {

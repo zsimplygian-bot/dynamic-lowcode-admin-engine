@@ -4,12 +4,16 @@ import { Form } from '@inertiajs/react'
 import { SmartButton } from '@/components/smart-button'
 import { FormGroup } from '@/components/form-group'
 import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+
 const MODE_CONFIG = {
   store: { label: 'Crear', loadingLabel: 'Creando...', buttonColor: 'blue', method: 'post' as const, icon: Plus, variant: 'default' as const },
   update: { label: 'Actualizar', loadingLabel: 'Actualizando...', buttonColor: 'green', method: 'put' as const, icon: Pencil, variant: 'default' as const },
   delete: { label: 'Eliminar', loadingLabel: 'Eliminando...', buttonColor: 'red', method: 'delete' as const, icon: Trash2, variant: 'destructive' as const },
   info: { label: '', loadingLabel: '', buttonColor: undefined, method: 'get' as const, icon: undefined, variant: 'outline' as const },
 }
+
+const EMPTY_OBJECT = Object.freeze({})
+
 interface DynamicFormProps {
   mode?: 'store' | 'update' | 'info' | 'delete'
   tableName?: string
@@ -19,25 +23,30 @@ interface DynamicFormProps {
   initialValues?: Record<string, any>
   onSuccess?: (pageProps?: any) => void
 }
-export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fields: passedFields, initialValues = {}, onSuccess }: DynamicFormProps) => {
+
+export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fields: passedFields, initialValues = EMPTY_OBJECT, onSuccess }: DynamicFormProps) => {
   const config = MODE_CONFIG[mode]
   const isReadonly = mode === 'info' || mode === 'delete'
   const [fields, setFields] = useState<any[]>(passedFields ?? [])
-  const [fetchedValues, setFetchedValues] = useState<Record<string, any>>({})
-  const [customValues, setCustomValues] = useState<Record<string, any>>({})
+  const [fetchedValues, setFetchedValues] = useState<Record<string, any>>(EMPTY_OBJECT)
+  const [customValues, setCustomValues] = useState<Record<string, any>>(EMPTY_OBJECT)
   const [isLoading, setIsLoading] = useState(!passedFields)
+
   useEffect(() => {
     let isMounted = true
     const shouldFetchSchema = !passedFields && Boolean(tableName)
     const shouldFetchRecord = Boolean(recordId && tableName && mode !== 'store' && Object.keys(initialValues).length === 0)
+    
     if (!shouldFetchSchema && !shouldFetchRecord) {
       if (passedFields) setFields(passedFields)
       setIsLoading(false)
       return
     }
+
     setIsLoading(true)
     const reqSchema = shouldFetchSchema ? axios.get(`/schema/${tableName}/fields`) : Promise.resolve({ data: null })
     const reqData = shouldFetchRecord ? axios.get(`/crud/${tableName}/${recordId}`) : Promise.resolve({ data: null })
+
     Promise.all([reqSchema, reqData])
       .then(([resFields, resRecord]) => {
         if (!isMounted) return
@@ -46,13 +55,21 @@ export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fie
       })
       .catch((err) => console.error('Error al cargar datos:', err))
       .finally(() => { if (isMounted) setIsLoading(false) })
+
     return () => { isMounted = false }
   }, [tableName, recordId, mode, passedFields, initialValues])
+
   const handleCustomChange = useCallback((name: string, value: any) => {
-    setCustomValues((prev) => ({ ...prev, [name]: value }))
+    setCustomValues((prev) => (prev[name] === value ? prev : { ...prev, [name]: value }))
   }, [])
+
+  const handleSuccess = useCallback((p: any) => {
+    onSuccess?.(p?.props)
+  }, [onSuccess])
+
   const action = endpoint ?? (mode === 'store' || !recordId ? `/crud/${tableName}` : `/crud/${tableName}/${recordId}`)
   const formValues = useMemo(() => ({ ...initialValues, ...fetchedValues, ...customValues }), [initialValues, fetchedValues, customValues])
+
   if (isLoading) {
     return (
       <div {...{ className: 'flex-1 flex items-center justify-center p-6 min-h-[150px]' }}>
@@ -60,8 +77,9 @@ export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fie
       </div>
     )
   }
+
   return (
-    <Form {...{ action, method: config.method, options: { preserveScroll: true, onSuccess: (p: any) => onSuccess?.(p?.props) }, className: 'flex flex-col h-full min-h-0' }}>
+    <Form {...{ action, method: config.method, options: { preserveScroll: true, onSuccess: handleSuccess }, className: 'flex flex-col h-full min-h-0' }}>
       {({ processing, errors }) => (
         <>
           <div {...{ className: 'flex-1 overflow-y-auto space-y-2 pr-1' }}>

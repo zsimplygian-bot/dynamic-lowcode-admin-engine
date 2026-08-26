@@ -1,4 +1,5 @@
 import { forwardRef, useState } from "react"
+import { Link } from "@inertiajs/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SmartTooltip } from "@/components/smart-tooltip"
@@ -17,6 +18,8 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   buttonColor?: "green" | "red" | "blue" | "gray"
   isLoading?: boolean
   confirmation?: { title?: React.ReactNode; description?: React.ReactNode; confirmText?: string; cancelText?: string }
+  href?: string
+  prefetch?: boolean
 }
 const sizeClasses: Record<NonNullable<SmartButtonProps["size"]>, { btn: string; iconOnly: string; iconSize: number }> = {
   xs: { btn: "h-6 px-2 text-xs", iconOnly: "h-6 w-6 p-0", iconSize: 14 },
@@ -31,7 +34,7 @@ const colorClasses: Record<NonNullable<SmartButtonProps["buttonColor"]>, string>
   gray: "bg-gray-800 hover:bg-gray-900 text-white",
 }
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(
-  ({ icon: Icon, iconSize, label, loadingLabel, tooltip, tooltipSide = "top", children, className, variant = "default", disabled, size = "md", buttonColor, isLoading, type = "button", onClick, confirmation, ...props }, ref) => {
+  ({ icon: Icon, iconSize, label, loadingLabel, tooltip, tooltipSide = "top", children, className, variant = "default", disabled, size = "md", buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, ...props }, ref) => {
     const [openConfirm, setOpenConfirm] = useState(false)
     const [isConfirmLoading, setIsConfirmLoading] = useState(false)
     const text = label ?? children
@@ -39,13 +42,27 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(
     const isDisabled = disabled || busy
     const config = sizeClasses[size]
     const finalIconSize = iconSize ?? config.iconSize
-    const buttonEl = (
-      <Button {...{ ref, type, variant, disabled: isDisabled, className: cn("rounded-full inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0", !text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], className), onClick: confirmation ? (e) => { e.preventDefault(); setOpenConfirm(true) } : onClick, ...props }}>
-        <span {...{ className: "inline-flex items-center gap-2" }}>
-          {busy ? <Loader2 {...{ style: { width: finalIconSize, height: finalIconSize }, className: "animate-spin shrink-0" }} /> : Icon && <Icon {...{ style: { width: finalIconSize, height: finalIconSize }, className: "shrink-0" }} />}
-          {text && <span>{busy ? (loadingLabel ?? text) : text}</span>}
-        </span>
+    const content = (
+      <span {...{ className: "inline-flex items-center gap-2" }}>
+        {busy ? <Loader2 {...{ style: { width: finalIconSize, height: finalIconSize }, className: "animate-spin shrink-0" }} /> : Icon && <Icon {...{ style: { width: finalIconSize, height: finalIconSize }, className: "shrink-0" }} />}
+        {text && <span>{busy ? (loadingLabel ?? text) : text}</span>}
+      </span>
+    )
+    const buttonProps = {
+      ref,
+      type: href ? undefined : type,
+      variant,
+      disabled: isDisabled,
+      className: cn("rounded-full inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0", !text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], className),
+      onClick: confirmation ? (e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); setOpenConfirm(true) } : onClick,
+      ...props
+    }
+    const buttonEl = href ? (
+      <Button {...{ ...buttonProps, asChild: true }}>
+        <Link {...{ href, prefetch }}>{content}</Link>
       </Button>
+    ) : (
+      <Button {...buttonProps}>{content}</Button>
     )
     const rendered = tooltip ? <SmartTooltip {...{ content: tooltip, side: tooltipSide }}>{buttonEl}</SmartTooltip> : buttonEl
     if (!confirmation) return rendered

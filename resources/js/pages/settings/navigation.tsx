@@ -14,7 +14,7 @@ export default function NavigationManager() {
     return (
         <> <Head {...{ title: "Configuración de Navegación" }} />
             <h1 {...{ className: "sr-only" }}>Configuración de Navegación</h1>
-            <div {...{ className: "max-w-7xl mx-auto space-y-4" }}>
+            <div {...{ className: "max-w-7xl mx-auto" }}>
                 <Heading {...headingProps} />
                     <DynamicTableContent {...{ tableName: TABLE_NAME, crudEndpoint: CRUD_ENDPOINT, dataEndpoint: DATA_ENDPOINT }} />
             </div>

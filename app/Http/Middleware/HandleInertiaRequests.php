@@ -1,91 +1,62 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\{Cache, DB, Storage};
 use Inertia\Middleware;
-
 class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
-
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
-
     public function share(Request $request): array
     {
-        $mainNavItems = [
-            ['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'LayoutGrid'],
-        ];
-
-        if (Schema::hasTable('navigation')) {
-            $all = DB::table('navigation')
-                ->select(
-                    'id_navigation as id',
-                    'navigation as title',
-                    'path as href',
-                    'emoji_navigation as icon',
-                    'parent',
-                    'order_index'
-                )
-                ->orderBy('order_index', 'asc')
-                ->get();
-
-            if ($all->isNotEmpty()) {
-                $parents = $all->filter(fn ($item) => empty($item->parent) || (int) $item->parent === 0);
-
-                $mainNavItems = $parents->map(function ($parent) use ($all) {
-                    $children = $all->filter(fn ($child) => (int) $child->parent === (int) $parent->id)
-                        ->map(fn ($child) => [
-                            'id'    => $child->id,
-                            'title' => $child->title,
-                            'href'  => $child->href,
-                            'icon'  => $child->icon ?? 'LayoutGrid',
-                        ])
-                        ->values()
-                        ->toArray();
-
-                    return [
-                        'id'    => $parent->id,
-                        'title' => $parent->title,
-                        'href'  => $parent->href,
-                        'icon'  => $parent->icon ?? 'LayoutGrid',
-                        'items' => !empty($children) ? $children : null,
-                    ];
-                })->values()->toArray();
-            }
-        }
-
-        $appearance = [
-            'app_name'           => config('app.name'),
-            'app_icon_url'       => null,
-            'app_icon_thumb_url' => null,
-        ];
-
-        if (Storage::exists('settings/appearance.json')) {
-            $json = json_decode(Storage::get('settings/appearance.json'), true);
-            if (is_array($json)) {
-                $appearance = array_merge($appearance, $json);
-            }
-        }
-
+        $app = $this->getAppearance();
         return [
             ...parent::share($request),
-            'mainNavItems'   => $mainNavItems,
+            'mainNavItems'   => $this->getNavigation(),
             'headerNavItems' => [],
-            'name'           => $appearance['app_name'],
-            'logoUrl'        => $appearance['app_icon_url'] ?? null,
-            'logoThumbUrl'   => $appearance['app_icon_thumb_url'] ?? null,
-            'appSettings'    => $appearance,
-            'auth' => [
-                'user' => $request->user(),
-            ],
+            'name'           => $app['app_name'],
+            'logoUrl'        => $app['app_icon_url'] ?? null,
+            'logoThumbUrl'   => $app['app_icon_thumb_url'] ?? null,
+            'appSettings'    => $app,
+            'auth'           => ['user' => $request->user()],
             'sidebarOpen'    => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+    protected function getNavigation(): array
+    {
+        return Cache::remember('inertia_main_nav_items', 3600, function () {
+            $fallback = [['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'LayoutGrid']];
+            try {
+                $all = DB::table('navigation')
+                ->select('id_navigation as id', 'navigation as title', 'path as href', 'emoji_navigation as icon', 'parent')
+                ->orderBy('order_index', 'asc')
+                ->get();
+                if ($all->isEmpty()) 
+                    return $fallback;
+                $grouped = $all->groupBy(fn ($item) => (int) ($item->parent ?? 0));
+                return $grouped->get(0, collect())->map(function ($p) use ($grouped) {
+                    $children = $grouped->get((int) $p->id, collect())->map(fn ($c) => [
+                        'id' => $c->id, 'title' => $c->title, 'href' => $c->href, 'icon' => $c->icon ?? 'LayoutGrid'
+                    ])->values()->all();
+                    return ['id' => $p->id, 'title' => $p->title, 'href' => $p->href, 'icon' => $p->icon ?? 'LayoutGrid', 'items' => $children ?: null];
+                })->values()->all();
+            } catch (\Throwable $e) {
+                return $fallback;
+            }
+        });
+    }
+    protected function getAppearance(): array
+    {
+        return Cache::remember('inertia_appearance_settings', 3600, function () {
+            $default = ['app_name' => config('app.name'), 'app_icon_url' => null, 'app_icon_thumb_url' => null];
+            if (Storage::exists('settings/appearance.json')) {
+                $json = json_decode(Storage::get('settings/appearance.json'), true);
+                return is_array($json) ? array_merge($default, $json) : $default;
+            }
+            return $default;
+        });
     }
 }

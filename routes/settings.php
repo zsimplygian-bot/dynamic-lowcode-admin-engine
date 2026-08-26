@@ -43,13 +43,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Navigation
-    Route::get('settings/navigation', [NavigationController::class, 'edit'])->name('navigation.edit');
-    Route::post('settings/navigation', [NavigationController::class, 'update'])->name('navigation.update');
-
-    Route::post('settings/navigation/item', [NavigationController::class, 'store'])->name('navigation.store');
-    Route::put('settings/navigation/item/{index}', [NavigationController::class, 'updateItem'])->name('navigation.update-item');
-    Route::delete('settings/navigation/item/{index}', [NavigationController::class, 'destroy'])->name('navigation.destroy');
-
+    Route::inertia('settings/navigation', 'settings/navigation')->name('navigation.edit');
     // Profile destroy
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

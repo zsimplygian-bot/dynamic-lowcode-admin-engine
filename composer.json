@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "barryvdh/laravel-dompdf": "^3.1",
         "inertiajs/inertia-laravel": "^3.0",
         "intervention/image": "4.0",
         "intervention/image-laravel": "4.1",
