@@ -2,6 +2,7 @@ import { memo, useState, useEffect, useCallback, useMemo } from "react"
 import axios from "axios"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ActionButtons } from "@/components/action-buttons"
+
 export interface ActividadItem {
   id: number | string
   item: string
@@ -12,7 +13,9 @@ export interface ActividadItem {
   fecha: string
   tabla?: string
 }
+
 export interface ExtendedFormProps {
+  mode?: string
   recordId?: string | number
   tableName?: string
   children: React.ReactNode
@@ -22,6 +25,13 @@ export interface ExtendedFormProps {
   foreignKey?: string
   sectionTitle?: string
 }
+
+const toSingularTableName = (item: string): string => {
+  const clean = item.toLowerCase().trim()
+  if (clean === "anamnesis") return clean
+  return clean.endsWith("s") ? clean.slice(0, -1) : clean
+}
+
 export const ExtendedForm = memo(({
   mode,
   recordId,
@@ -35,8 +45,10 @@ export const ExtendedForm = memo(({
 }: ExtendedFormProps) => {
   const [actividades, setActividades] = useState<ActividadItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+
   const resolvedEndpoint = endpoint || (recordId && tableName ? `/api/${tableName}/${recordId}/actividades` : "")
   const resolvedForeignKey = foreignKey || (tableName ? `id_${tableName}` : "id_relacion")
+
   const fetchActividades = useCallback(async (signal?: AbortSignal) => {
     if (!resolvedEndpoint) return
     setLoading(true)
@@ -49,18 +61,22 @@ export const ExtendedForm = memo(({
       setLoading(false)
     }
   }, [resolvedEndpoint])
+
   useEffect(() => {
     if (!resolvedEndpoint) return
     const controller = new AbortController()
     fetchActividades(controller.signal)
     return () => controller.abort()
   }, [resolvedEndpoint, fetchActividades])
+
   const handleRecordCreated = useCallback((data?: any) => {
     fetchActividades()
     onSuccess?.(data)
   }, [fetchActividades, onSuccess])
+
   const initialPayload = useMemo(() => ({ [resolvedForeignKey]: recordId }), [resolvedForeignKey, recordId])
   const prefix = useMemo(() => (tableName ? `${tableName}_` : ""), [tableName])
+
   const grupos = useMemo(() => {
     const map = new Map<string, ActividadItem[]>()
     for (const item of actividades) {
@@ -74,6 +90,7 @@ export const ExtendedForm = memo(({
     }
     return Array.from(map.entries())
   }, [actividades])
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh] pr-1">
       <div className="w-full lg:w-[450px] shrink-0">{children}</div>
@@ -104,7 +121,7 @@ export const ExtendedForm = memo(({
                 <div key={fecha} className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-muted-foreground tracking-wide">{fecha}</span>
                   {items.map((act) => {
-                    const targetTable = act.tabla || `${prefix}${act.item.toLowerCase().trim()}`
+                    const targetTable = act.tabla || `${prefix}${toSingularTableName(act.item)}`
                     return (
                       <div key={act.id} className="flex flex-col gap-1">
                         <div className="flex items-center justify-between px-1">

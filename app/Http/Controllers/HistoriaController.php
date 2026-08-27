@@ -1,14 +1,18 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Traits\FormatsDateDifference;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+
 class HistoriaController extends Controller
 {
     use FormatsDateDifference;
+
     public function pdf(int $id)
     {
         $historiaData = $this->obtenerDatosHistoria($id);
@@ -53,6 +57,7 @@ class HistoriaController extends Controller
         $pdf = Pdf::loadView('pdf.historia', compact('historia', 'mascota', 'cliente', 'edadFmt', 'actividades', 'total', 'logo'));
         return $pdf->stream("historia_clinica_{$id}.pdf");
     }
+
     public function actividades(int $id): JsonResponse
     {
         $actividades = $this->obtenerActividadesHistoria($id)
@@ -60,6 +65,7 @@ class HistoriaController extends Controller
             ->map(fn($act) => [
                 'id'        => $act['id'],
                 'item'      => $act['tipo'] === 'Procedimiento' ? 'Procedimientos' : ($act['tipo'] === 'Producto' ? 'Productos' : $act['tipo']),
+                'tabla'     => 'historia_' . strtolower($act['tipo']),
                 'titulo'    => $act['titulo'],
                 'detalle'   => $this->formatearDetalleJson($act),
                 'precio'    => $act['precio'],
@@ -67,8 +73,10 @@ class HistoriaController extends Controller
                 'fecha'     => $act['fecha_raw'],
             ])
             ->values();
+
         return response()->json($actividades);
     }
+
     private function obtenerDatosHistoria(int $id): object
     {
         [$t1, $t2, $t3, $t4, $t5, $t6, $t7] = ['motivo', 'estado_historia', 'mascota', 'cliente', 'sexo', 'raza', 'especie'];
@@ -93,6 +101,7 @@ class HistoriaController extends Controller
             ])
             ->first() ?? (object) [];
     }
+
     private function obtenerActividadesHistoria(int $id): Collection
     {
         $seguimientos = DB::table('historia_seguimiento')
@@ -166,6 +175,7 @@ class HistoriaController extends Controller
             ->concat($productosMapped)
             ->concat($anamnesis);
     }
+
     private function formatearDetallePDF(array $act): array
     {
         $d = [];
@@ -202,6 +212,7 @@ class HistoriaController extends Controller
         }
         return $d;
     }
+
     private function formatearDetalleJson(array $act): ?string
     {
         return match ($act['tipo']) {
