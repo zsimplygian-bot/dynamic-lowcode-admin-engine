@@ -1,36 +1,29 @@
 <?php
 
-use App\Http\Controllers\DynamicFormSchemaController;
-use App\Http\Controllers\DynamicCrudController;
-use App\Http\Controllers\DynamicTableController;
-use App\Http\Controllers\LookupController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DynamicCrudController;
+use App\Http\Controllers\DynamicFormSchemaController;
+use App\Http\Controllers\DynamicTableController;
 use App\Http\Controllers\HistoriaController;
+use App\Http\Controllers\LookupController;
 use Illuminate\Support\Facades\Route;
 
-// Rutas públicas
 Route::inertia('/', 'welcome')->name('home');
 
-// Rutas protegidas
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Lookups para selects dinámicos
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
+    Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
+    Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
 
-    // Vistas de tablas dinámicas
     Route::controller(DynamicTableController::class)->prefix('tables')->name('tables.')->group(function () {
         Route::get('/{table}', 'show')->name('show');
         Route::get('/{table}/data', 'data')->name('data');
         Route::get('/{table}/record/{id}', 'findRecord')->name('record');
     });
 
-    Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
-
-    // PDF de Historia Clínica
-    Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
-
-    // Endpoints del CRUD dinámico
     Route::controller(DynamicCrudController::class)->prefix('crud/{tabla}')->name('crud.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
@@ -39,11 +32,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
 
-    // Endpoints para el Dropdown de Citas Próximas
-    Route::controller(CitaController::class)->group(function () {
-        Route::get('/api/citas/proximas', 'proximas')->name('citas.proximas');
-        Route::post('/api/cita/{id}/atender', 'atender')->name('citas.atender');
-        Route::post('/api/cita/{id}/cancelar', 'cancelar')->name('citas.cancelar');
+    Route::prefix('api')->group(function () {
+        Route::get('/historia/{id}/actividades', [HistoriaController::class, 'actividades'])->name('historia.actividades');
+
+        Route::controller(CitaController::class)->name('citas.')->group(function () {
+            Route::get('/citas/proximas', 'proximas')->name('proximas');
+            Route::post('/cita/{id}/atender', 'atender')->name('atender');
+            Route::post('/cita/{id}/cancelar', 'cancelar')->name('cancelar');
+        });
     });
 });
 

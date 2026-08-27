@@ -28,8 +28,8 @@ trait HasTableMetadata
 
     public function getTableColumns(string $table): array
     {
-        // Cambiamos el prefijo de la clave a 'schema_metadata_v2_' para invalidar caché vieja automáticamente
-        return Cache::rememberForever("schema_metadata_v2_{$table}", function () use ($table) {
+        // Cambiamos el prefijo para invalidar automáticamente la caché previa
+        return Cache::rememberForever("schema_metadata_v3_{$table}", function () use ($table) {
             $rawColumns = $this->getRawTableColumns($table);
             if (empty($rawColumns)) return [];
 
@@ -51,12 +51,12 @@ trait HasTableMetadata
                     'hidden'     => $isForeign || isset($this->hiddenByDefault[$name]),
                 ];
 
-                // 2. Inyecta la columna descriptiva asociada justo después (ej: 'id_cliente' -> 'cliente')
+                // 2. Inyecta la columna descriptiva asociada usando inferLabel
                 if ($isForeign) {
                     $relatedName = substr($name, 3);
                     $columns[] = [
                         'accessor'   => $relatedName,
-                        'header'     => strtoupper($relatedName),
+                        'header'     => $this->inferLabel($relatedName, null, false), // <--- Genera 'ESTADO CITA' en lugar de 'ESTADO_CITA'
                         'type'       => 'text',
                         'searchable' => false,
                         'hidden'     => false,
@@ -71,6 +71,6 @@ trait HasTableMetadata
     public function clearTableMetadataCache(string $table): void
     {
         $this->clearSchemaCache($table);
-        Cache::forget("schema_metadata_v2_{$table}");
+        Cache::forget("schema_metadata_v3_{$table}");
     }
 }

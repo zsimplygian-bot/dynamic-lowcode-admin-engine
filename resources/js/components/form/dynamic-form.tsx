@@ -35,7 +35,7 @@ export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fie
   useEffect(() => {
     let isMounted = true
     const shouldFetchSchema = !passedFields && Boolean(tableName)
-    const shouldFetchRecord = Boolean(recordId && tableName && mode !== 'store' && Object.keys(initialValues).length === 0)
+    const shouldFetchRecord = Boolean(recordId && tableName && mode !== 'store')
     
     if (!shouldFetchSchema && !shouldFetchRecord) {
       if (passedFields) setFields(passedFields)
@@ -57,7 +57,7 @@ export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fie
       .finally(() => { if (isMounted) setIsLoading(false) })
 
     return () => { isMounted = false }
-  }, [tableName, recordId, mode, passedFields, initialValues])
+  }, [tableName, recordId, mode, passedFields])
 
   const handleCustomChange = useCallback((name: string, value: any) => {
     setCustomValues((prev) => (prev[name] === value ? prev : { ...prev, [name]: value }))
@@ -68,7 +68,13 @@ export const DynamicForm = ({ mode = 'store', tableName, endpoint, recordId, fie
   }, [onSuccess])
 
   const action = endpoint ?? (mode === 'store' || !recordId ? `/crud/${tableName}` : `/crud/${tableName}/${recordId}`)
-  const formValues = useMemo(() => ({ ...initialValues, ...fetchedValues, ...customValues }), [initialValues, fetchedValues, customValues])
+
+  const formValues = useMemo(() => {
+    if (mode === 'store') {
+      return { ...initialValues, ...customValues }
+    }
+    return { ...initialValues, ...fetchedValues, ...customValues }
+  }, [mode, initialValues, fetchedValues, customValues])
 
   if (isLoading) {
     return (

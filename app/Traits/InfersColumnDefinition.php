@@ -48,8 +48,9 @@ trait InfersColumnDefinition
     protected function inferLabel(string $columnName, ?string $comment, bool $isPrimaryId): string
     {
         if ($comment !== null && $comment !== '') {
-            if (str_contains($comment, 'label:') && preg_match("/label\s*:\s*['\"]([^'\"]+)['\"]/i", $comment, $match)) {
-                return Str::upper($match[1]);
+            if (str_contains(strtolower($comment), 'label:')) {
+                $extracted = Str::after($comment, 'label:');
+                return trim($extracted, " '\"\t\n\r\0\x0B");
             }
             return Str::upper(str_replace('_', ' ', $comment));
         }
@@ -57,7 +58,11 @@ trait InfersColumnDefinition
         if ($columnName === 'created_at') return 'FECHA CREACIÓN';
         if ($isPrimaryId) return 'ID';
 
-        return Str::upper(str_replace('_', ' ', $columnName));
+        // Limpia prefijos/sufijos de ID y convierte cualquier '_' restante en espacio
+        $cleanName = str_replace(['id_', '_id'], '', $columnName);
+        $cleanName = str_replace('_', ' ', $cleanName);
+
+        return Str::upper(trim($cleanName));
     }
 
     protected function buildBaseColumnDefinition(mixed $col, string $tableName): array
