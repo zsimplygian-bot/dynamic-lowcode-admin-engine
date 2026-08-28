@@ -3,7 +3,8 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { FullscreenButton } from '@/components/fullscreen-button';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import AppearanceToggleDropdown from "@/components/appearance-dropdown";
-import CitasDropdown from "@/components/sidebar_cita";
+import CitasDropdown from "@/components/dashboard/cita-dropdown";
+
 export function AppSidebarHeader({
     breadcrumbs = [],
 }: {

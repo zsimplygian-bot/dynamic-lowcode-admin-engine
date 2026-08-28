@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useEffect, useDeferredValue, useSyncExternalStore } from "react"
-import { getListaSync, setListaCache, resetLista, subscribeCache } from "@/hooks/use-listas-cache"
+import { getListaSync, updateListaCache, resetLista, subscribeCache } from "@/hooks/use-listas-cache"
 import { useApi } from "@/hooks/use-api"
 
 interface UseFormSelectAsyncProps {
@@ -9,86 +9,71 @@ interface UseFormSelectAsyncProps {
 }
 
 export const useFormSelectAsync = ({ id, valueProp, defaultValue, openProp, setOpenProp, onSelect, lista, name }: UseFormSelectAsyncProps) => {
-  const [internalValue, setInternalValue] = useState<string>(() => {
-    const init = valueProp ?? defaultValue
-    return init !== undefined && init !== null ? String(init) : ""
-  })
+  const [internalVal, setInternalVal] = useState<string>(() => String(valueProp ?? defaultValue ?? ""))
+  const value = valueProp !== undefined ? String(valueProp ?? "") : internalVal
 
-  useEffect(() => {
-    if (valueProp !== undefined) setInternalValue(valueProp !== null ? String(valueProp) : "")
-  }, [valueProp])
-
-  const value = valueProp !== undefined ? (valueProp !== null ? String(valueProp) : "") : internalValue
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
   const setOpen = setOpenProp ?? setOpenInternal
 
   const [search, setSearch] = useState("")
   const deferredSearch = useDeferredValue(search)
-  const [forceFetchCount, setForceFetchCount] = useState(0)
 
   const campoLista = lista ?? id ?? name ?? ""
+  const tableName = useMemo(() => (name ?? id ?? lista ?? "").replace(/^id_/, "").toLowerCase().trim(), [name, id, lista])
 
-  // Extrae el nombre de tabla eliminando el prefijo 'id_' inicial
-  const tableName = useMemo(() => {
-    const raw = name ?? id ?? lista ?? ""
-    return raw.replace(/^id_/, "").toLowerCase().trim()
-  }, [name, id, lista])
+  const cacheState = useSyncExternalStore(
+    useCallback((cb) => subscribeCache(campoLista, cb), [campoLista]),
+    useCallback(() => getListaSync(campoLista), [campoLista])
+  )
 
-  const subscribe = useCallback((cb: () => void) => subscribeCache(campoLista, cb), [campoLista])
-  const getSnapshot = useCallback(() => getListaSync(campoLista), [campoLista])
-  const cacheState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-
-  const isSelectedInCache = useMemo(() => {
-    if (!value || !cacheState.options.length) return false
-    return cacheState.options.some((o) => String(o.id) === String(value))
-  }, [value, cacheState.options])
-
-  const shouldFetchSingle = Boolean(campoLista && value && !isSelectedInCache)
-  const singleUrl = useMemo(() => (shouldFetchSingle ? `/lookups/${campoLista}?id=${value}${forceFetchCount ? `&ts=${forceFetchCount}` : ""}` : null), [shouldFetchSingle, campoLista, value, forceFetchCount])
-  const { data: rawSingleData } = useApi(singleUrl, { enabled: shouldFetchSingle })
-
-  const shouldFetchFull = Boolean(campoLista && open && !cacheState.isFullLoaded)
-  const fullUrl = useMemo(() => (shouldFetchFull ? `/lookups/${campoLista}${forceFetchCount ? `?ts=${forceFetchCount}` : ""}` : null), [shouldFetchFull, campoLista, forceFetchCount])
-  const { data: rawFullData, isLoading: loadingLista } = useApi(fullUrl, { enabled: shouldFetchFull })
-
-  useEffect(() => {
-    if (rawFullData) setListaCache(campoLista, rawFullData, true)
-  }, [rawFullData, campoLista])
-
-  useEffect(() => {
-    if (rawSingleData && !rawFullData) setListaCache(campoLista, rawSingleData, false)
-  }, [rawSingleData, rawFullData, campoLista])
-
+  // 1. Resolver opción inicial individual si no está en la caché
+  const needsInitialLookup = Boolean(campoLista && value && !cacheState.options.some((o) => String(o.id) === String(value)))
+  
+  useApi(`/lookups/${campoLista}`, {
+    enabled: needsInitialLookup,
+    config: { params: { id: value } },
+    select: (data) => {
+      const items = data?.data ?? data
+      if (items) updateListaCache(campoLista, items, false)
+      return items
+    }
+  })
+  // 2. Cargar lista completa al abrir el select si no está completa en caché
+  const needsFullFetch = Boolean(campoLista && open && !cacheState.isFull)
+  const { isLoading: loadingLista, refetch } = useApi(`/lookups/${campoLista}`, {
+    enabled: needsFullFetch,
+    select: (data) => {
+      const items = data?.data ?? data
+      if (items) updateListaCache(campoLista, items, true)
+      return items
+    }
+  })
+  // 3. Refrescar lista forzadamente
   const handleRefresh = useCallback(() => {
     if (!campoLista) return
     resetLista(campoLista)
-    setForceFetchCount((p) => p + 1)
-  }, [campoLista])
+    refetch()
+  }, [campoLista, refetch])
 
-  const selectedOption = useMemo(() => (value ? cacheState.options.find((o) => String(o.id) === String(value)) ?? null : null), [cacheState.options, value])
+  const selectedOption = useMemo(() => cacheState.options.find((o) => String(o.id) === String(value)) ?? null, [cacheState.options, value])
   const selectedLabel = useMemo(() => (selectedOption ? String(selectedOption.label ?? "").toUpperCase() : ""), [selectedOption])
 
   const filteredOptions = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase()
-    if (!query) return cacheState.options
-    return cacheState.options.filter((o) => String(o.label ?? "").toLowerCase().includes(query))
+    const q = deferredSearch.trim().toLowerCase()
+    return q ? cacheState.options.filter((o) => String(o.label ?? "").toLowerCase().includes(q)) : cacheState.options
   }, [cacheState.options, deferredSearch])
 
-  const handleSelectOption = useCallback((idSelected: any) => {
-    const selectedStr = String(idSelected)
-    const newValue = String(value) === selectedStr ? "" : selectedStr
-    setInternalValue(newValue)
-    onSelect?.(newValue)
+  const handleSelectOption = useCallback((idSel: any) => {
+    const next = String(value) === String(idSel) ? "" : String(idSel)
+    setInternalVal(next)
+    onSelect?.(next)
     setOpen(false)
     setSearch("")
   }, [onSelect, setOpen, value])
 
-  const crudEndpoint = useMemo(() => (tableName ? `/crud/${tableName}` : ""), [tableName])
-  const preparedInitialValues = useMemo(() => (value ? selectedOption ?? { id: value } : {}), [value, selectedOption])
-
   return {
-    value, open, setOpen, search, setSearch, cacheState, loadingLista, selectedLabel, filteredOptions,
-    tableName, crudEndpoint, preparedInitialValues, handleRefresh, handleSelectOption
+    value, open, setOpen, search, setSearch, loadingLista, selectedLabel, filteredOptions,
+    tableName, crudEndpoint: tableName ? `/crud/${tableName}` : "", handleRefresh, handleSelectOption
   }
 }

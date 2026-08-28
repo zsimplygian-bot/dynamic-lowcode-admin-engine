@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from 'react'
-import { Phone } from 'lucide-react'
+import { Phone, PawPrint } from 'lucide-react'
 import { SmartBadge } from '@/components/smart-badge'
+import { SmartButton } from '@/components/smart-button'
 import { SmartImagePreview } from '@/components/smart-image-preview'
 
 const COLOR_MAP: Record<string, string> = {
@@ -11,6 +12,12 @@ const COLOR_MAP: Record<string, string> = {
 }
 
 const IGNORED_WORDS = new Set(['con', 'y', 'de', 'manchas', 'claro', 'oscuro'])
+
+const BooleanBadge = memo(({ value }: { value: any }) => {
+  const isTrue = value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true'
+  return <SmartBadge label={isTrue ? 'Sí' : 'No'} variant={isTrue ? 'default' : 'destructive'} />
+})
+BooleanBadge.displayName = 'BooleanBadge'
 
 const ColorCircle = memo(({ value }: { value: any }) => {
   const background = useMemo(() => {
@@ -28,51 +35,48 @@ const getThumbUrl = (url: string) => url.replace(/(\.[^.]+)$/, '_thumb$1')
 
 const CellImagePreview = memo(({ value }: { value: string }) => {
   const url = String(value)
-  const thumbUrl = getThumbUrl(url)
-  return (
-    <div className="flex justify-center">
-      <SmartImagePreview {...{ url, thumbUrl, size: 'sm' }} />
-    </div>
-  )
+  return <div className="flex justify-center"><SmartImagePreview url={url} thumbUrl={getThumbUrl(url)} size="sm" /></div>
 })
 CellImagePreview.displayName = 'CellImagePreview'
 
-const PhoneLink = memo(({ value }: { value: string }) => (
-  <a href={`https://wa.me/${value}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 h-6 px-2 text-xs font-medium rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors shrink-0">
-    <Phone {...{ className: 'size-3 shrink-0' }} />
-    <span>{value}</span>
-  </a>
+const PhoneButton = memo(({ value }: { value: string }) => (
+  <SmartButton size="xs" buttonColor="green" icon={Phone} label={value} href={`https://wa.me/${value}`} target="_blank" rel="noopener noreferrer" tooltip="Abrir WhatsApp" />
 ))
-PhoneLink.displayName = 'PhoneLink'
+PhoneButton.displayName = 'PhoneButton'
 
-const RENDERERS: Record<string, (value: any) => React.ReactNode> = {
-  weight: (val) => `${val} kg`,
-  activo: (val) => <SmartBadge {...{ label: Boolean(Number(val)) ? 'Activo' : 'Inactivo', variant: Boolean(Number(val)) ? 'default' : 'destructive' }} />,
-  is_active: (val) => <SmartBadge {...{ label: Boolean(Number(val)) ? 'Activo' : 'Inactivo', variant: Boolean(Number(val)) ? 'default' : 'destructive' }} />,
-  status: (val) => <SmartBadge {...{ label: Boolean(Number(val)) ? 'Activo' : 'Inactivo', variant: Boolean(Number(val)) ? 'default' : 'destructive' }} />
+const PetCountButton = memo(({ value }: { value: any }) => (
+  <SmartButton size="xs" variant="secondary" icon={PawPrint} label={String(value)} className="font-semibold cursor-default" />
+))
+PetCountButton.displayName = 'PetCountButton'
+
+const CUSTOM_RENDERERS: Record<string, (value: any) => React.ReactNode> = {
+  precio: (val) => `S/ ${Number(val).toFixed(2)}`,
 }
 
-const formatValue = (accessor: string, value: any, tableName?: string) => {
-  // Única fuente de verdad para valores nulos o vacíos
-  if (value == null || value === '') {
-    return <span className="italic text-muted-foreground/50">null</span>
-  }
-  if (tableName && accessor === `id_${tableName}`) {
-    return <span className="font-semibold opacity-60">{String(value)}</span>
-  }
-  if (RENDERERS[accessor]) return RENDERERS[accessor](value)
-  if (accessor.includes('telefono') || accessor.includes('phone')) return <PhoneLink {...{ value }} />
-  if (accessor.includes('color')) return <ColorCircle {...{ value }} />
-  if (accessor.includes('archivo') || accessor.includes('file') || accessor.includes('imagen') || accessor.includes('image') || accessor.includes('foto')) {
-    return <CellImagePreview {...{ value }} />
-  }
-  if (accessor.includes('fecha') || accessor.includes('date')) {
-    return String(value).replace(/[\sT]00:00:00(\.000Z)?$/, '')
-  }
+const formatValue = (accessor: string, value: any, type?: string, tableName?: string) => {
+  if (value == null || value === '') return <span className="italic text-muted-foreground/50">null</span>
+  if (tableName && accessor === `id_${tableName}`) return <span className="font-semibold opacity-60">{String(value)}</span>
+
+  const isBooleanType = type === 'checkbox' || type === 'boolean' || typeof value === 'boolean'
+  const isBooleanName = accessor.startsWith('es_') || accessor.startsWith('is_') || accessor.startsWith('tiene_') || accessor.includes('activo')
+  const isBinaryValue = value === 0 || value === 1 || value === '0' || value === '1'
+  if (isBooleanType || (isBooleanName && isBinaryValue)) return <BooleanBadge value={value} />
+
+  if (accessor.includes('total_mascota') || accessor === 'mascotas') return <PetCountButton value={value} />
+  if (CUSTOM_RENDERERS[accessor]) return CUSTOM_RENDERERS[accessor](value)
+
+  const lower = accessor.toLowerCase()
+  if (lower.includes('telefono') || lower.includes('phone') || lower.includes('celular')) return <PhoneButton value={String(value)} />
+  if (lower.includes('color')) return <ColorCircle value={value} />
+  if (lower.includes('archivo') || lower.includes('file') || lower.includes('imagen') || lower.includes('image') || lower.includes('foto')) return <CellImagePreview value={String(value)} />
+  if (lower.includes('fecha') || lower.includes('date')) return String(value).replace(/[\sT]00:00:00(\.000Z)?$/, '')
+
   return String(value)
 }
 
-export const CellFormatter = memo(({ accessor, row, tableName }: { accessor: string; row: any; tableName?: string }) => {
-  return formatValue(accessor, row[accessor], tableName)
+interface CellFormatterProps { accessor: string; row: any; type?: string; tableName?: string }
+
+export const CellFormatter = memo(({ accessor, row, type, tableName }: CellFormatterProps) => {
+  return formatValue(accessor, row[accessor], type, tableName)
 })
 CellFormatter.displayName = 'CellFormatter'

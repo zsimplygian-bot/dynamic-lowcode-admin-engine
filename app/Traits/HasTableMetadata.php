@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Cache;
 
 trait HasTableMetadata
 {
-    use HasSchemaCache, InfersColumnDefinition;
+    use HasSchemaCache, InfersColumnDefinition, HasExtraColumns;
 
     protected array $hiddenByDefault = [
         'creater_id' => true,
@@ -63,7 +63,7 @@ trait HasTableMetadata
                     ];
                 }
             }
-
+            $this->appendExtraColumnsToMetadata($table, $columns);
             return $columns;
         });
     }

@@ -12,14 +12,20 @@ class DynamicFormSchemaController extends Controller
     use HasSchemaCache, InfersColumnDefinition;
 
     private const IGNORED_COLUMNS = [
-        'created_at' => true, 'updated_at' => true, 'deleted_at' => true,
-        'remember_token' => true, 'creater_id' => true, 'updater_id' => true,
-        'deleter_id' => true, 'user_id_created' => true
+        'created_at'        => true,
+        'updated_at'        => true,
+        'deleted_at'        => true,
+        'remember_token'    => true,
+        'creater_id'        => true,
+        'creator_id'        => true,
+        'updater_id'        => true,
+        'deleter_id'        => true,
+        'user_id_created'   => true,
     ];
 
     public function getTableSchema(string $table): array
     {
-        return Cache::rememberForever("compiled_schema_{$table}", function () use ($table) {
+        return Cache::rememberForever("compiled_schema_v3_{$table}", function () use ($table) {
             $rawColumns = $this->getRawTableColumns($table);
             if (empty($rawColumns)) return [];
 
@@ -30,17 +36,25 @@ class DynamicFormSchemaController extends Controller
 
                 if (isset(self::IGNORED_COLUMNS[$name])) continue;
 
-                $type = $base['is_primary'] ? 'hidden' : $base['type'];
+                $isPrimary = $base['is_primary'];
+                $isForeign = $base['is_foreign'];
+                $type      = $isPrimary ? 'hidden' : $base['type'];
 
                 $fieldData = [
-                    'name'     => $name,
-                    'label'    => $base['label'],
-                    'type'     => $type,
-                    'required' => !$base['is_nullable'] && $type !== 'hidden',
+                    'name'        => $name,
+                    'label'       => $base['label'],
+                    'type'        => $type,
+                    'required'    => !$base['is_nullable'] && !$isPrimary,
+                    'is_foreign'  => $isForeign,
                 ];
 
                 if ($type === 'image') {
                     $fieldData['accept'] = 'image/*';
+                }
+
+                // Clave foránea: corta 'id_' para obtener la lista en singular (ej: 'id_cliente' -> 'cliente')
+                if ($isForeign) {
+                    $fieldData['lista'] = substr($name, 3);
                 }
 
                 $fields[] = $fieldData;
@@ -53,6 +67,7 @@ class DynamicFormSchemaController extends Controller
     public function fields(string $table): JsonResponse
     {
         $schema = $this->getTableSchema($table);
+
         if (empty($schema)) {
             return response()->json(['message' => "La tabla '{$table}' no existe o no contiene columnas registradas."], 404);
         }
@@ -61,5 +76,11 @@ class DynamicFormSchemaController extends Controller
             'tableName' => $table,
             'fields'    => $schema,
         ]);
+    }
+
+    public function clearFormSchemaCache(string $table): void
+    {
+        $this->clearSchemaCache($table);
+        Cache::forget("compiled_schema_v3_{$table}");
     }
 }

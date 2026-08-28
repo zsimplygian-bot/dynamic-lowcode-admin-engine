@@ -13,10 +13,8 @@ export function useApi<T = any>(url: string | null, { enabled = true, initialDat
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<any>(null)
 
-  // Mantenemos referencias estables para evitar re-ejecuciones por objetos/funciones no memorizados
   const configRef = useRef(config)
   configRef.current = config
-
   const selectRef = useRef(select)
   selectRef.current = select
 
@@ -24,16 +22,14 @@ export function useApi<T = any>(url: string | null, { enabled = true, initialDat
     if (!url) return
     setIsLoading(true)
     setError(null)
-
     try {
       const res = await axios.get(url, { ...configRef.current, signal })
-      const resolvedData = selectRef.current ? selectRef.current(res.data) : (res.data?.data ?? res.data)
-      setData(resolvedData)
-      return resolvedData
+      const resolved = selectRef.current ? selectRef.current(res.data) : (res.data?.data ?? res.data)
+      setData(resolved)
+      return resolved
     } catch (err: any) {
       if (!axios.isCancel(err)) {
         setError(err)
-        throw err
       }
     } finally {
       setIsLoading(false)
@@ -47,5 +43,5 @@ export function useApi<T = any>(url: string | null, { enabled = true, initialDat
     return () => controller.abort()
   }, [enabled, url, JSON.stringify(config?.params)])
 
-  return { data, isLoading, error, setData, refetch: fetchData }
+  return { data: data ?? (initialData as T), isLoading, error, setData, refetch: fetchData }
 }
