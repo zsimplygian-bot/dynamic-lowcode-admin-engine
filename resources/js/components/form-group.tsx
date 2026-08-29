@@ -24,13 +24,12 @@ const FieldRenderer = memo(({ field, error, value, isReadonly, layout = "vertica
 
   const isHorizontal = layout === "horizontal"
 
-  // Checkbox puramente numérico (0 / 1)
   if (field.type === "checkbox") {
     const isChecked = Number(fieldValue) === 1
     return (
-      <div className={isHorizontal ? "grid grid-cols-3 items-center gap-2" : "grid gap-1.5"}>
-        {isHorizontal && <div className="col-span-1" />}
-        <div className={`flex items-center space-x-2 pt-1 ${isHorizontal ? "col-span-2" : ""}`}>
+      <div className={isHorizontal ? "grid grid-cols-12 items-center gap-2" : "grid gap-1.5"}>
+        {isHorizontal && <div className="col-span-4" />}
+        <div className={`flex items-center space-x-2 pt-1 ${isHorizontal ? "col-span-8" : ""}`}>
           <Input type="hidden" name={name} value={isChecked ? 1 : 0} />
           <Checkbox id={fieldId} checked={isChecked} disabled={disabled} onCheckedChange={(v) => onChange?.(name, v ? 1 : 0)} />
           <Label htmlFor={fieldId} className="cursor-pointer text-sm font-medium flex items-center gap-1">
@@ -90,7 +89,6 @@ const FieldRenderer = memo(({ field, error, value, isReadonly, layout = "vertica
     case "image":
       inputControl = (
         <FormFilePicker
-          key={`${fieldId}-${strVal}`}
           id={fieldId}
           name={name}
           type={field.type}
@@ -106,12 +104,12 @@ const FieldRenderer = memo(({ field, error, value, isReadonly, layout = "vertica
   }
 
   return (
-    <div className={isHorizontal ? "grid grid-cols-3 items-center gap-2" : "grid gap-1"}>
-      <Label htmlFor={fieldId} className={`flex items-center gap-1 text-sm font-medium ${isHorizontal ? "col-span-1 text-right justify-end" : ""}`}>
-        {field.label}
-        {field.required && <span className="text-red-500 font-bold">*</span>}
+    <div className={isHorizontal ? "grid grid-cols-12 items-start gap-2 pt-1" : "grid gap-1"}>
+      <Label htmlFor={fieldId} className={`flex items-start gap-1 text-sm font-medium leading-tight select-none ${isHorizontal ? "col-span-4 text-left justify-start pt-2" : ""}`} title={field.label}>
+        <span className="line-clamp-2">{field.label}</span>
+        {field.required && <span className="text-red-500 font-bold shrink-0">*</span>}
       </Label>
-      <div className={isHorizontal ? "col-span-2 space-y-1" : ""}>
+      <div className={isHorizontal ? "col-span-8 space-y-1" : ""}>
         {inputControl}
         {error && <InputError message={error} />}
       </div>

@@ -28,19 +28,23 @@ export const SmartModal: React.FC<SmartModalProps> = ({ open, onOpenChange, trig
   return (
     <Dialog {...{ ...props, open: isOpen, onOpenChange: handleOpenChange }}>
       {trigger && <DialogTrigger {...{ asChild: true }}>{trigger}</DialogTrigger>}
-      <DialogContent {...{ className: `${dialogSizeClass} flex flex-col max-h-[90dvh]` }}>
-        {(title || description) && (
-          <DialogHeader {...{ className: "text-center sm:text-center" }}>
-            {title && <DialogTitle {...{ className: "text-center" }}>{title}</DialogTitle>}
-            {description && <DialogDescription {...{ className: "text-center" }}>{description}</DialogDescription>}
-          </DialogHeader>
-        )}
-        {children && (
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {typeof children === "function" ? children({ close }) : children}
-          </div>
-        )}
-      </DialogContent>
+      
+      {/* Condicionamos la existencia del contenido al estado de apertura */}
+      {isOpen && (
+        <DialogContent {...{ className: `${dialogSizeClass} flex flex-col max-h-[90dvh]` }}>
+          {(title || description) && (
+            <DialogHeader {...{ className: "text-center sm:text-center" }}>
+              {title && <DialogTitle {...{ className: "text-center" }}>{title}</DialogTitle>}
+              {description && <DialogDescription {...{ className: "text-center" }}>{description}</DialogDescription>}
+            </DialogHeader>
+          )}
+          {children && (
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {typeof children === "function" ? children({ close }) : children}
+            </div>
+          )}
+        </DialogContent>
+      )}
     </Dialog>
   )
 }

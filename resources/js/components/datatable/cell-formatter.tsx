@@ -3,6 +3,8 @@ import { Phone, PawPrint } from 'lucide-react'
 import { SmartBadge } from '@/components/smart-badge'
 import { SmartButton } from '@/components/smart-button'
 import { SmartImagePreview } from '@/components/smart-image-preview'
+import { SmartModal } from '@/components/smart-modal'
+import { ExtendedForm } from '@/components/form/extended-form'
 
 const COLOR_MAP: Record<string, string> = {
   negro: '#000', marrón: '#7B3F00', acero: '#A8A9AD', cenizo: '#B2BEB5',
@@ -12,12 +14,51 @@ const COLOR_MAP: Record<string, string> = {
 }
 
 const IGNORED_WORDS = new Set(['con', 'y', 'de', 'manchas', 'claro', 'oscuro'])
+const IS_EMOJI = /\p{Extended_Pictographic}/u
+
+const FormattedTextWithEmoji = memo(({ text }: { text: string }) => {
+  const segmenter = useMemo(() => new Intl.Segmenter(undefined, { granularity: 'grapheme' }), [])
+  const segments = Array.from(segmenter.segment(text))
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      {segments.map((segment, index) => {
+        const char = segment.segment
+        if (IS_EMOJI.test(char)) {
+          return (
+            <span key={index} className="text-2xl leading-none inline-block transform select-none align-middle" style={{ fontSize: '1.9rem' }}>
+              {char}
+            </span>
+          )
+        }
+        return <React.Fragment key={index}>{char}</React.Fragment>
+      })}
+    </span>
+  )
+})
+FormattedTextWithEmoji.displayName = 'FormattedTextWithEmoji'
 
 const BooleanBadge = memo(({ value }: { value: any }) => {
   const isTrue = value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true'
   return <SmartBadge label={isTrue ? 'Sí' : 'No'} variant={isTrue ? 'default' : 'destructive'} />
 })
 BooleanBadge.displayName = 'BooleanBadge'
+
+const StatusBadge = memo(({ value }: { value: any }) => {
+  const valStr = String(value).toLowerCase().trim()
+  const isSuccess = ['activo', 'abierto', 'completado', 'aprobado', 'confirmado', 'exitoso', 'pagado', 'atendido'].some(s => valStr.includes(s))
+  const isWarning = ['pendiente', 'en proceso', 'espera', 'revision', 'revisión', 'parcial', 'por pagar'].some(s => valStr.includes(s))
+  const isDanger = ['inactivo', 'cancelado', 'rechazado', 'fallido', 'eliminado', 'anulado'].some(s => valStr.includes(s))
+
+  let variant: 'default' | 'warning' | 'destructive' | 'secondary' = 'default'
+  if (isSuccess) variant = 'default'
+  else if (isWarning) variant = 'warning'
+  else if (isDanger) variant = 'destructive'
+  else variant = 'secondary'
+
+  return <SmartBadge label={String(value)} variant={variant} />
+})
+StatusBadge.displayName = 'StatusBadge'
 
 const ColorCircle = memo(({ value }: { value: any }) => {
   const background = useMemo(() => {
@@ -27,7 +68,7 @@ const ColorCircle = memo(({ value }: { value: any }) => {
     return colors.length > 1 ? `linear-gradient(to right, ${colors.join(', ')})` : colors[0]
   }, [value])
   if (!background) return '—'
-  return <div className="size-7 rounded-full shadow-sm mx-auto transition-transform hover:scale-110 border border-black/20 dark:border-white/40" style={{ background }} title={String(value)} />
+  return <div className="size-7 rounded-full shadow-sm mx-auto border border-black/20 dark:border-white/40" style={{ background }} title={String(value)} />
 })
 ColorCircle.displayName = 'ColorCircle'
 
@@ -35,7 +76,7 @@ const getThumbUrl = (url: string) => url.replace(/(\.[^.]+)$/, '_thumb$1')
 
 const CellImagePreview = memo(({ value }: { value: string }) => {
   const url = String(value)
-  return <div className="flex justify-center"><SmartImagePreview url={url} thumbUrl={getThumbUrl(url)} size="sm" /></div>
+  return <div className="flex justify-center w-full"><SmartImagePreview url={url} thumbUrl={getThumbUrl(url)} size="sm" /></div>
 })
 CellImagePreview.displayName = 'CellImagePreview'
 
@@ -44,39 +85,75 @@ const PhoneButton = memo(({ value }: { value: string }) => (
 ))
 PhoneButton.displayName = 'PhoneButton'
 
-const PetCountButton = memo(({ value }: { value: any }) => (
-  <SmartButton size="xs" variant="secondary" icon={PawPrint} label={String(value)} className="font-semibold cursor-default" />
-))
-PetCountButton.displayName = 'PetCountButton'
+// Componente totalmente genérico para cualquier conteo relacional (ej: total_mascota, total_cita, etc.)
+const RelatedCountButton = memo(({ accessor, value, row, tableName, ...props }: any) => {
+  const resolvedId = row[`id_${tableName}`]
+  // Extrae la tabla secundaria omitiendo el prefijo 'total_' (ej: 'total_mascota' -> 'mascota')
+  const targetTable = accessor.replace(/^total_/, '').toLowerCase().trim()
+
+  return (
+    <SmartModal
+      title={`${targetTable.toUpperCase()}S DE ${tableName?.toUpperCase() ?? ''}`}
+      description="Consulta todos los registros asociados"
+      trigger={
+        <SmartButton
+          size="xs"
+          variant="secondary"
+          icon={PawPrint}
+          label={String(value ?? 0)}
+          className="font-semibold cursor-pointer"
+          tooltip={`Ver ${targetTable}s`}
+          {...props}
+        />
+      }
+    >
+      {({ close }) => (
+        <ExtendedForm
+          recordId={resolvedId}
+          tableName={targetTable}
+          foreignKey={tableName}
+          onSuccess={close}
+        />
+      )}
+    </SmartModal>
+  )
+})
+RelatedCountButton.displayName = 'RelatedCountButton'
 
 const CUSTOM_RENDERERS: Record<string, (value: any) => React.ReactNode> = {
   precio: (val) => `S/ ${Number(val).toFixed(2)}`,
+  peso: (val) => `${val} kg`,
 }
 
-const formatValue = (accessor: string, value: any, type?: string, tableName?: string) => {
+const formatValue = (accessor: string, value: any, type?: string, tableName?: string, row?: any) => {
   if (value == null || value === '') return <span className="italic text-muted-foreground/50">null</span>
   if (tableName && accessor === `id_${tableName}`) return <span className="font-semibold opacity-60">{String(value)}</span>
 
-  const isBooleanType = type === 'checkbox' || type === 'boolean' || typeof value === 'boolean'
-  const isBooleanName = accessor.startsWith('es_') || accessor.startsWith('is_') || accessor.startsWith('tiene_') || accessor.includes('activo')
-  const isBinaryValue = value === 0 || value === 1 || value === '0' || value === '1'
-  if (isBooleanType || (isBooleanName && isBinaryValue)) return <BooleanBadge value={value} />
+  const lower = accessor.toLowerCase()
+  if (lower.startsWith('estado_') || lower === 'estado') return <StatusBadge value={value} />
 
-  if (accessor.includes('total_mascota') || accessor === 'mascotas') return <PetCountButton value={value} />
+  const isBooleanType = type === 'checkbox' || type === 'boolean' || typeof value === 'boolean'
+  if (isBooleanType) return <BooleanBadge value={value} />
+
+  // Evalúa de forma dinámica si el campo sigue la convención total_* o es un conteo genérico
+  if (lower.startsWith('total_') || lower === 'mascotas') {
+    return <RelatedCountButton accessor={accessor} value={value} row={row} tableName={tableName} />
+  }
+
   if (CUSTOM_RENDERERS[accessor]) return CUSTOM_RENDERERS[accessor](value)
 
-  const lower = accessor.toLowerCase()
   if (lower.includes('telefono') || lower.includes('phone') || lower.includes('celular')) return <PhoneButton value={String(value)} />
   if (lower.includes('color')) return <ColorCircle value={value} />
   if (lower.includes('archivo') || lower.includes('file') || lower.includes('imagen') || lower.includes('image') || lower.includes('foto')) return <CellImagePreview value={String(value)} />
   if (lower.includes('fecha') || lower.includes('date')) return String(value).replace(/[\sT]00:00:00(\.000Z)?$/, '')
 
-  return String(value)
+  const strValue = String(value)
+  return IS_EMOJI.test(strValue) ? <FormattedTextWithEmoji text={strValue} /> : strValue
 }
 
 interface CellFormatterProps { accessor: string; row: any; type?: string; tableName?: string }
 
 export const CellFormatter = memo(({ accessor, row, type, tableName }: CellFormatterProps) => {
-  return formatValue(accessor, row[accessor], type, tableName)
+  return formatValue(accessor, row[accessor], type, tableName, row)
 })
 CellFormatter.displayName = 'CellFormatter'

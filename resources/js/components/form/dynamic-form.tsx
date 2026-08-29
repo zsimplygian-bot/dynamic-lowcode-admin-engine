@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Form } from '@inertiajs/react'
 import { SmartButton } from '@/components/smart-button'
 import { FormGroup } from '@/components/form-group'
@@ -32,6 +32,11 @@ export const DynamicForm = ({
 
   const [customValues, setCustomValues] = useState<Record<string, any>>(EMPTY_OBJECT)
 
+  // Resetear valores personalizados cuando cambian los initialValues o el registro
+  useEffect(() => {
+    setCustomValues(EMPTY_OBJECT)
+  }, [initialValues, recordId])
+
   // 1. Obtener schema/fields si no fueron provistos
   const shouldFetchSchema = Boolean(!passedFields && tableName)
   const { data: fetchedFields = [], isLoading: loadingSchema } = useApi<any[]>(
@@ -55,7 +60,11 @@ export const DynamicForm = ({
   )
 
   const activeFields = passedFields ?? fetchedFields
-  const isLoading = (shouldFetchSchema && loadingSchema) || (shouldFetchRecord && loadingRecord)
+  
+  // Garantizar el spinner de carga inicial considerando si las peticiones están pendientes o activas
+  const isLoading =
+    (shouldFetchSchema && (loadingSchema || fetchedFields.length === 0)) ||
+    (shouldFetchRecord && (loadingRecord || fetchedValues === EMPTY_OBJECT))
 
   const handleCustomChange = useCallback((name: string, value: any) => {
     setCustomValues((prev) => (prev[name] === value ? prev : { ...prev, [name]: value }))

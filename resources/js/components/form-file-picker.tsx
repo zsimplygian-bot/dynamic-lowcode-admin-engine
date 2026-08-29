@@ -23,28 +23,25 @@ export const FormFilePicker = memo(({ id, name = id, defaultValue, accept, disab
   const [isBlob, setIsBlob] = useState(false)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const previewRef = useRef(preview)
   const isBlobRef = useRef(isBlob)
-  const onChangeRef = useRef(onChange)
-
-  previewRef.current = preview
+  const previewRef = useRef(preview)
+  
   isBlobRef.current = isBlob
-  onChangeRef.current = onChange
+  previewRef.current = preview
 
-  // Re-sincronizar el estado de la vista previa cuando el backend cargue los datos (defaultValue cambie)
+  // Sincronizar únicamente cuando llega una nueva URL desde el servidor y no hay un blob local seleccionado
   useEffect(() => {
-    if (defaultValue && !isBlobRef.current) {
-      const valStr = String(defaultValue)
-      setPreview(valStr)
-      setFileName(valStr.split("/").pop() ?? null)
+    if (isBlobRef.current) return
+    
+    if (defaultValue && typeof defaultValue === "string") {
+      setPreview(defaultValue)
+      setFileName(defaultValue.split("/").pop() ?? null)
       setIsRemoved(false)
-    } else if (!defaultValue && !isBlobRef.current) {
+    } else if (!defaultValue) {
       setPreview(null)
       setFileName(null)
     }
   }, [defaultValue])
-
-  const isImageType = type === "image" || (accept?.includes("image") ?? false) || (Boolean(preview) && IS_IMAGE_REGEX.test(preview ?? ""))
 
   const revokeBlob = useCallback(() => {
     if (previewRef.current && isBlobRef.current) {
@@ -73,7 +70,8 @@ export const FormFilePicker = memo(({ id, name = id, defaultValue, accept, disab
     if (file) {
       setFileName(file.name)
       if (file.type.startsWith("image/")) {
-        setPreview(URL.createObjectURL(file))
+        const objectUrl = URL.createObjectURL(file)
+        setPreview(objectUrl)
         setIsBlob(true)
       } else {
         setPreview(null)
@@ -83,10 +81,10 @@ export const FormFilePicker = memo(({ id, name = id, defaultValue, accept, disab
     } else {
       handleClear()
     }
-    onChangeRef.current?.(e)
-  }, [handleClear, revokeBlob])
+    onChange?.(e)
+  }, [handleClear, revokeBlob, onChange])
 
-  // Si es una URL del backend (no blob), usamos la imagen directa
+  const isImageType = type === "image" || (accept?.includes("image") ?? false) || Boolean(preview && (isBlob || IS_IMAGE_REGEX.test(preview)))
   const thumbUrl = preview && !isBlob ? preview.replace(/(\.[a-zA-Z0-9]+)$/, "_thumb$1") : preview
   const showImagePreview = isImageType && Boolean(preview)
   const hasFile = Boolean(preview || fileName)

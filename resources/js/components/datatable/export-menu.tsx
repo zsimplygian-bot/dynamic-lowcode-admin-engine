@@ -5,6 +5,6 @@ import { useDataExport } from "@/hooks/datatable/use-datatable-export"
 interface ExportMenuProps { tableName: string; columns: any[]; data: any[] }
 export const ExportMenu = memo(function ExportMenu({ tableName, columns, data }: ExportMenuProps) {
   const { exportToExcel } = useDataExport(tableName, columns, data)
-  const items = useMemo(() => [{ label: "Excel", icon: FileSpreadsheetIcon, action: exportToExcel }], [exportToExcel])
+  const items = useMemo(() => [{ label: "Excel", color: "text-green-500", icon: FileSpreadsheetIcon, action: exportToExcel }], [exportToExcel])
   return <SmartDropdown { ...{ label: "Exportar", icon: DownloadIcon, items } } />
 })

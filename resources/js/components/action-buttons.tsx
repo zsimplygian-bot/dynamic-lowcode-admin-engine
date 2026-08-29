@@ -40,8 +40,13 @@ export const ActionButtons = memo(({ row_id, tableName = "registro", endpoint = 
   ]
 
   const activeConfig = action ? ACTION_MODES[action] : null
-  const modalTitle = activeConfig ? `${activeConfig.modalPrefix} ${tableName.toUpperCase()}` : ""
-const modalDescription = action === 'delete' ? (
+  
+  const recordLabel = initialValues?.nombre ?? initialValues?.name ?? initialValues?.codigo ?? resolvedId ?? ''
+  const modalTitle = activeConfig 
+    ? `${activeConfig.modalPrefix} ${tableName.toUpperCase()} ${recordLabel}`.trim() 
+    : ""
+
+  const modalDescription = action === 'delete' ? (
     <div className="mx-auto max-w-2xl p-2.5 text-sm rounded-lg bg-destructive/10 text-destructive font-medium border border-destructive/20 text-center">
       {activeConfig?.description}
     </div>
