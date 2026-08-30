@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Traits\HasImageProcessing;
+use App\Traits\HasDynamicFileUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AppearanceController extends Controller
 {
-    use HasImageProcessing;
+    use HasDynamicFileUpload;
 
     private string $jsonPath = 'settings/appearance.json';
 
@@ -47,29 +48,38 @@ class AppearanceController extends Controller
 
         $currentSettings = $this->getSettings();
 
-        if ($request->hasFile('app_icon') && $request->file('app_icon')->isValid()) {
-            // Limpiar archivos anteriores si existen
+        // 1. Eliminación explícita mediante _remove_app_icon
+        if ($request->boolean('_remove_app_icon')) {
             if (!empty($currentSettings['app_icon_url'])) {
-                // Extraer la ruta relativa relativa al disco público (ej. "icons/1786817281_VvBx2.jpg")
-                $relativeBasePath = preg_replace('/^\/?storage\//', '', parse_url($currentSettings['app_icon_url'], PHP_URL_PATH));
-                $relativeThumbPath = preg_replace('/(\.[a-zA-Z0-9]+)$/i', '_thumb$1', $relativeBasePath);
+                $this->deleteFileAndThumb($currentSettings['app_icon_url']);
+            }
+            $currentSettings['app_icon_url']       = null;
+            $currentSettings['app_icon_thumb_url'] = null;
+        }
 
-                Storage::disk('public')->delete([$relativeBasePath, $relativeThumbPath]);
+        // 2. Procesamiento de la nueva imagen
+        if ($request->hasFile('app_icon') && $request->file('app_icon')->isValid()) {
+            if (!empty($currentSettings['app_icon_url'])) {
+                $this->deleteFileAndThumb($currentSettings['app_icon_url']);
             }
 
             $storedPath = $this->processAndStoreFile($request->file('app_icon'), 'icons');
 
-            // Obtener rutas base y thumb limpias
-            $basePath = preg_replace('/(?:_thumb)+(\.[a-zA-Z0-9]+)$/i', '$1', $storedPath);
+            // Formatear rutas para la imagen completa y el thumbnail
+            $basePath  = preg_replace('/(?:_thumb)+(\.[a-zA-Z0-9]+)$/i', '$1', $storedPath);
             $thumbPath = preg_replace('/(\.[a-zA-Z0-9]+)$/i', '_thumb$1', $basePath);
 
-            $currentSettings['app_icon_url'] = Storage::url($basePath);
+            $currentSettings['app_icon_url']       = Storage::url($basePath);
             $currentSettings['app_icon_thumb_url'] = Storage::url($thumbPath);
         }
 
         $currentSettings['app_name'] = $validated['app_name'];
 
+        // Guardar configuración en archivo JSON
         Storage::disk('local')->put($this->jsonPath, json_encode($currentSettings, JSON_PRETTY_PRINT));
+
+        // Invalidar la caché compartida de Inertia
+        Cache::forget('inertia_appearance_settings');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Appearance settings updated.')]);
 

@@ -1,11 +1,11 @@
 import { memo, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Command, CommandInput } from "@/components/ui/command"
-import { CheckIcon, RotateCcw, Loader2 } from "lucide-react"
+import { CheckIcon, Loader2 } from "lucide-react"
 import { NewRecordButton } from "@/components/new-record-button"
-import { SmartButton } from "@/components/smart-button"
 import { InfoButton } from "@/components/info-button"
 import { SmartPopover } from "@/components/smart-popover"
+import { ResetButton } from "@/components/reset-button"
 import { useFormSelectAsync } from "@/hooks/use-form-select-async"
 
 interface FormSelectAsyncProps {
@@ -58,7 +58,7 @@ export const FormSelectAsync = memo(({
           <div className="relative w-full p-1 border-b">
             <CommandInput disabled={disabled} value={search} onValueChange={setSearch} placeholder="Buscar..." className="w-full pr-16 text-xs h-8" />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 z-10">
-              <SmartButton icon={RotateCcw} onClick={handleRefresh} tooltip="Refrescar" size="xs" isLoading={loadingLista} />
+              <ResetButton onReset={handleRefresh} isLoading={loadingLista} size="xs"/>
               <NewRecordButton tableName={tableName} endpoint={crudEndpoint} size="xs" onSuccess={handleRefresh} />
             </div>
           </div>

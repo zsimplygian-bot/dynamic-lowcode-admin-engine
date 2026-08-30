@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, memo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "./ui/dialog"
 
 export interface SmartModalProps {
@@ -11,40 +11,40 @@ export interface SmartModalProps {
   size?: "sm" | "md" | "lg" | string
 }
 
-const sizeClasses: Record<string, string> = {
-  sm: "max-w-md",
-  md: "max-w-lg",
-  lg: "max-w-2xl",
-}
+const SIZE_MAP: Record<string, string> = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl" }
 
-export const SmartModal: React.FC<SmartModalProps> = ({ open, onOpenChange, trigger, title, description, children, size = "md", ...props }) => {
+export const SmartModal = memo(({ open, onOpenChange, trigger, title, description, children, size = "md", ...props }: SmartModalProps) => {
   const [internalOpen, setInternalOpen] = useState(false)
+
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
-  const handleOpenChange = (state: boolean) => { if (!isControlled) setInternalOpen(state); onOpenChange?.(state) }
+
+  const handleOpenChange = (state: boolean) => {
+    if (!isControlled) setInternalOpen(state)
+    onOpenChange?.(state)
+  }
+
   const close = () => handleOpenChange(false)
-  const dialogSizeClass = sizeClasses[size] ?? size
 
   return (
-    <Dialog {...{ ...props, open: isOpen, onOpenChange: handleOpenChange }}>
-      {trigger && <DialogTrigger {...{ asChild: true }}>{trigger}</DialogTrigger>}
-      
-      {/* Condicionamos la existencia del contenido al estado de apertura */}
-      {isOpen && (
-        <DialogContent {...{ className: `${dialogSizeClass} flex flex-col max-h-[90dvh]` }}>
-          {(title || description) && (
-            <DialogHeader {...{ className: "text-center sm:text-center" }}>
-              {title && <DialogTitle {...{ className: "text-center" }}>{title}</DialogTitle>}
-              {description && <DialogDescription {...{ className: "text-center" }}>{description}</DialogDescription>}
-            </DialogHeader>
-          )}
-          {children && (
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-              {typeof children === "function" ? children({ close }) : children}
-            </div>
-          )}
-        </DialogContent>
-      )}
+    <Dialog open={isOpen} onOpenChange={handleOpenChange} {...props}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+
+      <DialogContent className={`${SIZE_MAP[size] ?? size} flex max-h-[90dvh] flex-col`}>
+        {(title || description) && (
+          <DialogHeader className="text-center sm:text-center">
+            {title && <DialogTitle className="text-center">{title}</DialogTitle>}
+            {description && <DialogDescription className="text-center">{description}</DialogDescription>}
+          </DialogHeader>
+        )}
+        {children && (
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {typeof children === "function" ? children({ close }) : children}
+          </div>
+        )}
+      </DialogContent>
     </Dialog>
   )
-}
+})
+
+SmartModal.displayName = "SmartModal"

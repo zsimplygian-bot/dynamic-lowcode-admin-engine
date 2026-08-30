@@ -34,11 +34,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Profile
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Appearance
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
-    Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
+    Route::post('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -9,8 +9,8 @@ export const NewRecordButton = ({ tableName = "registro", endpoint = `/crud/${ta
     description="Completa la información requerida"
     trigger={<SmartButton tooltip={`Nuevo ${tableName}`} icon={Plus} {...props} />}
   >
-    {({ close }: { close: () => void }) => (
-      <DynamicForm tableName={tableName} endpoint={endpoint} fields={fields} initialValues={initialValues} onSuccess={(data: any) => { onSuccess?.(data); close(); }} />
+    {({ close }) => (
+      <DynamicForm tableName={tableName} endpoint={endpoint} fields={fields} initialValues={initialValues} onSuccess={(data) => { onSuccess?.(data); close(); }} />
     )}
   </SmartModal>
 )
