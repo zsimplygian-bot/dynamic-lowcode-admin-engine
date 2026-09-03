@@ -43,9 +43,8 @@ class DynamicCRUDController extends Controller
             $model = $this->getModel($tabla);
             $existingRecord = $isUpdate ? $model->findOrFail($id) : null;
             $validated = $this->validateDynamicData($request, $tabla, $isUpdate);
-            $data = $isUpdate  ? $this->applyUpdateAudit($validated, $request)  : $this->applyCreationAudit($validated, $request);
-            $fileData = $this->handleFilesUpload($request, $tabla, $data, $existingRecord);
-            $finalData = array_merge($data, $fileData);
+            $data = $isUpdate ? $this->applyUpdateAudit($validated, $request) : $this->applyCreationAudit($validated, $request);
+            $finalData = $this->handleFilesUpload($request, $tabla, $data, $existingRecord);
             if ($isUpdate) { $existingRecord->update($finalData);
             } else { $model->create($finalData);
             }

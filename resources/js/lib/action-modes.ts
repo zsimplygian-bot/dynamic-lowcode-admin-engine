@@ -30,7 +30,7 @@ export const ACTION_MODES: Record<ActionMode, ModeConfig> = {
   },
   update: {
     label: 'Editar',
-    loadingLabel: 'Actualizando...',
+    loadingLabel: 'Editando...',
     buttonColor: 'green',
     variant: 'default',
     method: 'put',

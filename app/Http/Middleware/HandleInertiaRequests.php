@@ -16,29 +16,29 @@ class HandleInertiaRequests extends Middleware
     }
 
     public function share(Request $request): array
-{
-    $app = $this->getAppearance();
-    $user = $request->user();
+    {
+        $app = $this->getAppearance();
+        $user = $request->user();
 
-    return [
-        ...parent::share($request),
-        'mainNavItems'   => $this->getNavigation(),
-        'headerNavItems' => [],
-        'name'           => $app['app_name'],
-        'logoUrl'        => $app['app_icon_url'] ?? null,
-        'logoThumbUrl'   => $app['app_icon_thumb_url'] ?? null,
-        'appSettings'    => $app,
-        'auth' => [
-    'user' => $user ? array_merge($user->toArray(), [
-        'avatar'       => $user->avatar,
-        'avatar_thumb' => $user->avatar_thumb,
-        'roles'        => $user->getRoleNames(),
-        'permissions'  => $user->getAllPermissions()->pluck('name'),
-    ]) : null,
-],
-        'sidebarOpen'    => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-    ];
-}
+        return [
+            ...parent::share($request),
+            'mainNavItems'   => $this->getNavigation(),
+            'headerNavItems' => [],
+            'name'           => $app['app_name'],
+            'logoUrl'        => $app['app_icon'] ?? null,
+            'logoThumbUrl'   => $app['app_icon_thumb'] ?? null,
+            'appSettings'    => $app,
+            'auth' => [
+                'user' => $user ? array_merge($user->toArray(), [
+                    'avatar'       => $user->avatar,
+                    'avatar_thumb' => $user->avatar_thumb,
+                    'roles'        => $user->getRoleNames(),
+                    'permissions'  => $user->getAllPermissions()->pluck('name'),
+                ]) : null,
+            ],
+            'sidebarOpen'    => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
 
     protected function getNavigation(): array
     {
@@ -72,11 +72,20 @@ class HandleInertiaRequests extends Middleware
     protected function getAppearance(): array
     {
         return Cache::remember('inertia_appearance_settings', 3600, function () {
-            $default = ['app_name' => config('app.name'), 'app_icon_url' => null, 'app_icon_thumb_url' => null];
+            $default = ['app_name' => config('app.name'), 'app_icon' => null, 'app_icon_thumb' => null];
 
             if (Storage::disk('local')->exists('settings/appearance.json')) {
                 $json = json_decode(Storage::disk('local')->get('settings/appearance.json'), true);
-                return is_array($json) ? array_merge($default, $json) : $default;
+                if (is_array($json)) {
+                    $settings = array_merge($default, $json);
+                    
+                    // Genera automáticamente la ruta del thumbnail añadiendo _thumb antes de la extensión
+                    if (!empty($settings['app_icon'])) {
+                        $settings['app_icon_thumb'] = preg_replace('/\.([^.]+)$/', '_thumb.$1', $settings['app_icon']);
+                    }
+
+                    return $settings;
+                }
             }
 
             return $default;

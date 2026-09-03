@@ -1,37 +1,27 @@
-import { useState, useCallback, useEffect } from "react"
-
-export function useDataTableStorage<T extends Record<string, any>>(key: string, initialValue: T) {
-  // Inicializa siempre con initialValue para coincidir exactamente con el HTML generado en SSR
-  const [storedValue, setStoredValue] = useState<T>(initialValue)
-
-  // Sincroniza con localStorage únicamente cuando el componente ya está montado en el cliente
-  useEffect(() => {
+// resources/js/hooks/datatable/use-datatable-storage.ts
+import { useState, useCallback } from "react"
+export function useDataTableStorage<T extends Record<string, any>>(tableName: string, initialValue: T) {
+  const key = `datatable_params_${tableName}`
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === "undefined") return initialValue
     try {
       const item = localStorage.getItem(key)
-      if (item) setStoredValue(JSON.parse(item))
-    } catch (e) {
-      console.error(e)
-    }
-  }, [key])
-
+      return item ? JSON.parse(item) : initialValue
+    } catch { return initialValue }
+  })
   const setStorage = useCallback((value: T | ((prev: T) => T)) => {
     setStoredValue((prev) => {
-      const nextValue = typeof value === "function" ? value(prev) : { ...prev, ...value }
-      if (typeof window !== "undefined") {
-        try { localStorage.setItem(key, JSON.stringify(nextValue)) }
-        catch (e) { console.error(e) }
-      }
-      return nextValue
+      const next = typeof value === "function" ? value(prev) : { ...prev, ...value }
+      // Persistencia asíncrona diferida para no bloquear el renderizado
+      queueMicrotask(() => {
+        try { localStorage.setItem(key, JSON.stringify(next)) } catch {}
+      })
+      return next
     })
   }, [key])
-
   const clearStorage = useCallback(() => {
-    if (typeof window !== "undefined") {
-      try { localStorage.removeItem(key) }
-      catch (e) { console.error(e) }
-    }
+    try { localStorage.removeItem(key) } catch {}
     setStoredValue(initialValue)
   }, [key, initialValue])
-
   return { storedValue, setStorage, clearStorage }
 }

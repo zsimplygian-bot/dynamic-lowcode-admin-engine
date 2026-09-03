@@ -17,5 +17,5 @@ export const ToggleColumns = memo(function ToggleColumns({ columns, columnVisibi
     onChange: () => onToggle(key)
   })), [columns, columnVisibility, onToggle])
 
-  return <SmartDropdown { ...{ label: "Columnas visibles:", items, closeOnSelect: false, icon: EyeIcon } } />
+  return <SmartDropdown { ...{ label: "Columnas visibles:", items, icon: EyeIcon } } />
 })

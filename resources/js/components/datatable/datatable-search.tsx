@@ -1,54 +1,70 @@
 import { useState, useEffect, useCallback, useMemo, memo } from "react"
-import { Search, RotateCcw, Check } from "lucide-react"
+import { Filter, Check } from "lucide-react"
 import { SmartDropdown, SDItem } from "@/components/smart-dropdown"
 import { SmartButton } from "@/components/smart-button"
+import { ResetButton } from "@/components/reset-button"
 import { FormGroup, FieldConfig } from "@/components/form-group"
+
 interface DataTableSearchDropdownProps {
-  fields: FieldConfig[]
+  fields?: FieldConfig[]
   appliedValues: Record<string, any>
   activeCount: number
   onApply: (filters: Record<string, any>) => void
   onClear: () => void
 }
+
 const SearchFormContent = memo(function SearchFormContent({
-  fields,
-  appliedValues,
+  fields = [],
+  appliedValues = {},
   onApply,
   onClear
 }: Omit<DataTableSearchDropdownProps, "activeCount">) {
-  const [localValues, setLocalValues] = useState<Record<string, any>>(appliedValues || {})
+  const [localValues, setLocalValues] = useState<Record<string, any>>(() => appliedValues)
+
   useEffect(() => {
     setLocalValues(appliedValues || {})
   }, [appliedValues])
+
   const handleFormChange = useCallback((name: string, value: any) => {
     setLocalValues((prev) => ({ ...prev, [name]: value }))
   }, [])
-  const handleApply = useCallback(() => onApply(localValues), [localValues, onApply])
+
+  const hasValues = useMemo(() => {
+    return Object.values(localValues).some((v) => v !== "" && v !== null && v !== undefined)
+  }, [localValues])
+
+  const handleApply = useCallback(() => {
+    if (hasValues) onApply(localValues)
+  }, [hasValues, localValues, onApply])
+
   const handleClear = useCallback(() => {
     setLocalValues({})
     onClear()
   }, [onClear])
-  if (fields.length === 0) {
-    return <span {...{ className: "text-xs text-muted-foreground px-2 py-2" }}>No hay campos disponibles</span>
+
+  if (!fields.length) {
+    return <span className="text-xs text-muted-foreground px-2 py-2">No hay campos disponibles</span>
   }
+
   return (
-    <div {...{ className: "flex flex-col gap-2 p-1", onClick: (e) => e.stopPropagation() }}>
-      <div {...{ className: "px-1 py-1 w-full max-h-[400px] overflow-y-auto" }}>
-        <FormGroup {...{ fields, values: localValues, layout: "horizontal", onChange: handleFormChange }} />
+    <div className="flex flex-col gap-2 p-1" onClick={(e) => e.stopPropagation()}>
+      <div className="w-100 pl-2 max-h-[400px] overflow-y-auto">
+        <FormGroup fields={fields} values={localValues} layout="horizontal" onChange={handleFormChange} />
       </div>
-      <div {...{ className: "flex items-center gap-2 pt-2 border-t" }}>
-        <SmartButton {...{ variant: "default", size: "sm", icon: Check,  className: "flex-1 justify-center", onClick: handleApply, label: "Aplicar" }} />
-        <SmartButton {...{ variant: "ghost", size: "sm", icon: RotateCcw,  className: "flex-1 justify-center text-muted-foreground hover:text-foreground", onClick: handleClear, label: "Limpiar" }} />
+      <div className="flex items-center gap-2 pt-2 border-t">
+        <SmartButton variant="default" size="sm" icon={Check} disabled={!hasValues} className="flex-1 justify-center" onClick={handleApply} label="Aplicar" />
+        <ResetButton onReset={handleClear} canReset={hasValues} size="sm" variant="ghost" className="flex-1 justify-center" label="Limpiar" tooltip="" />
       </div>
     </div>
   )
 })
-export function DataTableSearchDropdown(props: DataTableSearchDropdownProps) {
-  const { activeCount } = props
+
+export function DataTableSearchDropdown({ activeCount, appliedValues, fields, onApply, onClear }: DataTableSearchDropdownProps) {
   const items: SDItem[] = useMemo(() => [
-    { type: "custom" as const, custom: <SearchFormContent {...props} /> }
-  ], [props.fields, props.appliedValues, props.onApply, props.onClear])
+    { type: "custom" as const, custom: <SearchFormContent fields={fields} appliedValues={appliedValues} onApply={onApply} onClear={onClear} /> }
+  ], [fields, appliedValues, onApply, onClear])
+
   return (
-    <SmartDropdown {...{ icon: Search, variant: "default", badge: activeCount > 0 ? activeCount : undefined, align: "start", closeOnSelect: false, items, label: "Buscar por..", disableHover: true }} />
+    <SmartDropdown icon={Filter} variant="default" badge={activeCount > 0 ? activeCount : undefined} align="start" items={items} label="Filtrar por.." disableHover />
   )
 }

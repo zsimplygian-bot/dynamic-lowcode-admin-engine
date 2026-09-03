@@ -1,129 +1,55 @@
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
-import { Save } from 'lucide-react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
-import Heading from '@/components/heading';
-import { FormGroup } from '@/components/form-group';
-import { SmartButton } from '@/components/smart-button';
-import { edit } from '@/routes/profile';
-import { send } from '@/routes/verification';
-import type { Auth } from '@/types';
-
-type PageProps = {
-    auth: Auth;
-};
-
-export default function Profile({
-    mustVerifyEmail,
-    status,
-}: {
-    mustVerifyEmail: boolean;
-    status?: string;
-}) {
-    const { auth } = usePage<PageProps>().props;
-
-    const avatarPreview = auth.user.avatar_thumb || auth.user.avatar;
-
-    return (
-        <>
-            <Head title="Profile settings" />
-
-            <h1 className="sr-only">Profile settings</h1>
-
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title="Profile"
-                    description="Update your profile photo, name, and email address"
+import { Form, Head, usePage, Link } from '@inertiajs/react'
+import { Save } from 'lucide-react'
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController'
+import DeleteUser from '@/components/delete-user'
+import Heading from '@/components/heading'
+import { FormGroup } from '@/components/form-group'
+import { SmartButton } from '@/components/smart-button'
+import { edit } from '@/routes/profile'
+import { send } from '@/routes/verification'
+import type { Auth } from '@/types'
+type PageProps = { auth: Auth }
+export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
+  const { auth } = usePage<PageProps>().props
+  return (
+    <><Head title="Profile settings" />
+      <h1 className="sr-only">Profile settings</h1>
+      <div className="space-y-6">
+        <Heading variant="small" title="Profile" description="Update your profile photo, name, and email address" />
+        <Form {...ProfileController.update.form()} options={{ preserveScroll: true }} className="space-y-6">
+          {({ processing, errors }) => (
+            <>
+              <FormGroup errors={errors}
+                fields={[
+                    { id: 'avatar', name: 'avatar', label: 'Profile Picture', type: 'file', accept: 'image/*', defaultValue: auth.user.avatar },
+                    { id: 'name', name: 'name', label: 'Name', type: 'text', placeholder: 'Full name', defaultValue: auth.user.name },
+                    { id: 'email', name: 'email', label: 'Email address', type: 'email', placeholder: 'Email address', defaultValue: auth.user.email },
+                ]}
                 />
-
-                <Form
-                    {...ProfileController.update.form()}
-                    options={{ preserveScroll: true }}
-                    className="space-y-6"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <FormGroup
-                                fields={[
-                                    {
-                                        id: 'avatar',
-                                        name: 'avatar',
-                                        label: 'Profile Picture',
-                                        type: 'file',
-                                        accept: 'image/*',
-                                        defaultValue: avatarPreview,
-                                    },
-                                    {
-                                        id: 'name',
-                                        name: 'name',
-                                        label: 'Name',
-                                        type: 'text',
-                                        required: true,
-                                        placeholder: 'Full name',
-                                        defaultValue: auth.user.name,
-                                    },
-                                    {
-                                        id: 'email',
-                                        name: 'email',
-                                        label: 'Email address',
-                                        type: 'email',
-                                        required: true,
-                                        placeholder: 'Email address',
-                                        defaultValue: auth.user.email,
-                                    },
-                                ]}
-                                errors={errors}
-                            />
-
-                            {mustVerifyEmail &&
-                                auth.user.email_verified_at === null && (
-                                    <div>
-                                        <p className="-mt-4 text-sm text-muted-foreground">
-                                            Your email address is unverified.{' '}
-                                            <Link
-                                                href={send()}
-                                                as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                            >
-                                                Click here to re-send the verification email.
-                                            </Link>
-                                        </p>
-
-                                        {status === 'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
-                                                A new verification link has been sent to your email address.
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                            <div className="flex items-center gap-4">
-                                <SmartButton
-                                    type="submit"
-                                    icon={Save}
-                                    isLoading={processing}
-                                    label="Save"
-                                    loadingLabel="Saving..."
-                                    data-test="update-profile-button"
-                                />
-                            </div>
-                        </>
-                    )}
-                </Form>
-            </div>
-
-            <DeleteUser />
-        </>
-    );
+              {mustVerifyEmail && auth.user.email_verified_at === null && (
+                <div>
+                  <p className="-mt-4 text-sm text-muted-foreground">
+                    Your email address is unverified.{' '}
+                    <Link href={send()} as="button" className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500">
+                      Click here to re-send the verification email.
+                    </Link>
+                  </p>
+                  {status === 'verification-link-sent' && (
+                    <div className="mt-2 text-sm font-medium text-green-600">
+                      A new verification link has been sent to your email address.
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-4">
+                <SmartButton type="submit" icon={Save} isLoading={processing} label="Save" loadingLabel="Saving..." data-test="update-profile-button" />
+              </div>
+            </>
+          )}
+        </Form>
+      </div>
+      <DeleteUser />
+    </>
+  )
 }
-
-Profile.layout = {
-    breadcrumbs: [
-        {
-            title: 'Profile settings',
-            href: edit(),
-        },
-    ],
-};
+Profile.layout = { breadcrumbs: [{ title: 'Profile settings', href: edit() }], }

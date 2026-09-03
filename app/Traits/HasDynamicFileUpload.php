@@ -1,39 +1,51 @@
 <?php
+
 namespace App\Traits;
-use App\Models\DynamicModel;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+
 trait HasDynamicFileUpload
 {
     use HasImageProcessing;
-    protected function handleFilesUpload(Request $request, string $tabla, array $data, ?DynamicModel $existingRecord = null): array
+
+    protected function handleFilesUpload(Request $request, string $tabla, array $data, object|array|null $existingRecord = null): array
     {
-        if ($existingRecord) {
-            foreach ($existingRecord->getAttributes() as $key => $value) {
-                $removeKey = "_remove_{$key}";
-                if ($request->boolean($removeKey) || ($request->has($key) && is_null($request->input($key)))) {
-                    if (!empty($value)) {
-                        $this->deleteFileAndThumb($value);
-                    }
+        $existingRecord = (object) ($existingRecord ?? []);
+
+        // 1. Manejo de eliminación explícita (_remove_{key})
+        if (!empty((array) $existingRecord)) {
+            foreach ((array) $existingRecord as $key => $value) {
+                if ($request->boolean("_remove_{$key}")) {
+                    $this->deleteFileAndThumb($value);
                     $data[$key] = null;
                 }
             }
         }
+
+        // 2. Obtener archivos válidos
         $files = array_filter($request->allFiles(), fn($f) => $f->isValid());
         if (empty($files)) {
             return $data;
         }
+
+        // 3. Procesar y guardar nuevos archivos
         foreach ($files as $key => $file) {
-            $oldPath = $existingRecord->{$key} ?? null;
-            $savedPath = $this->processAndStoreFile($file, $tabla, $oldPath);
-            $data[$key] = Storage::url($savedPath);
+            $oldValue = $existingRecord->{$key} ?? null;
+            if (!empty($oldValue)) {
+                $this->deleteFileAndThumb($oldValue);
+            }
+            $savedPath = $this->processAndStoreFile($file, $tabla);
+            $data[$key] = "/storage/{$savedPath}";
         }
 
         return $data;
     }
-    protected function deleteRecordFiles(DynamicModel $record): void
+
+    protected function deleteRecordFiles(object|array $record): void
     {
-        foreach ($record->getAttributes() as $value) {
+        $attributes = is_object($record) ? (method_exists($record, 'getAttributes') ? $record->getAttributes() : (array) $record) : $record;
+
+        foreach ($attributes as $value) {
             if (is_string($value) && str_contains($value, '/storage/')) {
                 $this->deleteFileAndThumb($value);
             }

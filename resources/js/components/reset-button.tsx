@@ -7,7 +7,7 @@ export interface ResetButtonProps extends Omit<SmartButtonProps, "onClick"> {
 }
 export const ResetButton = memo(
   forwardRef<HTMLButtonElement, ResetButtonProps>(
-    ({ onReset, canReset, disabled, tooltip = "Restablecer", size = "md", variant = "outline", ...props }, ref) => (
+    ({ onReset, canReset, disabled, tooltip = "Restablecer", size = "md", variant, ...props }, ref) => (
       <SmartButton ref={ref} icon={RotateCcw} onClick={onReset} tooltip={tooltip} size={size} variant={variant}
         disabled={disabled || !(canReset ?? true)}
         {...props}

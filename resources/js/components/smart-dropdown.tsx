@@ -78,7 +78,7 @@ export const SmartDropdown = memo(
     labelExtra,
     items,
     align = "end",
-    closeOnSelect = true,
+    closeOnSelect = false,
     itemsMaxHeight,
     disableHover = false,
   }, ref) {

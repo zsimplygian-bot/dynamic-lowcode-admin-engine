@@ -1,33 +1,24 @@
 import { useCallback } from "react"
-import { router, VisitOptions } from "@inertiajs/react"
-
-type HttpMethod = "get" | "post" | "put" | "patch" | "delete"
-
-const makeAsyncRequest = (method: HttpMethod, url: string, data: any = {}, options: VisitOptions = {}) => {
-  return new Promise<any>((resolve, reject) => {
-    const opts: VisitOptions = {
+import { router } from "@inertiajs/react"
+type Method = "get" | "post" | "put" | "patch" | "delete"
+type RouterOptions = Parameters<typeof router.visit>[1]
+const req = (method: Method, url: string, data: any = {}, opts: RouterOptions = {}) =>
+  new Promise<any>((resolve, reject) => {
+    const options: RouterOptions = {
       preserveScroll: true,
-      ...options,
-      onSuccess: (page) => { options.onSuccess?.(page); resolve(page) },
-      onError: (errors) => { options.onError?.(errors); reject(errors) },
-      onCancel: () => { options.onCancel?.(); reject(new Error("Request cancelled")) },
+      ...opts,
+      onSuccess: (p) => { opts?.onSuccess?.(p); resolve(p) },
+      onError: (e) => { opts?.onError?.(e); reject(e) },
+      onCancel: () => { opts?.onCancel?.(); reject(new Error("Cancelled")) },
     }
-
-    if (method === "get") router.get(url, data, opts)
-    else if (method === "post") router.post(url, data, opts)
-    else if (method === "put") router.put(url, data, opts)
-    else if (method === "patch") router.patch(url, data, opts)
-    else if (method === "delete") router.delete(url, { ...opts, data })
+    method === "delete" ? router.delete(url, { ...options, data }) : (router as any)[method](url, data, options)
   })
-}
-
 export function useRouter() {
-  const get = useCallback((url: string, data?: any, opts?: VisitOptions) => makeAsyncRequest("get", url, data, opts), [])
-  const post = useCallback((url: string, data?: any, opts?: VisitOptions) => makeAsyncRequest("post", url, data, opts), [])
-  const put = useCallback((url: string, data?: any, opts?: VisitOptions) => makeAsyncRequest("put", url, data, opts), [])
-  const patch = useCallback((url: string, data?: any, opts?: VisitOptions) => makeAsyncRequest("patch", url, data, opts), [])
-  const destroy = useCallback((url: string, opts?: VisitOptions) => makeAsyncRequest("delete", url, {}, opts), [])
-  const reload = useCallback((opts?: VisitOptions) => new Promise<any>((resolve) => router.reload({ ...opts, onSuccess: resolve })), [])
-
+  const get     = useCallback((url: string, data?: any, opts?: RouterOptions) => req("get", url, data, opts), [])
+  const post    = useCallback((url: string, data?: any, opts?: RouterOptions) => req("post", url, data, opts), [])
+  const put     = useCallback((url: string, data?: any, opts?: RouterOptions) => req("put", url, data, opts), [])
+  const patch   = useCallback((url: string, data?: any, opts?: RouterOptions) => req("patch", url, data, opts), [])
+  const destroy = useCallback((url: string, opts?: RouterOptions) => req("delete", url, {}, opts), [])
+  const reload  = useCallback((opts?: RouterOptions) => new Promise<any>((res) => router.reload({ ...opts, onSuccess: res })), [])
   return { get, post, put, patch, delete: destroy, reload, raw: router }
 }

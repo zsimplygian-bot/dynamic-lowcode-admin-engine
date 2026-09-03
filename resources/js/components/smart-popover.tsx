@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback } from "react"
+import React, { useState, memo } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export interface SmartPopoverProps {
@@ -12,30 +12,24 @@ export interface SmartPopoverProps {
 }
 
 export const SmartPopover = memo(({
-  open,
-  onOpenChange,
-  trigger,
-  children,
-  align = "start",
-  side = "bottom",
-  className = "w-auto p-0 z-50",
-  ...props
+  open, onOpenChange, trigger, children, align = "start", side = "bottom", className = "w-auto p-0 z-50", ...props
 }: SmartPopoverProps) => {
   const [internalOpen, setInternalOpen] = useState(false)
+
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
 
-  const handleOpenChange = useCallback((state: boolean) => {
+  const handleOpenChange = (state: boolean) => {
     if (!isControlled) setInternalOpen(state)
     onOpenChange?.(state)
-  }, [isControlled, onOpenChange])
+  }
 
-  const close = useCallback(() => handleOpenChange(false), [handleOpenChange])
+  const close = () => handleOpenChange(false)
 
   return (
-    <Popover {...{ ...props, open: isOpen, onOpenChange: handleOpenChange }}>
-      {trigger && <PopoverTrigger {...{ asChild: true }}>{trigger}</PopoverTrigger>}
-      <PopoverContent {...{ align, side, className }}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange} {...props}>
+      {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
+      <PopoverContent align={align} side={side} className={className}>
         {typeof children === "function" ? children({ close }) : children}
       </PopoverContent>
     </Popover>

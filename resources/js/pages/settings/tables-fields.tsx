@@ -4,7 +4,6 @@ import { ArrowLeft, Key, Type } from 'lucide-react';
 import Heading from '@/components/heading';
 import { SmartButton } from '@/components/smart-button';
 import { SimpleList, FieldConfig } from '@/components/simple-list';
-
 export interface FieldItem {
     id: string;
     name: string;
@@ -13,12 +12,10 @@ export interface FieldItem {
     is_primary?: boolean;
     default_value?: string | null;
 }
-
 interface TableFieldsProps {
     tableName?: string;
     fieldsList?: FieldItem[];
 }
-
 const FIELD_FORM_CONFIG: FieldConfig[] = [
     { name: 'name', label: 'Nombre del campo', placeholder: 'Ej. user_id', required: true },
     { 
@@ -42,7 +39,6 @@ const FIELD_FORM_CONFIG: FieldConfig[] = [
     { name: 'is_nullable', label: 'Permitir valores nulos (NULL)', type: 'checkbox' },
     { name: 'auto_increment', label: 'Autoincrementable (AUTO_INCREMENT)', type: 'checkbox' },
 ];
-
 const FieldRowContent = memo(({ field }: { field: any }) => (
     <div {...{ className: "flex items-center justify-between min-w-0 pr-2" }}>
         <div {...{ className: "flex items-center gap-2 min-w-0" }}>
@@ -63,13 +59,10 @@ const FieldRowContent = memo(({ field }: { field: any }) => (
     </div>
 ));
 FieldRowContent.displayName = 'FieldRowContent';
-
 export default function TableFieldsManager({ tableName = "tabla_desconocida", fieldsList = [] }: TableFieldsProps) {
     const endpoint = `/settings/tables/${tableName}/fields`;
-    
     return (
-        <>
-            <Head {...{ title: `Campos de ${tableName}` }} />
+        <> <Head {...{ title: `Campos de ${tableName}` }} />
             <div {...{ className: "max-w-4xl mx-auto space-y-0" }}>
                 <div {...{ className: "flex items-center gap-2" }}>
                     <Link {...{ href: "/settings/tables" }}>
@@ -77,19 +70,11 @@ export default function TableFieldsManager({ tableName = "tabla_desconocida", fi
                     </Link>
                     <Heading {...{ title: `Estructura de: ${tableName}`, description: "Administra los campos y tipos de datos pertenecientes a esta tabla." }} />
                 </div>
-                <SimpleList {...{ 
-                    items: fieldsList, 
-                    searchKey: "name", 
-                    endpoint, 
-                    fields: FIELD_FORM_CONFIG,
-                    emptyText: "Esta tabla no posee columnas configuradas.", 
+                <SimpleList {...{ items: fieldsList, searchKey: "name", endpoint, fields: FIELD_FORM_CONFIG, emptyText: "Esta tabla no posee columnas configuradas.", 
                     renderRowContent: (field) => <FieldRowContent {...{ field }} />
                 }} />
             </div>
         </>
     );
 }
-
-TableFieldsManager.layout = { 
-    breadcrumbs: [{ title: 'Configuración de Tablas', href: '/settings/tables' }, { title: 'Campos de Tabla', href: '#' }] 
-};
+TableFieldsManager.layout = { breadcrumbs: [{ title: 'Configuración de Tablas', href: '/settings/tables' }, { title: 'Campos de Tabla', href: '#' }] };
