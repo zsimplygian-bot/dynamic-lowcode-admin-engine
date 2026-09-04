@@ -38,7 +38,7 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
   if (item === "-" || ("separator" in item && item.separator)) return <DropdownMenuSeparator />
 
   if (typeof item === "object" && "custom" in item && item.custom !== undefined) {
-    return <div {...{ onClick: stopPropagation, className: "w-full" }}>{item.custom}</div>
+    return <div onClick={stopPropagation} className="w-full">{item.custom}</div>
   }
 
   const hoverClass = disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
@@ -46,8 +46,8 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
   if (item.type === "checkbox") {
     const { checked, disabled, onChange: onCheckedChange, icon, label: text } = item
     return (
-      <DropdownMenuCheckboxItem {...{ checked, disabled, onCheckedChange, onSelect: prevent, className: cn("cursor-pointer", hoverClass) }}>
-        <RenderIcon {...{ icon, size: iconSize, className: "mr-2 opacity-80" }} />
+      <DropdownMenuCheckboxItem checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
+        <RenderIcon icon={icon} size={iconSize} className="mr-2 opacity-80" />
         <span>{text}</span>
       </DropdownMenuCheckboxItem>
     )
@@ -55,9 +55,9 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
 
   const { disabled, variant, action: onClick, icon, color, label } = item
   return (
-    <DropdownMenuItem {...{ disabled, variant, onClick, onSelect: prevent, className: cn("cursor-pointer", hoverClass) }}>
-      <RenderIcon {...{ icon, size: iconSize, className: "opacity-80" }} />
-      <span {...{ className: color }}>{label}</span>
+    <DropdownMenuItem disabled={disabled} variant={variant} onClick={onClick} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
+      <RenderIcon icon={icon} size={iconSize} className="opacity-80" />
+      <span className={color}>{label}</span>
     </DropdownMenuItem>
   )
 })
@@ -103,26 +103,26 @@ export const SmartDropdown = memo(
 
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger {...{ asChild: true }}>
-          <Button {...{ ref, variant, className: buttonClassName }}>
-            <RenderIcon {...{ icon: Icon, size: finalIconSize }} />
+        <DropdownMenuTrigger asChild>
+          <Button ref={ref} variant={variant} className={buttonClassName}>
+            <RenderIcon icon={Icon} size={finalIconSize} />
             {buttonLabel}
-            {badge !== undefined && badge !== null && <Badge {...{ className: badgeClass }}>{badge}</Badge>}
+            {badge !== undefined && badge !== null && <Badge className={badgeClass}>{badge}</Badge>}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent {...{ align }}>
+        <DropdownMenuContent align={align}>
           {(label || labelExtra) && (
             <>
-              <DropdownMenuLabel {...{ className: "flex items-center justify-between gap-2" }}>
+              <DropdownMenuLabel className="flex items-center justify-between gap-2">
                 {label && <span>{label}</span>}
-                {labelExtra && <div {...{ onClick: stopPropagation, className: "font-normal" }}>{labelExtra}</div>}
+                {labelExtra && <div onClick={stopPropagation} className="font-normal">{labelExtra}</div>}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
             </>
           )}
-          <div {...{ className: cn(itemsMaxHeight && "overflow-y-auto"), style: itemsMaxHeight ? { maxHeight: itemsMaxHeight } : undefined }}>
+          <div className={cn(itemsMaxHeight && "overflow-y-auto")} style={itemsMaxHeight ? { maxHeight: itemsMaxHeight } : undefined}>
             {items.map((it, idx) => (
-              <DropdownItemRow {...{ key: idx, item: it, iconSize: finalIconSize, disableHover, prevent }} />
+              <DropdownItemRow key={idx} item={it} iconSize={finalIconSize} disableHover={disableHover} prevent={prevent} />
             ))}
           </div>
         </DropdownMenuContent>

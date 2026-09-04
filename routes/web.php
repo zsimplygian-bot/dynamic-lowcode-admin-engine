@@ -7,6 +7,7 @@ use App\Http\Controllers\DynamicCrudController;
 use App\Http\Controllers\DynamicFormSchemaController;
 use App\Http\Controllers\DynamicTableController;
 use App\Http\Controllers\HistoriaController;
+use App\Http\Controllers\LocaleController; // 1. Importación agregada
 use App\Http\Controllers\LookupController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,9 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // 2. Ruta para cambiar de idioma
+    Route::post('/locale', LocaleController::class)->name('locale.update');
 
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
@@ -32,7 +36,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
-Route::get('/tables/{table}/actividades', [DynamicActivityController::class, 'actividades'])->name('tables.actividades');
+
+    Route::get('/tables/{table}/actividades', [DynamicActivityController::class, 'actividades'])->name('tables.actividades');
+
     Route::prefix('api')->group(function () {
         // Rutas específicas primero
 

@@ -36,6 +36,7 @@ export const SmartTable = memo(({ tableState, renderCell, renderActions, virtual
     <div className="relative flex-1 min-h-0 border border-border bg-card rounded-md shadow-sm overflow-hidden flex flex-col">
       <div ref={scrollRef} className="w-full overflow-auto max-h-full">
         <Table className="min-w-full">
+          <thead>
             <TableRow>
               {visibleColumns.map((col: any) => {
                 const isSorted = sortBy === col.accessor
@@ -49,6 +50,7 @@ export const SmartTable = memo(({ tableState, renderCell, renderActions, virtual
               })}
               {renderActions && <TableHead className="sticky top-0 right-0 z-20 text-right bg-background shadow-sm w-[1%] px-1" />}
             </TableRow>
+          </thead>
           <TableBody>
             {isTableLoading || error ? (
               <TableRow>

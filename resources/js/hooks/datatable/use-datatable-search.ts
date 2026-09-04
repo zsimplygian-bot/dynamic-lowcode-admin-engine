@@ -20,6 +20,7 @@ export function useDataTableSearch(
   }, [searchValues])
   const setSearchValues = useCallback((values: Record<string, any>) => patchQuery({ appliedSearchValues: values || {} }, true), [])
   const clearSearchValues = useCallback(() => patchQuery({ appliedSearchValues: {} }, true), [])
+  const setGlobalSearch = useCallback((search: string) => patchQuery({ search }, true), [])
   const setDateRange = useCallback((range: Record<string, any>) => patchQuery({ dateRange: range || {} }, true), [])
-  return { searchFields, activeSearchCount, setSearchValues, clearSearchValues, setDateRange }
+  return { searchFields, activeSearchCount, setSearchValues, clearSearchValues, setGlobalSearch, setDateRange }
 }

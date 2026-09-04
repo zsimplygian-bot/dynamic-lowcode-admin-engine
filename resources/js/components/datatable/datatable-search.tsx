@@ -65,6 +65,6 @@ export function DataTableSearchDropdown({ activeCount, appliedValues, fields, on
   ], [fields, appliedValues, onApply, onClear])
 
   return (
-    <SmartDropdown icon={Filter} variant="default" badge={activeCount > 0 ? activeCount : undefined} align="start" items={items} label="Filtrar por.." disableHover />
+    <SmartDropdown icon={Filter} variant="default" badge={activeCount > 0 ? activeCount : undefined} align="start" items={items} label="Filtro avanzado" disableHover />
   )
 }

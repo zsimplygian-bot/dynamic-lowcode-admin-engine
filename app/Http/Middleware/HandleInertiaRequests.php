@@ -17,11 +17,23 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
+        // 1. Establece el idioma activo desde la sesión
+        if (session()->has('locale')) {
+            app()->setLocale(session('locale'));
+        }
+
+        $locale = app()->getLocale();
+        $langFile = lang_path("{$locale}.json");
+
         $app = $this->getAppearance();
         $user = $request->user();
 
         return [
             ...parent::share($request),
+            'locale'       => $locale,
+            'translations' => file_exists($langFile) 
+                ? json_decode(file_get_contents($langFile), true) 
+                : [],
             'mainNavItems'   => $this->getNavigation(),
             'headerNavItems' => [],
             'name'           => $app['app_name'],
@@ -79,7 +91,6 @@ class HandleInertiaRequests extends Middleware
                 if (is_array($json)) {
                     $settings = array_merge($default, $json);
                     
-                    // Genera automáticamente la ruta del thumbnail añadiendo _thumb antes de la extensión
                     if (!empty($settings['app_icon'])) {
                         $settings['app_icon_thumb'] = preg_replace('/\.([^.]+)$/', '_thumb.$1', $settings['app_icon']);
                     }

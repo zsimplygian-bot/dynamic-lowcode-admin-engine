@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ArrowLeft, Key, Type } from 'lucide-react';
 import Heading from '@/components/heading';
 import { SmartButton } from '@/components/smart-button';
@@ -17,9 +17,8 @@ interface TableFieldsProps {
     fieldsList?: FieldItem[];
 }
 const FIELD_FORM_CONFIG: FieldConfig[] = [
-    { name: 'name', label: 'Nombre del campo', placeholder: 'Ej. user_id', required: true },
-    { 
-        name: 'type', label: 'Tipo de dato', type: 'select', required: true,
+    { name: 'name', label: 'NOMBRE', placeholder: 'Ej. user_id', required: true },
+    { name: 'type', label: 'TIPO', type: 'select', required: true,
         options: [
             { id: 'varchar', label: 'Texto corto (varchar)' },
             { id: 'text', label: 'Texto largo (text)' },
@@ -32,12 +31,12 @@ const FIELD_FORM_CONFIG: FieldConfig[] = [
             { id: 'json', label: 'JSON (json)' },
         ]
     },
-    { name: 'raw_type', label: 'Definición / Longitud', placeholder: 'Ej. varchar(255) o decimal(10,2)' },
-    { name: 'default_value', label: 'Valor por defecto', placeholder: 'Ej. active, 0, null' },
-    { name: 'comment', label: 'Comentario / Descripción', placeholder: 'Descripción o propósito de este campo' },
-    { name: 'order', label: 'Ubicación / Campo previo (AFTER)', placeholder: 'Ej. id_navigation (o escribe "FIRST" para el inicio)' },
-    { name: 'is_nullable', label: 'Permitir valores nulos (NULL)', type: 'checkbox' },
-    { name: 'auto_increment', label: 'Autoincrementable (AUTO_INCREMENT)', type: 'checkbox' },
+    { name: 'raw_type', label: 'LONGITUD', placeholder: 'Ej. varchar(255) o decimal(10,2)' },
+    { name: 'default_value', label: 'VALOR POR DEFECTO', placeholder: 'Ej. active, 0, null' },
+    { name: 'comment', label: 'COMENTARIO / DESCRIPCIÓN', placeholder: 'Descripción o propósito de este campo', type: 'textarea' },
+    { name: 'order', label: 'UBICACIÓN / CAMPO PREVIO (AFTER)', placeholder: 'Ej. id_navigation (o escribe "FIRST" para el inicio)' },
+    { name: 'is_nullable', label: 'PERMITIR VALORES NULOS?', type: 'checkbox' },
+    { name: 'auto_increment', label: 'AUTOINCREMENTABLE?', type: 'checkbox' },
 ];
 const FieldRowContent = memo(({ field }: { field: any }) => (
     <div {...{ className: "flex items-center justify-between min-w-0 pr-2" }}>
@@ -65,9 +64,7 @@ export default function TableFieldsManager({ tableName = "tabla_desconocida", fi
         <> <Head {...{ title: `Campos de ${tableName}` }} />
             <div {...{ className: "max-w-4xl mx-auto space-y-0" }}>
                 <div {...{ className: "flex items-center gap-2" }}>
-                    <Link {...{ href: "/settings/tables" }}>
-                        <SmartButton {...{ icon: ArrowLeft, variant: "outline", size: "sm" }} />
-                    </Link>
+                        <SmartButton {...{ href: "/settings/tables", icon: ArrowLeft, variant: "outline", size: "sm" }} />
                     <Heading {...{ title: `Estructura de: ${tableName}`, description: "Administra los campos y tipos de datos pertenecientes a esta tabla." }} />
                 </div>
                 <SimpleList {...{ items: fieldsList, searchKey: "name", endpoint, fields: FIELD_FORM_CONFIG, emptyText: "Esta tabla no posee columnas configuradas.", 

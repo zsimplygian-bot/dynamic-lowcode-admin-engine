@@ -26,11 +26,12 @@ interface FormGroupProps {
 const RenderControl = memo(({ field, name, value, disabled, onChange }: { field: FieldConfig; name: string; value: any; disabled: boolean; onChange?: (n: string, v: any) => void }) => {
   const strVal = value instanceof File ? "" : String(value ?? "")
   const isControlled = Boolean(onChange)
-  const common = { id: name, name, disabled, placeholder: field.placeholder, ...(isControlled ? { value: strVal } : { defaultValue: strVal }), }
+  const common = { id: name, name, disabled, placeholder: field.placeholder, ...(isControlled ? { value: strVal } : { defaultValue: strVal }) }
   switch (field.type) {
-    case "textarea": return <Textarea {...common} rows={field.rows ?? 3} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    case "textarea": 
+      return <Textarea {...common} rows={field.rows ?? 3} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
     case "select":
-      return field.options?.length
+      return Array.isArray(field.options)
         ? <FormSelectSimple {...common} value={strVal} options={field.options} onSelect={(v) => onChange?.(name, v)} />
         : <FormSelectAsync {...common} value={strVal} onSelect={(v) => onChange?.(name, v)} />
     case "date":
@@ -59,9 +60,8 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
     case "file":
     case "image":
       return <FormFilePicker id={name} name={name} defaultValue={strVal} accept={field.accept} disabled={disabled} onChange={(e: any) => onChange?.(name, e?.target?.files?.[0] ?? e)} />
-    case "color":
-      return <Input {...common} type="color" onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
-    default: return <Input {...common} type={field.type || "text"} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    case "color": return <Input {...common} type="color" onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    default:  return <Input {...common} type={field.type || "text"} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
   }
 })
 RenderControl.displayName = "RenderControl"
@@ -87,8 +87,7 @@ export const FormGroup = memo(({ fields = [], errors = {}, disabled = false, isR
               {isCheckbox ? (
                 <div className="flex items-center space-x-2">
                   <input type="hidden" name={name} value={isChecked ? 1 : 0} />
-                  <Checkbox id={name} {...(onChange ? { checked: isChecked } : { defaultChecked: isChecked })} disabled={isDisabled} onCheckedChange={(v) => onChange?.(name, v ? 1 : 0)}
-                  />
+                  <Checkbox id={name} {...(onChange ? { checked: isChecked } : { defaultChecked: isChecked })} disabled={isDisabled} onCheckedChange={(v) => onChange?.(name, v ? 1 : 0)} />
                 </div>
               ) : (
                 <RenderControl field={field} name={name} value={val} disabled={Boolean(isDisabled)} onChange={onChange} />

@@ -6,6 +6,9 @@ import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig } from 'vite';
 
+// Obtén tu IP local ejecutando `ipconfig` en Windows (ej. 192.168.1.15)
+const LOCAL_IP = '192.168.1.42';
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -28,4 +31,10 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    server: {
+        host: true, // Expone Vite en toda la red local
+        hmr: {
+            host: LOCAL_IP, // Permite que la recarga en vivo (HMR) funcione en el celular
+        },
+    },
 });

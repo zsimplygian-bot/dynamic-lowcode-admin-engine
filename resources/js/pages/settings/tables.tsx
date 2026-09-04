@@ -31,9 +31,7 @@ const renderTableRow = (table: DatabaseTableItem) => (
     <div className="flex items-center gap-2 font-mono shrink-0">
       {table.rows_count !== undefined && <SmartBadge {...{ icon: Layers, label: `${table.rows_count} registros`, variant: "secondary" }} />}
       {table.size_mb && <SmartBadge {...{ label: `${table.size_mb} MB`, variant: "secondary" }} />}
-      <Link {...{ href: `/settings/tables/${table.id}` }}>
-        <SmartButton {...{ icon: Settings2, label: "Campos", size: "xs" }} />
-      </Link>
+        <SmartButton {...{ href: `/settings/tables/${table.id}`, icon: Settings2, label: "Campos", size: "xs" }} />
     </div>
   </div>
 );
