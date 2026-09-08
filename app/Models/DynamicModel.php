@@ -1,8 +1,10 @@
 <?php
 namespace App\Models;
+use App\Traits\HasAuditFields;
 use Illuminate\Database\Eloquent\Model;
 class DynamicModel extends Model
 {
+    use HasAuditFields; // Automáticamente maneja creater_id y updater_id
     protected $guarded = [];
     public static function fromTable(string $table): static
     {

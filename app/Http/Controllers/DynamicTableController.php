@@ -9,11 +9,7 @@ use Inertia\Response;
 class DynamicTableController extends Controller
 {
     use HasTableMetadata, HasDynamicQuery;
-    public function show(string $table): Response
-    {
-        if (!$this->hasTableInSchema($table)) abort(404, "La tabla '{$table}' no existe.");
-        return Inertia::render('dynamic-table', ['tableName' => $table]);
-    }
+    public function show(string $table): Response { return Inertia::render('dynamic-table', ['tableName' => $table]); }
     public function data(Request $request, string $table): JsonResponse
     {
         if (!$this->hasTableInSchema($table)) {

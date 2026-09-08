@@ -9,8 +9,8 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 const footerNavItems: NavItem[] = [
-    { title: 'Repository', href: 'https://github.com/laravel/react-starter-kit', icon: FolderGit2 },
-    { title: 'Documentation', href: 'https://laravel.com/docs/starter-kits#react', icon: BookOpen },
+    { title: 'Repositorio', href: 'https://github.com/laravel/react-starter-kit', icon: FolderGit2 },
+    { title: 'Documentación', href: 'https://laravel.com/docs/starter-kits#react', icon: BookOpen },
 ];
 export function AppSidebar() {
     const { mainNavItems = [] } = usePage<{ mainNavItems?: any[] }>().props;

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\DatabaseIEController;
+use App\Http\Controllers\Settings\CacheController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -39,6 +40,10 @@ Route::middleware(['auth'])->group(function () {
     // Appearance
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::post('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
+
+    // Cache Global
+    Route::get('settings/cache', [CacheController::class, 'edit'])->name('cache.edit');
+    Route::delete('settings/cache', [CacheController::class, 'destroy'])->name('cache.destroy');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

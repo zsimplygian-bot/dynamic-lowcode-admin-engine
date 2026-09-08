@@ -1,22 +1,34 @@
-import { memo } from 'react'
-import { Languages } from 'lucide-react'
-import { SmartDropdown } from '@/components/smart-dropdown'
-import { useTranslation } from '@/hooks/use-translation'
-import { useRouter } from '@/hooks/use-router'
+import { memo } from 'react';
+import { Languages } from 'lucide-react';
+import { router, usePage } from '@inertiajs/react';
+import { SmartDropdown } from '@/components/smart-dropdown';
+
 const LOCALES = [
-  { code: 'es', label: 'Español' },
   { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
   { code: 'ja', label: '日本語' },
-] as const
+] as const;
+
 export const LanguageDropdown = memo(function LanguageDropdown() {
-  const { locale } = useTranslation()
-  const { post } = useRouter()
+  const { locale } = usePage<any>().props;
+
   const items = LOCALES.map(({ code, label }) => ({
     label,
-    action: () => code !== locale && post('/locale', { locale: code }, { preserveState: false }),
+    action: () =>
+      code !== locale &&
+      router.post('/locale', { locale: code }, { preserveState: false }),
     color: locale === code ? 'font-bold text-primary' : undefined,
-  }))
-  return <SmartDropdown icon={Languages} variant="ghost" label="Idioma / Language / 言語" items={items} />
-})
-LanguageDropdown.displayName = 'LanguageDropdown'
-export default LanguageDropdown
+  }));
+
+  return (
+    <SmartDropdown
+      icon={Languages}
+      variant="ghost"
+      label="Language / Idioma / 言語"
+      items={items}
+    />
+  );
+});
+
+LanguageDropdown.displayName = 'LanguageDropdown';
+export default LanguageDropdown;

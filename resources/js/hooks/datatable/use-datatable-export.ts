@@ -1,8 +1,6 @@
 import { useCallback } from "react";
 import * as XLSX from "xlsx";
-
 interface Column { accessor: string; header: string }
-
 export function useDataExport(tableName: string, columns: Column[], data: Record<string, any>[]) {
   const exportToExcel = useCallback(() => {
     if (!data.length || !columns.length) return;
@@ -11,8 +9,7 @@ export function useDataExport(tableName: string, columns: Column[], data: Record
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, tableName.toUpperCase());
-    XLSX.writeFile(workbook, `${tableName}_export_${Date.now()}.xlsx`);
+    XLSX.writeFile(workbook, `${tableName}_${Date.now()}.xlsx`);
   }, [tableName, columns, data]);
-
   return { exportToExcel };
 }

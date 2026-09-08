@@ -2,81 +2,70 @@
 namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Traits\HasInertiaNotifications;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\{RedirectResponse, Request};
+use Illuminate\Support\Facades\{DB, Schema};
+use Inertia\{Inertia, Response};
 class TableController extends Controller
 {
     use HasInertiaNotifications;
     public function index(): Response
     {
-        $dbTables = DB::table('information_schema.tables')
-            ->where('table_schema', DB::getDatabaseName())
-            ->where('table_type', 'BASE TABLE')
-            ->orderBy('table_name')
-            ->get(['table_name as id', 'table_name as name', DB::raw('COALESCE(table_rows, 0) as rows_count')]);
+        $dbTables = collect(Schema::getTables())
+            ->map(fn (array $table) => [
+                'id'         => $table['name'],
+                'name'       => $table['name'],
+                'rows_count' => DB::table($table['name'])->count(),
+                'size_mb'    => isset($table['size']) ? number_format($table['size'] / (1024 * 1024), 2) : '0.00',
+            ])
+            ->sortBy('name')
+            ->values();
+
         return Inertia::render('settings/tables', compact('dbTables'));
     }
-    public function show(string $table): Response
+    public function show(string $tableName): Response
     {
-        $primaryKeys = collect(Schema::getIndexes($table))
-            ->firstWhere('primary')['columns'] ?? [];
-
-        $fieldsList = collect(Schema::getColumns($table))->map(fn (array $col) => [
-            'id' => $col['name'],
-            'name' => $col['name'],
-            'type' => $col['type_name'],
-            'raw_type' => $col['type'],
-            'is_nullable' => $col['nullable'],
-            'is_primary' => in_array($col['name'], $primaryKeys),
-            'default_value' => $col['default'],
+        $primaryKeys = collect(Schema::getIndexes($tableName)) ->firstWhere('primary')['columns'] ?? [];
+        $fieldsList = collect(Schema::getColumns($tableName))->map(fn (array $col) => [
+            'id'             => $col['name'],
+            'name'           => $col['name'],
+            'type'           => $col['type_name'],
+            'raw_type'       => $col['type'],
+            'is_nullable'    => $col['nullable'],
+            'is_primary'     => in_array($col['name'], $primaryKeys),
+            'default_value'  => $col['default'],
             'auto_increment' => $col['auto_increment'],
-            'comment' => $col['comment'],
+            'comment'        => $col['comment'],
         ]);
-
-        return Inertia::render('settings/tables-fields', [
-            'tableName' => $table, 
-            'fieldsList' => $fieldsList,
-        ]);
+        return Inertia::render('settings/tables-fields', compact('tableName', 'fieldsList'));
     }
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse { return $this->persist($request); }
+    public function update(Request $request, string $tableName): RedirectResponse { return $this->persist($request, $tableName); }
+    private function persist(Request $request, ?string $currentTableName = null): RedirectResponse
     {
-        return $this->persist($request);
-    }
-    public function update(Request $request, string $table): RedirectResponse
-    {
-        return $this->persist($request, $table);
-    }
-    private function persist(Request $request, ?string $currentTable = null): RedirectResponse
-    {
-        $newName = strtolower($request->input('name'));
-        if ($currentTable) {
-            if ($currentTable !== $newName) {
-                Schema::rename($currentTable, $newName);
-            }
-            return $this->notifyAndRedirect("Tabla renombrada a '{$newName}' correctamente.", 'success', 'tables.index');
+        $newName = strtolower(trim($request->input('name')));
+        if ($currentTableName) {
+            Schema::table($currentTableName, function ($table) use ($currentTableName, $newName) {
+                $table->renameColumn("id_{$currentTableName}", "id_{$newName}");
+                $table->renameColumn($currentTableName, $newName);
+            });
+            Schema::rename($currentTableName, $newName);
+            $message = "Tabla renombrada a '{$newName}' correctamente.";
+        } else {
+            Schema::create($newName, function ($table) use ($newName) {
+                $table->id("id_{$newName}");
+                $table->string($newName, 50);
+                $table->foreignId('creater_id');
+                $table->foreignId('updater_id')->nullable();
+                $table->timestamps();
+            }); $message = "Tabla '{$newName}' creada con éxito.";
         }
-        Schema::create($newName, function ($table) use ($newName) {
-            $table->integer("id_{$newName}")->autoIncrement()->primary();
-            $table->string($newName, 50);
-            $table->integer('creater_id');
-            $table->integer('updater_id')->nullable();
-            $table->dateTime('created_at');
-            $table->dateTime('updated_at')->nullable();
-        });
-        return $this->notifyAndRedirect("Tabla '{$newName}' creada con éxito.", 'success', 'tables.index');
+        return $this->notifyAndRedirect($message);
     }
-    public function destroy(string $table): RedirectResponse
+    public function destroy(string $tableName): RedirectResponse
     {
-        if (Schema::hasTable($table)) {
-            Schema::disableForeignKeyConstraints();
-            Schema::dropIfExists($table);
-            Schema::enableForeignKeyConstraints();
-            return $this->notifyAndRedirect("Tabla '{$table}' eliminada correctamente.", 'success', 'tables.index');
-        }
-        return $this->notifyAndRedirect("La tabla especificada no existe.", 'error', 'tables.index');
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists($tableName);
+        Schema::enableForeignKeyConstraints();
+        return $this->notifyAndRedirect("Tabla '{$tableName}' eliminada correctamente.");
     }
 }

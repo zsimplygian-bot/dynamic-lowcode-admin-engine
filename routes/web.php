@@ -7,7 +7,7 @@ use App\Http\Controllers\DynamicCrudController;
 use App\Http\Controllers\DynamicFormSchemaController;
 use App\Http\Controllers\DynamicTableController;
 use App\Http\Controllers\HistoriaController;
-use App\Http\Controllers\LocaleController; // 1. Importación agregada
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LookupController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,7 +17,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // 2. Ruta para cambiar de idioma
-    Route::post('/locale', LocaleController::class)->name('locale.update');
+    
+Route::post('/locale', LocaleController::class)->name('locale');
 
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);

@@ -1,53 +1,34 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\DynamicModel;
-use App\Traits\{HasAuditFields, HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables};
+use App\Traits\{HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables};
 use Illuminate\Http\{JsonResponse, RedirectResponse, Request};
-use Illuminate\Support\Facades\DB;
 class DynamicCRUDController extends Controller
 {
-    use HasAuditFields, HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables;
-    protected function getModel(string $tabla): DynamicModel
+    use HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables;
+    protected function getModel(string $tableName): DynamicModel
     {
-        $this->validateTable($tabla);
-        return DynamicModel::fromTable($tabla);
+        $this->validateTable($tableName); return DynamicModel::fromTable($tableName);
     }
-    public function show(string $tabla, string $id): JsonResponse
+    public function show(string $tableName, string $id): JsonResponse
     {
-        $registro = $this->getModel($tabla)->findOrFail($id);
-        return response()->json(['success' => true, 'data' => $registro]);
+        return response()->json([ 'data' => $this->getModel($tableName)->findOrFail($id), ]);
     }
-    public function store(Request $request, string $tabla): RedirectResponse
+    public function store(Request $request, string $tableName): RedirectResponse { return $this->persist($request, $tableName); }
+    public function update(Request $request, string $tableName, string $id): RedirectResponse { return $this->persist($request, $tableName, $id); }
+    public function destroy(string $tableName, string $id): RedirectResponse
     {
-        $this->persist($request, $tabla);
-        return $this->notifyAndRedirect('Registro creado correctamente.');
+        $this->getModel($tableName)->findOrFail($id)->delete(); return $this->notifyAndRedirect('Registro eliminado correctamente.');
     }
-    public function update(Request $request, string $tabla, string $id): RedirectResponse
+    private function persist(Request $request, string $tableName, ?string $id = null): RedirectResponse
     {
-        $this->persist($request, $tabla, $id);
-        return $this->notifyAndRedirect('Registro actualizado correctamente.');
-    }
-    public function destroy(string $tabla, string $id): RedirectResponse
-    {
-        DB::transaction(function () use ($tabla, $id) {
-            $model = $this->getModel($tabla)->findOrFail($id);
-            $this->deleteRecordFiles($model);
-            $model->delete();
-        });
-        return $this->notifyAndRedirect('Registro eliminado correctamente.');
-    }
-    private function persist(Request $request, string $tabla, ?string $id = null): void
-    {
-        DB::transaction(function () use ($request, $tabla, $id) {
-            $isUpdate = $id !== null;
-            $model = $this->getModel($tabla);
-            $existingRecord = $isUpdate ? $model->findOrFail($id) : null;
-            $validated = $this->validateDynamicData($request, $tabla, $isUpdate);
-            $data = $isUpdate ? $this->applyUpdateAudit($validated, $request) : $this->applyCreationAudit($validated, $request);
-            $finalData = $this->handleFilesUpload($request, $tabla, $data, $existingRecord);
-            if ($isUpdate) { $existingRecord->update($finalData);
-            } else { $model->create($finalData);
-            }
-        });
+        $isUpdate  = $id !== null;
+        $model     = $this->getModel($tableName);
+        $record    = $isUpdate ? $model->findOrFail($id) : $model->newInstance();
+        $validated = $this->validateDynamicData($request, $tableName, $isUpdate);
+        $finalData = $this->handleFilesUpload($request, $tableName, $validated, $isUpdate ? $record : null);
+        $record->fill($finalData)->save();
+        $message = $isUpdate ? 'Registro actualizado correctamente.' : 'Registro creado correctamente.';
+        return $this->notifyAndRedirect($message);
     }
 }

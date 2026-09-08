@@ -4,13 +4,13 @@ interface DynamicTableProps {
   tableName: string
   dataEndpoint?: string
   crudEndpoint?: string
-  [key: string]: any
+  maxHeight?: string
 }
-export default function DynamicTable({ tableName, ...restProps }: DynamicTableProps) {
+export default function DynamicTable({ tableName, dataEndpoint, crudEndpoint, maxHeight }: DynamicTableProps) {
   return (
-    <>
-      <Head title={`Listado de ${tableName}`} />
-      <DynamicTableContent key={tableName} tableName={tableName} {...restProps} />
+    <><Head title={`Listado de ${tableName}`} />
+      <DynamicTableContent key={tableName} tableName={tableName} dataEndpoint={dataEndpoint} crudEndpoint={crudEndpoint} maxHeight={maxHeight}
+      />
     </>
   )
 }

@@ -9,11 +9,11 @@ export interface ThemeVar {
 }
 
 export const THEME_VARS: ThemeVar[] = [
-  { label: "Fondo Principal", variable: "--background", defaultLight: "#ffffff", defaultDark: "#141414", type: "color" },
-  { label: "Fondo de Tarjetas", variable: "--card", defaultLight: "#ffffff", defaultDark: "#1a1a1a", type: "color" },
-  { label: "Barra Lateral", variable: "--sidebar", defaultLight: "#fafafa", defaultDark: "#18181b", type: "color" },
-  { label: "Bordes", variable: "--border", defaultLight: "#e4e4e7", defaultDark: "#27272a", type: "color" },
-  { label: "Radio de Bordes", variable: "--radius", defaultLight: "1.25rem", defaultDark: "1.25rem", type: "text" },
+  { label: "Main Background", variable: "--background", defaultLight: "#ffffff", defaultDark: "#141414", type: "color" },
+  { label: "Card Background", variable: "--card", defaultLight: "#ffffff", defaultDark: "#1a1a1a", type: "color" },
+  { label: "Sidebar", variable: "--sidebar", defaultLight: "#fafafa", defaultDark: "#18181b", type: "color" },
+  { label: "Borders", variable: "--border", defaultLight: "#e4e4e7", defaultDark: "#27272a", type: "color" },
+  { label: "Border Radius", variable: "--radius", defaultLight: "1.25rem", defaultDark: "1.25rem", type: "text" },
 ]
 
 export type ThemeMode = "light" | "dark"

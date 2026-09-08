@@ -1,51 +1,69 @@
-import { useCallback, useMemo, useRef } from "react"
+import { useMemo } from "react"
 import { useApi } from "@/hooks/use-api"
 import { useDataTableStorage } from "./use-datatable-storage"
-import { useDataTableColumns } from "./use-datatable-columns"
-import { useDataTableSearch } from "./use-datatable-search"
-import { useDataTablePagination } from "./use-datatable-pagination"
-import { useDataTableSort } from "./use-datatable-sort"
 interface UseDataTableOptions { tableName: string; endpoint: string }
-const EMPTY_ARR: any[] = [], EMPTY_OBJ: Record<string, any> = {}
+const EMPTY_ARR: any[] = []
+const DEFAULT_STORAGE = {
+  query: { pageIndex: 0, pageSize: undefined as number | undefined, search: "", appliedSearchValues: {}, dateRange: {}, sortBy: undefined, sortOrder: undefined },
+  ui: { columnVisibility: {} as Record<string, boolean> },
+}
 export const useDataTable = ({ tableName, endpoint }: UseDataTableOptions) => {
   const idKey = `id_${tableName}`
-  const { storedValue, setStorage, clearStorage } = useDataTableStorage(tableName, useMemo(() => ({ query: EMPTY_OBJ, ui: EMPTY_OBJ }), []))
-  const { query = EMPTY_OBJ, ui = EMPTY_OBJ } = storedValue
-  const searchValues = query.appliedSearchValues || EMPTY_OBJ, dateRange = query.dateRange || EMPTY_OBJ, globalSearch = query.search || ""
-  const patchQuery = useCallback((patch: any, resetPage = false) => {
-    setStorage((prev: any) => ({
-      ...prev, query: { ...prev.query, ...(typeof patch === "function" ? patch(prev.query || EMPTY_OBJ) : patch), ...(resetPage && { pageIndex: 0 }) }
-    }))
-  }, [setStorage])
-  const { sortBy, sortOrder, handleSort } = useDataTableSort(query.sortBy, query.sortOrder, patchQuery)
-  const lastValidRef = useRef({ data: EMPTY_ARR, columns: EMPTY_ARR, total: 0 })
-  const pagination = useDataTablePagination(query.pageIndex, query.pageSize, lastValidRef.current.total, undefined, undefined, patchQuery)
-  const apiConfig = useMemo(() => {
-    const params: Record<string, any> = { ...searchValues, page: pagination.pageIndex + 1, per_page: pagination.pageSize }
-    if (globalSearch) params.search = globalSearch
-    if (sortBy) { params.sort_by = sortBy; params.sort_order = sortOrder }
-    if (dateRange.from) params.from = dateRange.from
-    if (dateRange.to) params.to = dateRange.to
-    return { params }
-  }, [pagination.pageIndex, pagination.pageSize, searchValues, globalSearch, sortBy, sortOrder, dateRange.from, dateRange.to])
-  const { data: res, isLoading, error, setData: setApiResponse, refetch } = useApi(endpoint, { enabled: Boolean(endpoint), config: apiConfig })
-  if (res?.data) lastValidRef.current = { data: res.data, columns: res.columns ?? EMPTY_ARR, total: res.total ?? 0 }
-  const currentRes = res?.data ? res : lastValidRef.current
-  const { data = EMPTY_ARR, columns = EMPTY_ARR, total: totalRows = 0 } = currentRes
-  const { columnVisibility, visibleColumns, toggleColumn } = useDataTableColumns(columns, ui.columnVisibility, setStorage)
-  const { searchFields, activeSearchCount, setSearchValues, clearSearchValues, setGlobalSearch, setDateRange } = useDataTableSearch(columns, searchValues, patchQuery)
-  const getId = useCallback((row: any) => row?.[idKey] ?? row?.id, [idKey])
-  const getRowKey = useCallback((row: any, i: number) => getId(row) ?? i, [getId])
-  const isFiltered = Boolean(activeSearchCount > 0 || globalSearch || dateRange.from || dateRange.to || sortBy || 
-    pagination.pageSize !== 10 || pagination.pageIndex > 0 || Object.values(ui.columnVisibility || EMPTY_OBJ).some((v) => v === false))
-  const isReady = Boolean(res?.data || lastValidRef.current.data.length > 0)
-  return useMemo(() => ({
-    idKey, getId, getRowKey, pageIndex: pagination.pageIndex, pageSize: pagination.pageSize, sortBy, sortOrder, query,
-    data, columns, totalRows, visibleColumns, columnVisibility, pagination, searchFields, activeSearchCount, globalSearch,
-    appliedSearchValues: searchValues, dateRange, loading: isLoading, isFetching: isLoading && lastValidRef.current.data.length > 0,
-    isInitialLoading: isLoading && !res?.data && lastValidRef.current.data.length === 0, isReady, isValidResponse: Boolean(res?.data),
-    isFiltered, error, handleSort, resetAll: clearStorage, toggleColumn, setSearchValues, clearSearchValues, setGlobalSearch, setDateRange,
-    fetchData: refetch, setApiResponse,
-  }), [ idKey, getId, getRowKey, pagination, sortBy, sortOrder, query, data, columns, totalRows, visibleColumns, columnVisibility, searchFields, activeSearchCount, globalSearch, searchValues, dateRange, 
-    isLoading, res, isReady, isFiltered, error, handleSort, clearStorage, toggleColumn, setSearchValues, clearSearchValues, setGlobalSearch, setDateRange, refetch, setApiResponse ])
+  const { storedValue, setStorage, clearStorage } = useDataTableStorage(tableName, DEFAULT_STORAGE)
+  const { query, ui } = storedValue
+  const { search = "", appliedSearchValues = {}, dateRange = {}, sortBy, sortOrder } = query
+  const rawPageIndex = query.pageIndex || 0
+  const patchQuery = (patch: Record<string, any>, resetPage = false) => setStorage((prev) => ({ ...prev, query: { ...prev.query, ...patch, ...(resetPage && { pageIndex: 0 }) } }))
+  const apiConfig = useMemo(() => ({
+    params: { ...appliedSearchValues, page: rawPageIndex + 1,
+      ...(query.pageSize && { per_page: query.pageSize }),
+      ...(search && { search }),
+      ...(sortBy && { sort_by: sortBy, sort_order: sortOrder || "desc" }),
+      ...(dateRange.from && { from: dateRange.from }),
+      ...(dateRange.to && { to: dateRange.to }),
+    }
+  }), [query])
+  const { data: res, isLoading, error, refetch } = useApi(endpoint, { enabled: Boolean(endpoint), config: apiConfig })
+  const data = res?.data ?? EMPTY_ARR
+  const columns = res?.columns ?? EMPTY_ARR
+  const totalRows = res?.total ?? 0
+  const backendPerPage = res?.per_page ?? 10
+  const pageSize = query.pageSize || backendPerPage
+  const { columnVisibility, visibleColumns } = useMemo(() => {
+    const visibility: Record<string, boolean> = {}
+    const visible = columns.filter((col: any) => {
+      const isVis = ui.columnVisibility[col.accessor] ?? !col.hidden
+      visibility[col.accessor] = isVis
+      return isVis
+    })
+    return { columnVisibility: visibility, visibleColumns: visible }
+  }, [columns, ui.columnVisibility])
+  const toggleColumn = (accessor: string) => setStorage((prev) => ({ ...prev, ui: { ...prev.ui, columnVisibility: { ...prev.ui.columnVisibility, [accessor]: !columnVisibility[accessor] } } }))
+  const handleSort = (accessor: string) => {
+    const next = sortBy !== accessor ? "asc" : sortOrder === "asc" ? "desc" : undefined; patchQuery({ sortBy: next ? accessor : undefined, sortOrder: next }, true)
+  }
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
+  const pageIndex = Math.max(0, Math.min(rawPageIndex, totalPages - 1))
+  const goTo = (p: number) => patchQuery({ pageIndex: Math.max(0, Math.min(totalPages - 1, p - 1)) })
+  const pagination = { pageIndex, pageSize, totalRows, totalPages, isFirstPage: pageIndex === 0, isLastPage: pageIndex >= totalPages - 1,
+    goToPage: goTo,
+    goToFirstPage: () => goTo(1),
+    goToPreviousPage: () => goTo(pageIndex),
+    goToNextPage: () => goTo(pageIndex + 2),
+    goToLastPage: () => goTo(totalPages),
+    changePageSize: (size: number) => patchQuery({ pageSize: Math.max(size, 1) }, true),
+  }
+  const searchFields = useMemo(() => columns.filter((c: any) => c.searchable).map((c: any) => ({ id: c.accessor, name: c.accessor, label: c.header, type: c.type })), [columns])
+  const activeSearchCount = Object.values(appliedSearchValues).filter(Boolean).length
+  const getId = (row: any) => row?.[idKey] ?? row?.id
+  const getRowKey = (row: any, i: number) => getId(row) ?? i
+  const setSearchValues = (values: any) => patchQuery({ appliedSearchValues: values || {} }, true)
+  const isFiltered = Boolean(activeSearchCount || search || dateRange.from || dateRange.to || sortBy || pageIndex > 0 || (query.pageSize && query.pageSize !== backendPerPage))
+  return {
+    getId, getRowKey, data, columns, totalRows, visibleColumns, columnVisibility, pagination, searchFields, activeSearchCount, globalSearch: search, appliedSearchValues, dateRange, 
+    isFiltered, loading: isLoading, error, sortBy, sortOrder, handleSort, resetAll: clearStorage, toggleColumn, setSearchValues, fetchData: refetch,
+    clearSearchValues: () => setSearchValues({}),
+    setGlobalSearch: (s: string) => patchQuery({ search: s }, true),
+    setDateRange: (range: any) => patchQuery({ dateRange: range || {} }, true),
+  }
 }

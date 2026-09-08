@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { Head, Form, Link } from '@inertiajs/react';
+import { useState, useMemo } from 'react';
+import { Head, Form } from '@inertiajs/react';
 import { Table as TableIcon, Settings2, Database, Layers, Upload, Download } from 'lucide-react';
 import Heading from '@/components/heading';
 import { SmartButton } from '@/components/smart-button';
 import { SmartBadge } from '@/components/smart-badge';
-import { FormGroup } from '@/components/form-group';
-import { SimpleList, FieldConfig } from '@/components/simple-list';
+import { FormGroup, type FieldConfig } from '@/components/form-group';
+import { SimpleList } from '@/components/simple-list';
 import DatabaseIEController from '@/actions/App/Http/Controllers/Settings/DatabaseIEController';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
+import { useTranslation } from '@/hooks/use-translation';
 export interface DatabaseTableItem {
   id: string;
   name: string;
@@ -15,52 +16,60 @@ export interface DatabaseTableItem {
   size_mb?: string;
 }
 type TabSection = 'tables' | 'backups';
-const SECTION_TABS: TabItem<TabSection>[] = Object.freeze([
-  { id: 'tables', label: 'Tablas', icon: TableIcon }, { id: 'backups', label: 'Respaldos', icon: Database },
-]);
-const FIELDS: FieldConfig[] = Object.freeze([{ name: 'name', label: 'Nombre de la tabla', placeholder: 'Ej. users', required: true }]);
-const BACKUP_FIELDS = Object.freeze([{ id: 'backup', label: 'Seleccionar archivo .sql', type: 'file', accept: '.sql', required: true }]);
-const renderTableRow = (table: DatabaseTableItem) => (
-  <div className="flex items-center justify-between min-w-0">
-    <div className="flex items-center gap-2 min-w-0">
-      <div className="p-2 border rounded-lg bg-muted text-muted-foreground shrink-0">
-        <TableIcon className="size-5" />
-      </div>
-      <p className="text-sm font-medium font-mono truncate">{table.name}</p>
-    </div>
-    <div className="flex items-center gap-2 font-mono shrink-0">
-      {table.rows_count !== undefined && <SmartBadge {...{ icon: Layers, label: `${table.rows_count} registros`, variant: "secondary" }} />}
-      {table.size_mb && <SmartBadge {...{ label: `${table.size_mb} MB`, variant: "secondary" }} />}
-        <SmartButton {...{ href: `/settings/tables/${table.id}`, icon: Settings2, label: "Campos", size: "xs" }} />
-    </div>
-  </div>
-);
 export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTableItem[] }) {
+  const t = useTranslation();
   const [activeSection, setActiveSection] = useState<TabSection>('tables');
-  const formattedTables = dbTables.map((t) => {
-    const name = t.name.split('.').pop() ?? t.name;
-    return { ...t, id: name, name };
-  });
+  const sectionTabs: TabItem<TabSection>[] = useMemo(() => [
+    { id: 'tables', label: t('Tables'), icon: TableIcon },
+    { id: 'backups', label: t('Backups'), icon: Database },
+  ], [t]);
+  const fields: FieldConfig[] = useMemo(() => [
+    { name: 'name', label: t('Table name'), placeholder: t('e.g. users'), required: true }
+  ], [t]);
+  const backupFields: FieldConfig[] = useMemo(() => [
+    { id: 'backup', label: t('Select .sql file'), type: 'file', accept: '.sql', required: true }
+  ], [t]);
+  const formattedTables = useMemo(() => {
+    return dbTables.map((t) => {
+      const name = t.name.split('.').pop() ?? t.name;
+      return { ...t, id: name, name };
+    });
+  }, [dbTables]);
+  const renderTableRow = (table: DatabaseTableItem) => (
+    <div className="flex items-center justify-between min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="p-2 border rounded-lg bg-muted text-muted-foreground shrink-0">
+          <TableIcon className="size-5" />
+        </div>
+        <p className="text-sm font-medium font-mono truncate">{table.name}</p>
+      </div>
+      <div className="flex items-center gap-2 font-mono shrink-0">
+        {table.rows_count !== undefined && <SmartBadge icon={Layers} label={`${table.rows_count}`} variant="secondary" />}
+        {table.size_mb !== undefined && <SmartBadge label={`${table.size_mb} MB`} variant="secondary" />}
+        <SmartButton href={`/settings/tables/${table.id}`} icon={Settings2} size="xs" tooltip={t('View columns')} />
+      </div>
+    </div>
+  );
   return (
-    <><Head {...{ title: "Gestión de Tablas" }} />
+    <><Head title={t('Table Management')} />
       <div className="max-w-4xl mx-auto space-y-4">
-        <Heading {...{ variant: "small", title: "Base de Datos", description: "Gestiona las tablas activas, respaldos e importación de datos." }} />
-        <Tabs {...{ activeTab: activeSection, onTabChange: setActiveSection, tabs: SECTION_TABS }} />
+        <Heading variant="small" title={t('Database')} description={t('Manage active tables, backups, and data imports.')} />
+        <Tabs activeTab={activeSection} onTabChange={setActiveSection} tabs={sectionTabs} />
         {activeSection === 'tables' ? (
-          <SimpleList {...{ items: formattedTables, searchKey: "name", endpoint: "/settings/tables", fields: FIELDS, renderRowContent: renderTableRow }} />
+          <SimpleList items={formattedTables} searchKey="name" endpoint="/settings/tables" fields={fields} renderRowContent={renderTableRow} />
         ) : (
           <div className="space-y-4 border rounded-xl p-4 bg-card">
             <div className="space-y-2">
-              <Heading {...{ variant: "small", title: "Exportar respaldo", description: "Descarga una copia de seguridad completa de la base de datos en formato SQL." }} />
-              <SmartButton {...{ icon: Download, label: "Exportar", onClick: () => { window.location.href = '/settings/tables/export'; } }} />
+              <Heading variant="small" title={t('Export backup')} description={t('Download a complete backup copy of the database in SQL format.')} />
+              <SmartButton icon={Download} label={t('Export')} onClick={() => { window.location.href = '/settings/tables/export'; }} />
             </div>
             <hr className="border-border" />
-            <Form {...{ ...DatabaseIEController.import.form(), options: { preserveScroll: true }, className: "space-y-2" }}>
+            <Form {...DatabaseIEController.import.form()} options={{ preserveScroll: true }} className="space-y-2">
               {({ processing, errors }) => (
                 <div className="space-y-2">
-                  <Heading {...{ variant: "small", title: "Importar respaldo", description: "Sube un archivo de respaldo .sql para restaurar la estructura y los datos." }} />
-                  <FormGroup {...{ fields: BACKUP_FIELDS, errors }} />
-                  <SmartButton {...{ type: "submit", icon: Upload, label: "Importar", loadingLabel: "Importando...", isLoading: processing, variant: "secondary" }} />
+                  <Heading variant="small" title={t('Import backup')} description={t('Upload a .sql backup file to restore structure and data.')} />
+                  <FormGroup fields={backupFields} errors={errors} />
+                  <SmartButton type="submit" icon={Upload} label={t('Import')} loadingLabel={t('Importing...')} isLoading={processing} variant="secondary" />
                 </div>
               )}
             </Form>
@@ -70,4 +79,4 @@ export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTa
     </>
   );
 }
-TablesManager.layout = { breadcrumbs: [{ title: 'Configuración de Tablas', href: '/settings/tables' }] };
+TablesManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/tables' }] };

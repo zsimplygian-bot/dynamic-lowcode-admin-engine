@@ -1,15 +1,20 @@
 <?php
 namespace App\Traits;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 trait HasAuditFields
 {
-    protected function applyCreationAudit(array $data, Request $request): array
+    public static function bootHasAuditFields(): void
     {
-        $userId = $request->user()?->id;
-        return array_merge($data, [ 'creater_id' => $userId, 'updater_id' => $userId ]);
-    }
-    protected function applyUpdateAudit(array $data, Request $request): array
-    {
-        return array_merge($data, [ 'updater_id' => $request->user()?->id ]);
+        static::creating(function ($model) {
+            if ($userId = Auth::id()) {
+                $model->creater_id ??= $userId;
+                $model->updater_id ??= $userId;
+            }
+        });
+        static::updating(function ($model) {
+            if ($userId = Auth::id()) {
+                $model->updater_id = $userId;
+            }
+        });
     }
 }

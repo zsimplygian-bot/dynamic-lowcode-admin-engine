@@ -25,7 +25,7 @@ const parseDate = (v?: any) => {
 }
 const fmt = (d?: Date, sep = "-") => 
   d ? `${d.getFullYear()}${sep}${String(d.getMonth() + 1).padStart(2, "0")}${sep}${String(d.getDate()).padStart(2, "0")}` : ""
-export const DatePicker = memo(({ mode = "single", variant = "field", value, onChange, placeholder = "-", disabled = false, className, iconSize = 18 }: DatePickerProps) => {
+export const DatePicker = memo(({ mode = "single", variant = "field", value, onChange, placeholder = "-", disabled = false, className, iconSize = 21 }: DatePickerProps) => {
   const isField = variant === "field"
   const { selected, label } = useMemo(() => {
     if (mode === "single") {
