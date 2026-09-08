@@ -24,7 +24,7 @@ Route::post('/locale', LocaleController::class)->name('locale');
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
     Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
 
-    Route::controller(DynamicTableController::class)->prefix('tables')->name('tables.')->group(function () {
+    Route::controller(DynamicTableController::class)->prefix('table')->name('table.')->group(function () {
         Route::get('/{table}', 'show')->name('show');
         Route::get('/{table}/data', 'data')->name('data');
         Route::get('/{table}/record/{id}', 'findRecord')->name('record');

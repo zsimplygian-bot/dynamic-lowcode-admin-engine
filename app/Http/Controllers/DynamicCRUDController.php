@@ -1,11 +1,11 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\DynamicModel;
-use App\Traits\{HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables};
+use App\Traits\{HasDynamicFileUpload, HasDynamicValidation, HasNotify, HasProtectedTables};
 use Illuminate\Http\{JsonResponse, RedirectResponse, Request};
 class DynamicCRUDController extends Controller
 {
-    use HasDynamicFileUpload, HasDynamicValidation, HasInertiaNotifications, HasProtectedTables;
+    use HasDynamicFileUpload, HasDynamicValidation, HasNotify, HasProtectedTables;
     protected function getModel(string $tableName): DynamicModel
     {
         $this->validateTable($tableName); return DynamicModel::fromTable($tableName);
@@ -18,7 +18,7 @@ class DynamicCRUDController extends Controller
     public function update(Request $request, string $tableName, string $id): RedirectResponse { return $this->persist($request, $tableName, $id); }
     public function destroy(string $tableName, string $id): RedirectResponse
     {
-        $this->getModel($tableName)->findOrFail($id)->delete(); return $this->notifyAndRedirect('Registro eliminado correctamente.');
+        $this->getModel($tableName)->findOrFail($id)->delete(); return $this->notify('Registro eliminado correctamente.');
     }
     private function persist(Request $request, string $tableName, ?string $id = null): RedirectResponse
     {
@@ -29,6 +29,6 @@ class DynamicCRUDController extends Controller
         $finalData = $this->handleFilesUpload($request, $tableName, $validated, $isUpdate ? $record : null);
         $record->fill($finalData)->save();
         $message = $isUpdate ? 'Registro actualizado correctamente.' : 'Registro creado correctamente.';
-        return $this->notifyAndRedirect($message);
+        return $this->notify($message);
     }
 }

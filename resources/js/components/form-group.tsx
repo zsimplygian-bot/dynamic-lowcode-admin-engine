@@ -9,13 +9,14 @@ import { DatePicker } from "@/components/date-picker"
 import { Clock } from "@/components/ui/clock"
 import { FormFilePicker } from "@/components/form-file-picker"
 import InputError from "@/components/input-error"
-
 export interface FieldConfig {
   id?: string; name?: string; label?: string; type?: string; placeholder?: string
   defaultValue?: any; value?: any; disabled?: boolean; required?: boolean
   rows?: number; options?: any[]; accept?: string; description?: string
+  min?: number | string; max?: number | string
+  minLength?: number; maxLength?: number
+  minlength?: number; maxlength?: number
 }
-
 interface FormGroupProps {
   fields?: FieldConfig[]
   errors?: Record<string, string>
@@ -26,14 +27,15 @@ interface FormGroupProps {
   onChange?: (name: string, value: any) => void
   className?: string
 }
-
 const RenderControl = memo(({ field, name, value, disabled, onChange }: { field: FieldConfig; name: string; value: any; disabled: boolean; onChange?: (n: string, v: any) => void }) => {
   const strVal = value instanceof File ? "" : String(value ?? "")
   const isControlled = Boolean(onChange)
+  const minLen = field.minLength ?? field.minlength
+  const maxLen = field.maxLength ?? field.maxlength
   const common = { id: name, name, disabled, required: field.required, placeholder: field.placeholder, ...(isControlled ? { value: strVal } : { defaultValue: strVal }) }
-
   switch (field.type) {
-    case "textarea": return <Textarea {...common} rows={field.rows ?? 3} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    case "textarea": 
+      return <Textarea {...common} rows={field.rows ?? 3} minLength={minLen} maxLength={maxLen} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
     case "select":
       return Array.isArray(field.options)
         ? <FormSelectSimple {...common} value={strVal} options={field.options} onSelect={(v) => onChange?.(name, v)} />
@@ -64,7 +66,10 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
     case "file":
     case "image": return <FormFilePicker id={name} name={name} defaultValue={strVal} accept={field.accept} required={field.required} disabled={disabled} onChange={(e: any) => onChange?.(name, e?.target?.files?.[0] ?? e)} />
     case "color": return <Input {...common} type="color" onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
-    default: return <Input {...common} type={field.type || "text"} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    default: 
+      return ( <Input {...common} type={field.type || "text"} min={field.min} max={field.max} minLength={minLen} maxLength={maxLen} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} 
+        />
+      )
   }
 })
 RenderControl.displayName = "RenderControl"
@@ -78,12 +83,9 @@ export const FormGroup = memo(({ fields = [], errors = {}, disabled = false, isR
         const isDisabled = disabled || isReadonly || field.disabled
         const val = values ? (values[name] ?? field.defaultValue ?? "") : (field.value ?? field.defaultValue ?? "")
         const error = errors[name]
-
         if (field.type === "hidden") return <input key={name} type="hidden" id={name} name={name} value={String(val)} />
-
         const isCheckbox = field.type === "checkbox"
         const isChecked = isCheckbox && Boolean(val === 1 || val === "1" || val === true || val === "true")
-
         return (
           <div key={name} className={isHorizontal ? "grid grid-cols-12 items-center gap-2" : "grid gap-1"}>
             <Label className={`flex items-center gap-1 text-sm font-medium leading-tight select-none cursor-default ${isHorizontal ? "col-span-5 text-left justify-start" : ""}`} title={field.label}>

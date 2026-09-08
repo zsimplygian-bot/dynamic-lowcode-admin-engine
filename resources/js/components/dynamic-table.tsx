@@ -15,7 +15,7 @@ import { SearchInput } from "@/components/search-input"
 
 interface DynamicTableContentProps { tableName: string; crudEndpoint?: string; dataEndpoint?: string; maxHeight?: string }
 
-export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/tables/${tableName}/data`, maxHeight = "75vh" }: DynamicTableContentProps) {
+export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/table/${tableName}/data`, maxHeight = "75vh" }: DynamicTableContentProps) {
   const tableState = useDataTable({ tableName, endpoint: dataEndpoint })
   const { data, columns, columnVisibility, toggleColumn, resetAll, fetchData, appliedSearchValues, globalSearch, dateRange,
     setSearchValues, clearSearchValues, setGlobalSearch, setDateRange, searchFields, activeSearchCount, pagination, isFiltered, loading, getId } = tableState

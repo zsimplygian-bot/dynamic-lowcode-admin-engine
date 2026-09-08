@@ -24,7 +24,7 @@ export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTa
     { id: 'backups', label: t('Backups'), icon: Database },
   ], [t]);
   const fields: FieldConfig[] = useMemo(() => [
-    { name: 'name', label: t('Table name'), placeholder: t('e.g. users'), required: true }
+    { name: 'name', label: t('TABLE NAME'), placeholder: t('e.g. users'), required: true }
   ], [t]);
   const backupFields: FieldConfig[] = useMemo(() => [
     { id: 'backup', label: t('Select .sql file'), type: 'file', accept: '.sql', required: true }
@@ -46,7 +46,7 @@ export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTa
       <div className="flex items-center gap-2 font-mono shrink-0">
         {table.rows_count !== undefined && <SmartBadge icon={Layers} label={`${table.rows_count}`} variant="secondary" />}
         {table.size_mb !== undefined && <SmartBadge label={`${table.size_mb} MB`} variant="secondary" />}
-        <SmartButton href={`/settings/tables/${table.id}`} icon={Settings2} size="xs" tooltip={t('View columns')} />
+        <SmartButton href={`/settings/table/${table.id}`} icon={Settings2} size="xs" tooltip={t('View columns')} />
       </div>
     </div>
   );
@@ -56,12 +56,12 @@ export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTa
         <Heading variant="small" title={t('Database')} description={t('Manage active tables, backups, and data imports.')} />
         <Tabs activeTab={activeSection} onTabChange={setActiveSection} tabs={sectionTabs} />
         {activeSection === 'tables' ? (
-          <SimpleList items={formattedTables} searchKey="name" endpoint="/settings/tables" fields={fields} renderRowContent={renderTableRow} />
+          <SimpleList items={formattedTables} searchKey="name" endpoint="/settings/table" fields={fields} renderRowContent={renderTableRow} />
         ) : (
           <div className="space-y-4 border rounded-xl p-4 bg-card">
             <div className="space-y-2">
               <Heading variant="small" title={t('Export backup')} description={t('Download a complete backup copy of the database in SQL format.')} />
-              <SmartButton icon={Download} label={t('Export')} onClick={() => { window.location.href = '/settings/tables/export'; }} />
+              <SmartButton icon={Download} label={t('Export')} onClick={() => { window.location.href = '/settings/table/export'; }} />
             </div>
             <hr className="border-border" />
             <Form {...DatabaseIEController.import.form()} options={{ preserveScroll: true }} className="space-y-2">
@@ -79,4 +79,4 @@ export default function TablesManager({ dbTables = [] }: { dbTables?: DatabaseTa
     </>
   );
 }
-TablesManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/tables' }] };
+TablesManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/table' }] };

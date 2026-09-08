@@ -1,11 +1,11 @@
 <?php
 namespace App\Http\Controllers;
-use App\Traits\HasInertiaNotifications;
+use App\Traits\HasNotify;
 use Illuminate\Http\{JsonResponse, RedirectResponse};
 use Illuminate\Support\Facades\DB;
 class CitaController extends Controller
 {
-    use HasInertiaNotifications;
+    use HasNotify;
     public function proximas(): JsonResponse
     {
         [$t1, $t2, $t3] = ['mascota', 'cliente', 'motivo'];
@@ -31,6 +31,6 @@ class CitaController extends Controller
     private function updateEstado(string $id, int $estado, string $msg, string $type = 'success'): RedirectResponse
     {
         DB::table('cita')->where('id_cita', $id)->update(['id_estado_cita' => $estado]);
-        return $this->notifyAndRedirect($msg, $type);
+        return $this->notify($msg, $type);
     }
 }

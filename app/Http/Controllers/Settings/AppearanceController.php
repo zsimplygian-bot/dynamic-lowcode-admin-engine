@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Traits\HasDynamicFileUpload;
-use App\Traits\HasInertiaNotifications;
+use App\Traits\HasNotify;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Cache, Storage};
@@ -10,7 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 class AppearanceController extends Controller
 {
-    use HasDynamicFileUpload, HasInertiaNotifications;
+    use HasDynamicFileUpload, HasNotify;
     private string $jsonPath = 'settings/appearance.json';
     private function getSettings(): array
     {
@@ -36,6 +36,6 @@ class AppearanceController extends Controller
         $data = $this->handleFilesUpload($request, 'icons', $validated, $settings);
         Storage::disk('local')->put($this->jsonPath, json_encode(array_merge($settings, $data), JSON_PRETTY_PRINT));
         Cache::forget('inertia_appearance_settings');
-        return $this->notifyAndRedirect('Appearance settings updated.', 'success', 'appearance.edit');
+        return $this->notify('Appearance settings updated.', 'success', 'appearance.edit');
     }
 }

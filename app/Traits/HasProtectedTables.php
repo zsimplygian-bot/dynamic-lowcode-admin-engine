@@ -3,21 +3,23 @@ namespace App\Traits;
 use Illuminate\Support\Facades\Schema;
 trait HasProtectedTables
 {
-    protected array $blacklistedTables = [ // Tablas del sistema que nunca deben ser accedidas dinámicamente.
-        'migrations',
-        'failed_jobs',
-        'password_reset_tokens',
-        'personal_access_tokens',
-        'sessions',
-        'jobs',
-        'job_batches',
+    protected array $blacklistedTables = [
         'cache',
         'cache_locks',
+        'database_history',
+        'failed_jobs',
+        'job_batches',
+        'jobs',
+        'migrations',
+        'model_has_permissions',
+        'model_has_roles',
+        'password_reset_tokens',
+        'permissions',
+        'personal_access_tokens',
+        'role_has_permissions',
+        'roles',
+        'sessions',
+        'users',
     ];
-    protected function validateTable(string $table): void
-    {
-        if (in_array($table, $this->blacklistedTables, true) || !Schema::hasTable($table)) {
-            abort(404, "La tabla [{$table}] no existe o está restringida.");
-        }
-    }
+    protected function isBlacklisted(string $table): bool { return in_array(trim($table), $this->blacklistedTables, true); }
 }
