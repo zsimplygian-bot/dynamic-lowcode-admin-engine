@@ -27,7 +27,13 @@ class TableController extends Controller
         if ($this->isBlacklisted($tableName) || !Schema::hasTable($tableName)) {
             return $this->notify("You do not have permission to access table '{$tableName}'.", 'error');
         }
-        $fieldsList = collect(Schema::getColumns($tableName))->map(function (array $col) {
+
+        $foreignColumns = collect(Schema::getForeignKeys($tableName))
+            ->pluck('columns')
+            ->flatten()
+            ->toArray();
+
+        $fieldsList = collect(Schema::getColumns($tableName))->map(function (array $col) use ($foreignColumns) {
             preg_match('/\((.*?)\)/', $col['type'], $match);
             return [
                 'id'             => $col['name'],
@@ -37,12 +43,14 @@ class TableController extends Controller
                 'length'         => isset($match[1]) ? (int) $match[1] : null,
                 'is_nullable'    => $col['nullable'],
                 'is_primary'     => $col['auto_increment'],
+                'is_foreign'     => in_array($col['name'], $foreignColumns, true),
                 'is_unsigned'    => str_contains(strtolower($col['type']), 'unsigned'),
                 'default_value'  => $col['default'],
                 'auto_increment' => $col['auto_increment'],
                 'comment'        => $col['comment'],
             ];
         });
+
         return Inertia::render('settings/table-field', compact('tableName', 'fieldsList'));
     }
     public function store(Request $request): RedirectResponse { return $this->persist($request); }

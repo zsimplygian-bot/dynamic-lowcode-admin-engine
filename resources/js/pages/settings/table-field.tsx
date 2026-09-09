@@ -1,20 +1,38 @@
 import { Head } from '@inertiajs/react';
-import { ArrowLeft, Key, Type } from 'lucide-react';
+import { ArrowLeft, Binary, Calendar, Clock, Code2, Hash, Key, TextQuote, ToggleLeft, Type } from 'lucide-react';
 import Heading from '@/components/heading';
 import { SmartButton } from '@/components/smart-button';
 import { SmartBadge } from '@/components/smart-badge';
 import { SimpleList } from '@/components/simple-list';
 import { useTranslation } from '@/hooks/use-translation';
+
+function getFieldIcon(type: string) {
+  const t = type?.toLowerCase() ?? '';
+  if (t.includes('int')) return Binary;
+  if (t.includes('decimal') || t.includes('float') || t.includes('double')) return Hash;
+  if (t.includes('tinyint') || t.includes('bool')) return ToggleLeft;
+  if (t.includes('date') && !t.includes('time')) return Calendar;
+  if (t.includes('time') || t.includes('datetime') || t.includes('timestamp')) return Clock;
+  if (t.includes('text')) return TextQuote;
+  if (t.includes('json')) return Code2;
+  return Type;
+}
+
 function FieldRowContent({ field }: { field: any }) {
+  const IconComponent = field.is_primary ? Key : getFieldIcon(field.type);
+
   return (
     <div className="flex items-center justify-between min-w-0 text-sm font-mono">
       <div className="flex items-center gap-2 min-w-0">
-        {field.is_primary ? <Key className="size-5 text-amber-500" /> : <Type className="size-5" />}
+        <div className="p-2 border rounded-lg bg-muted text-muted-foreground shrink-0">
+          <IconComponent className={`size-5 ${field.is_primary ? 'text-amber-500' : ''}`} />
+        </div>
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium truncate">{field.name}</span>
             <SmartBadge label={field.raw_type ?? field.type} color="cyan" />
             {field.is_primary && <SmartBadge label="PK" color="amber" />}
+            {field.is_foreign && <SmartBadge label="FK" color="purple" />}
             {field.auto_increment && <SmartBadge label="AI" color="blue" />}
             {field.is_nullable && <SmartBadge label="NULL" variant="outline" />}
           </div>
@@ -24,10 +42,12 @@ function FieldRowContent({ field }: { field: any }) {
     </div>
   );
 }
+
 export default function TableFieldsManager({ tableName, fieldsList = [] }: { tableName?: string; fieldsList?: any[] }) {
   const t = useTranslation();
   const fields = [
-    { name: 'name', label: t('NAME'), placeholder: 'email, user_id, price', required: true },
+    { name: 'name', label: t('NAME'), placeholder: 'email, id_cliente, price', required: true },
+    { name: 'is_foreign', label: t('IS FOREIGN KEY (FK)?'), type: 'checkbox' },
     { name: 'type', label: t('TYPE'), type: 'select', required: true, defaultValue: 'varchar', options: [
         { id: 'varchar', label: `🔤 ${t('Short text (varchar)')}` },
         { id: 'text', label: `📄 ${t('Long text (text)')}` },
@@ -48,6 +68,7 @@ export default function TableFieldsManager({ tableName, fieldsList = [] }: { tab
     { name: 'auto_increment', label: t('AUTO INCREMENT?'), type: 'checkbox' },
     { name: 'is_unsigned', label: t('UNSIGNED (NO NEGATIVES)?'), type: 'checkbox' },
   ] as const;
+
   return (
     <><Head title={`${t('Fields of')} ${tableName}`} />
       <div>
@@ -60,4 +81,5 @@ export default function TableFieldsManager({ tableName, fieldsList = [] }: { tab
     </>
   );
 }
+
 TableFieldsManager.layout = { breadcrumbs: [ { title: 'Table Settings', href: '/settings/table' }, { title: 'Table Fields', href: '#' } ] };

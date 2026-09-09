@@ -4,7 +4,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\{HasNotify, HasProtectedFields};
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\{RedirectResponse, Request};
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\{DB, Schema};
 use Illuminate\Validation\Rule;
 class TableFieldController extends Controller
 {
@@ -19,9 +19,10 @@ class TableFieldController extends Controller
     private function persist(Request $request, string $table, ?string $currentField = null): RedirectResponse
     {
         $tableName = $this->cleanName($table);
+        $isForeign = $request->boolean('is_foreign');
         $validated = $request->validate([
             'name'           => ['required', 'string', 'alpha_dash', 'max:64'],
-            'type'           => ['required', Rule::in(array_keys(self::TYPES))],
+            'type'           => [$isForeign ? 'nullable' : 'required', Rule::in(array_keys(self::TYPES))],
             'length'         => ['nullable', 'integer', 'min:1', 'max:255'],
             'default_value'  => ['nullable', 'string', 'max:255'],
             'comment'        => ['nullable', 'string', 'max:255'],
@@ -29,6 +30,7 @@ class TableFieldController extends Controller
             'is_nullable'    => ['boolean'],
             'auto_increment' => ['boolean'],
             'is_unsigned'    => ['boolean'],
+            'is_foreign'     => ['boolean'],
         ]);
         $fieldName = $currentField && $this->isProtectedField($tableName, $currentField) ? $currentField : strtolower(trim($validated['name']));
         if ((!$currentField || $currentField !== $fieldName) && Schema::hasColumn($tableName, $fieldName)) {
@@ -37,20 +39,61 @@ class TableFieldController extends Controller
         if ($this->isProtectedField($tableName, $currentField ?? $fieldName)) {
             $this->notify("Field '{$fieldName}' is protected.", 'error', 'name');
         }
-        $fieldType   = self::TYPES[$validated['type']];
-        $isAuto      = $request->boolean('auto_increment');
+        $foreignTable = null;
+        if ($isForeign) {
+            $selectedType = $validated['type'] ?? null;
+            if ($selectedType && !in_array($selectedType, ['int', 'bigint'], true)) {
+                $this->notify("El campo debe ser de tipo entero (int/bigint) para establecer una clave foránea.", 'error', 'type');
+            }
+            $foreignTable = str_starts_with($fieldName, 'id_') ? substr($fieldName, 3) : $fieldName;
+            if (!Schema::hasTable($foreignTable)) {
+                $this->notify("No hay una tabla válida '{$foreignTable}' para relacionar.", 'error', 'name');
+            }
+            $targetPk = "id_{$foreignTable}";
+            if (!Schema::hasColumn($foreignTable, $targetPk)) {
+                $this->notify("La tabla '{$foreignTable}' no posee una clave primaria válida ('{$targetPk}') para relacionar.", 'error', 'name');
+            }
+        }
+        $fieldType   = $isForeign ? 'integer' : self::TYPES[$validated['type']];
+        $isAuto      = !$isForeign && $request->boolean('auto_increment');
         $fieldLength = (int) ($validated['length'] ?? match ($fieldType) { 'string' => 50, 'integer', 'bigInteger', 'decimal' => 11, default => 0 });
-        Schema::table($tableName, function (Blueprint $t) use ($request, $tableName, $fieldName, $fieldType, $fieldLength, $isAuto, $validated, $currentField) {
+        $isNullable  = $request->boolean('is_nullable');
+        if ($currentField && !$isNullable) {
+            $defaultValue = $validated['default_value'] ?? match ($fieldType) {
+                'integer', 'bigInteger', 'decimal' => 0,
+                'boolean' => 0,
+                default => '',
+            };
+            DB::table($tableName)->whereNull($currentField)->update([$currentField => $defaultValue]);
+        }
+        $targetField = $currentField ?? $fieldName;
+        $foreignKeys = Schema::getForeignKeys($tableName);
+        $realFkName  = null;
+        foreach ($foreignKeys as $fk) {
+            if (in_array($targetField, $fk['columns'], true)) {
+                $realFkName = $fk['name'];
+                break;
+            }
+        }
+        if ($realFkName) {
+            Schema::table($tableName, function (Blueprint $t) use ($realFkName) {
+                try { $t->dropForeign($realFkName); } catch (\Throwable $e) {}
+            });
+        }
+        Schema::table($tableName, function (Blueprint $t) use ($request, $fieldName, $fieldType, $fieldLength, $isAuto, $validated, $currentField, $isNullable, $isForeign) {
             $activeField = $currentField ?? $fieldName;
             $col = match (true) {
-                $isAuto                 => $fieldType === 'bigInteger' ? $t->bigIncrements($activeField) : $t->increments($activeField),
+                $isForeign               => $t->integer($activeField),
+                $isAuto                  => $fieldType === 'bigInteger' ? $t->bigIncrements($activeField) : $t->increments($activeField),
                 $fieldType === 'string'  => $t->string($activeField, $fieldLength),
                 $fieldType === 'decimal' => $t->decimal($activeField, $fieldLength, 2),
                 $fieldType === 'integer' => $t->integer($activeField),
-                default                 => $t->{$fieldType}($activeField),
+                default                  => $t->{$fieldType}($activeField),
             };
-            if ($request->boolean('is_unsigned') && !$isAuto && in_array($fieldType, ['integer', 'bigInteger', 'decimal'], true)) $col->unsigned();
-            if ($request->boolean('is_nullable') && !$isAuto) $col->nullable();
+            if (!$isForeign && $request->boolean('is_unsigned') && !$isAuto && in_array($fieldType, ['integer', 'bigInteger', 'decimal'], true)) {
+                $col->unsigned();
+            }
+            if (!$isAuto) $col->nullable($isNullable);
             if (filled($validated['default_value'] ?? null) && !$isAuto) $col->default($validated['default_value'] === 'null' ? null : $validated['default_value']);
             if (filled($validated['comment'] ?? null)) $col->comment($validated['comment']);
             if (filled($ord = $validated['order'] ?? null)) {
@@ -63,6 +106,13 @@ class TableFieldController extends Controller
                 }
             }
         });
+        if ($isForeign && $foreignTable) {
+            Schema::table($tableName, function (Blueprint $t) use ($fieldName, $foreignTable) {
+                try {
+                    $t->foreign($fieldName)->references("id_{$foreignTable}")->on($foreignTable)->onDelete('cascade');
+                } catch (\Throwable $e) {}
+            });
+        }
         $action = $currentField ? 'updated' : 'created';
         return $this->notify("Field '{$fieldName}' {$action} successfully.");
     }
@@ -72,7 +122,20 @@ class TableFieldController extends Controller
         if ($this->isProtectedField($tableName, $field)) {
             return $this->notify("Field '{$field}' is protected and cannot be deleted.", 'error');
         }
-        Schema::table($tableName, fn (Blueprint $t) => $t->dropColumn($field));
+        $foreignKeys = Schema::getForeignKeys($tableName);
+        $realFkName  = null;
+        foreach ($foreignKeys as $fk) {
+            if (in_array($field, $fk['columns'], true)) {
+                $realFkName = $fk['name'];
+                break;
+            }
+        }
+        Schema::table($tableName, function (Blueprint $t) use ($field, $realFkName) {
+            if ($realFkName) {
+                try { $t->dropForeign($realFkName); } catch (\Throwable $e) {}
+            }
+            $t->dropColumn($field);
+        });
         return $this->notify("Field '{$field}' deleted successfully.");
     }
 }

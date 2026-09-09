@@ -18,7 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // 2. Ruta para cambiar de idioma
     
-Route::post('/locale', LocaleController::class)->name('locale');
+    Route::post('/locale', LocaleController::class)->name('locale');
 
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
