@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Command, CommandInput } from "@/components/ui/command"
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, ChevronsUpDown } from "lucide-react"
 import { NewRecordButton } from "@/components/new-record-button"
 import { InfoButton } from "@/components/info-button"
 import { SmartPopover } from "@/components/smart-popover"
@@ -21,20 +21,23 @@ const OptionItem = memo(({ id, label, isSelected, onSelect }: { id: any; label: 
   )
 })
 OptionItem.displayName = "OptionItem"
-export const FormSelectAsync = memo(({ id, name, value: valueProp, defaultValue, placeholder = "-", disabled = false, className, onSelect }: FormSelectAsyncProps) => {
+export const FormSelectAsync = memo(({ id, name, value: valueProp, defaultValue, placeholder = "", disabled = false, className, onSelect }: FormSelectAsyncProps) => {
   const {
     value, open, setOpen, search, setSearch, loadingLista, selectedLabel,
     filteredOptions, tableName, crudEndpoint, handleRefresh, handleSelectOption
   } = useFormSelectAsync({ name, valueProp, defaultValue, onSelect })
   const currentValStr = useMemo(() => value != null ? String(value) : "", [value])
   const triggerButton = useMemo(() => (
-    <div className="relative w-full">
-      <Input id={id} disabled={disabled} value={selectedLabel} placeholder={placeholder} readOnly className={className ?? "w-full cursor-pointer pr-8"} />
-      {value && (
-        <div className="absolute right-1 top-1/2 -translate-y-1/2" onClick={(e) => e.stopPropagation()}>
-          <InfoButton row_id={value} tableName={tableName} endpoint={crudEndpoint} onSuccess={handleRefresh} />
-        </div>
-      )}
+    <div className="relative w-full flex items-center">
+      <Input id={id} disabled={disabled} value={selectedLabel} placeholder={placeholder} readOnly className={`pr-14 w-full cursor-pointer text-left ${className ?? ""}`} />
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        {value && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <InfoButton row_id={value} tableName={tableName} endpoint={crudEndpoint} onSuccess={handleRefresh} />
+          </div>
+        )}
+        <ChevronsUpDown className="size-4 text-muted-foreground pointer-events-none shrink-0" />
+      </div>
     </div>
   ), [id, disabled, selectedLabel, placeholder, className, value, tableName, crudEndpoint, handleRefresh])
   return (

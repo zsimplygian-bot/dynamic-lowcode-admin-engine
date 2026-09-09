@@ -11,11 +11,12 @@ import { index as tablesIndex } from '@/routes/tables';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
-import { User, ShieldCheck, Palette, Compass, TableProperties, DatabaseZap } from 'lucide-react';
+import { User, ShieldCheck, Palette, Compass, TableProperties, DatabaseZap, Lock } from 'lucide-react';
 
 const sidebarNavItems: NavItem[] = [
     { title: 'Profile', href: editProfile(), icon: User },
     { title: 'Security', href: editSecurity(), icon: ShieldCheck },
+    { title: 'Roles & Access', href: '/settings/role', icon: Lock },
     { title: 'Appearance', href: editAppearance(), icon: Palette },
     { title: 'Navigation', href: editNavigation(), icon: Compass },
     { title: 'Database', href: tablesIndex(), icon: TableProperties },

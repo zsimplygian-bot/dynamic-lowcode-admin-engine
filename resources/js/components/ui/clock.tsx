@@ -1,13 +1,35 @@
+import { memo } from "react"
 import { ClockIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
-export const Clock = (props: any) => (
-  <div className="relative w-full">
-    <Input
-      {...props}
-      type="time"
-      className="w-full pr-8 [&::-webkit-calendar-picker-indicator]:hidden"
-    />
-    <ClockIcon className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-  </div>
-)
+interface ClockProps extends Omit<React.ComponentProps<typeof Input>, "onChange"> {
+  onChange?: (value: string) => void
+}
+
+export const Clock = memo(({ className, value = "", onChange, onClick, ...props }: ClockProps) => {
+  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    try {
+      e.currentTarget.showPicker?.()
+    } catch {}
+    onClick?.(e)
+  }
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-md flex items-center">
+      <Input
+        {...props}
+        type="time"
+        value={value}
+        onClick={handleClick}
+        onChange={(e) => onChange?.(e.target.value)}
+        className={cn(
+          "w-full pr-8 cursor-pointer [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer",
+          className
+        )}
+      />
+      <ClockIcon className="absolute right-2.5 size-5 text-muted-foreground pointer-events-none shrink-0" />
+    </div>
+  )
+})
+Clock.displayName = "Clock"

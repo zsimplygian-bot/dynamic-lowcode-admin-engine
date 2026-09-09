@@ -30,7 +30,7 @@ function DynamicCard({ label, count, icon, colorClass, tableName, isPrimary }) {
             </div>
             <div className="flex shrink-0 flex-col gap-1">
                 <NewRecordButton {...{ tableName }} />
-                <SmartButton {...{ href: `/tables/${tableName}`, icon: ExternalLink, variant: 'outline', tooltip: 'Ir a lista' }} />
+                <SmartButton {...{ href: `/table/${tableName}`, icon: ExternalLink, variant: 'outline', tooltip: 'Ir a lista' }} />
             </div>
         </div>
     );

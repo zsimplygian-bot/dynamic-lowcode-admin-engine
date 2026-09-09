@@ -8,7 +8,7 @@ class DynamicCRUDController extends Controller
     use HasDynamicFileUpload, HasDynamicValidation, HasNotify, HasProtectedTables;
     protected function getModel(string $tableName): DynamicModel
     {
-        $this->validateTable($tableName); return DynamicModel::fromTable($tableName);
+        return DynamicModel::fromTable($tableName);
     }
     public function show(string $tableName, string $id): JsonResponse
     {

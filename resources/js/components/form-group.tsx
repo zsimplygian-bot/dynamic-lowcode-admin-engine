@@ -33,6 +33,7 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
   const minLen = field.minLength ?? field.minlength
   const maxLen = field.maxLength ?? field.maxlength
   const common = { id: name, name, disabled, required: field.required, placeholder: field.placeholder, ...(isControlled ? { value: strVal } : { defaultValue: strVal }) }
+
   switch (field.type) {
     case "textarea": 
       return <Textarea {...common} rows={field.rows ?? 3} minLength={minLen} maxLength={maxLen} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
@@ -48,7 +49,8 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
       )
     case "time":
       return (
-        <><input type="hidden" name={name} value={strVal} />
+        <>
+          <input type="hidden" name={name} value={strVal} />
           <Clock value={strVal} disabled={disabled} required={field.required} placeholder={field.placeholder} onChange={(v) => onChange?.(name, v)} />
         </>
       )
@@ -64,12 +66,12 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
       )
     }
     case "file":
-    case "image": return <FormFilePicker id={name} name={name} defaultValue={strVal} accept={field.accept} required={field.required} disabled={disabled} onChange={(e: any) => onChange?.(name, e?.target?.files?.[0] ?? e)} />
-    case "color": return <Input {...common} type="color" onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
+    case "image": 
+      return <FormFilePicker id={name} name={name} defaultValue={strVal} accept={field.accept ?? (field.type === "image" ? "image/*" : undefined)} required={field.required} disabled={disabled} onChange={(e: any) => onChange?.(name, e?.target?.files?.[0] ?? e)} />
+    case "color": 
+      return <Input {...common} type="color" onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
     default: 
-      return ( <Input {...common} type={field.type || "text"} min={field.min} max={field.max} minLength={minLen} maxLength={maxLen} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} 
-        />
-      )
+      return <Input {...common} type={field.type || "text"} min={field.min} max={field.max} minLength={minLen} maxLength={maxLen} onChange={onChange ? (e) => onChange(name, e.target.value) : undefined} />
   }
 })
 RenderControl.displayName = "RenderControl"
