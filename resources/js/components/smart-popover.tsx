@@ -1,6 +1,5 @@
 import React, { useState, memo } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
 export interface SmartPopoverProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -13,25 +12,19 @@ export interface SmartPopoverProps {
   size?: "sm" | "md" | "lg" | string
   className?: string
 }
-
 const SIZE_MAP: Record<string, string> = { sm: "w-48", md: "w-64", lg: "w-80" }
-
 export const SmartPopover = memo(({
-  open, onOpenChange, trigger, title, description, children, align = "start", side = "bottom", size, className, ...props
+  open, onOpenChange, trigger, title, description, children, align = "center", side = "bottom", size, className, ...props
 }: SmartPopoverProps) => {
   const [internalOpen, setInternalOpen] = useState(false)
-
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
-
   const handleOpenChange = (state: boolean) => {
     if (!isControlled) setInternalOpen(state)
     onOpenChange?.(state)
   }
-
   const close = () => handleOpenChange(false)
   const sizeClass = size ? (SIZE_MAP[size] ?? size) : "w-auto"
-
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange} {...props}>
       {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
@@ -47,5 +40,4 @@ export const SmartPopover = memo(({
     </Popover>
   )
 })
-
 SmartPopover.displayName = "SmartPopover"
