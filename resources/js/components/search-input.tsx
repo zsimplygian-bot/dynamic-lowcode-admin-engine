@@ -1,67 +1,51 @@
-import { forwardRef, useState, useMemo, KeyboardEvent, type InputHTMLAttributes } from 'react';
-import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { SmartButton } from '@/components/smart-button';
-import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
-export interface SearchInputProps<T> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children'> {
-    items?: T[];
-    searchKey?: keyof T | ((item: T) => string);
-    value?: string;
-    defaultValue?: string;
-    onChange?: (value: string) => void;
-    onClear?: () => void;
-    onSearchSubmit?: (value: string) => void;
-    filterOnEnter?: boolean;
-    children?: (props: { filteredItems: T[]; resetSearch: () => void; search: string }) => React.ReactNode;
-}
-const EMPTY_ITEMS: any[] = []; // Referencia estática para no invalidar el useMemo
-const getItemValue = <T,>(item: T, searchKey?: keyof T | ((item: T) => string)): string => {
-    if (typeof searchKey === 'function') return searchKey(item);
-    if (searchKey) return String(item[searchKey] ?? '');
-    return String((item as any)?.label ?? (item as any)?.name ?? '');
-};
-export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps<any>>(
-    ({ items = EMPTY_ITEMS, searchKey, value: valueProp, defaultValue = '', onChange, onClear, onSearchSubmit, filterOnEnter = false, placeholder, className, children, ...props }, ref) => {
-        const t = useTranslation();
-        const [search, setSearch] = useState(valueProp ?? defaultValue);
-        const currentVal = valueProp !== undefined ? valueProp : search;
-        const handleUpdate = (val: string) => {
-            if (valueProp === undefined) setSearch(val);
-            onChange?.(val);
-            if (!filterOnEnter) onSearchSubmit?.(val);
-        };
-        const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-            if (filterOnEnter && e.key === 'Enter') {
-                e.preventDefault();
-                onSearchSubmit?.(currentVal);
-            }
-        };
-        const handleClear = () => {
-            handleUpdate('');
-            onClear?.();
-            if (filterOnEnter) onSearchSubmit?.('');
-        };
-        const filteredItems = useMemo(() => {
-            const q = currentVal.trim().toLowerCase();
-            if (!q || !items.length) return items;
-            return items.filter((item) => getItemValue(item, searchKey).toLowerCase().includes(q));
-        }, [items, currentVal, searchKey]);
-        return (
-            <div className="w-full flex flex-col gap-1">
-                <div className="relative flex items-center w-full">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none z-10 shrink-0" />
-                    <Input ref={ref} type="text" placeholder={placeholder ?? t("Search...")} value={currentVal} onChange={(e) => handleUpdate(e.target.value)} onKeyDown={handleKeyDown}
-                        className={cn("pl-9 pr-9", className)} {...props} />
-                    {Boolean(currentVal) && (
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center z-10">
-                            <SmartButton icon={X} size="xs" variant="ghost" tooltip={t("Clear")} onClick={handleClear} />
-                        </div>
-                    )}
-                </div>
-                {children?.({ filteredItems, resetSearch: handleClear, search: currentVal })}
-            </div>
-        );
+import { useState } from "react"
+import { Search, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { SmartButton } from "@/components/smart-button"
+import { useTranslation } from "@/hooks/use-translation"
+export const SearchInput = ({ items = [], searchKey, value: valueProp, defaultValue = "", onChange, onSearchSubmit, filterOnEnter = false, placeholder, className = "",
+  disabled, children, ...props }: any) => {
+  const t = useTranslation()
+  const [internal, setInternal] = useState(valueProp ?? defaultValue)
+  const [submitted, setSubmitted] = useState(valueProp ?? defaultValue)
+  const search = valueProp !== undefined ? valueProp : internal
+  const trigger = (v: string) => {
+    setSubmitted(v)
+    ;(onSearchSubmit ?? onChange)?.(v)
+  }
+  const setVal = (v: string) => {
+    if (valueProp === undefined) setInternal(v)
+    if (!filterOnEnter) trigger(v)
+  }
+  const handleKeyDown = (e: any) => {
+    if (filterOnEnter && e.key === "Enter") {
+      e.preventDefault()
+      trigger(search)
     }
-);
-SearchInput.displayName = 'SearchInput';
+    props.onKeyDown?.(e)
+  }
+  const reset = () => {
+    if (valueProp === undefined) setInternal("")
+    trigger("")
+  }
+  const activeQuery = filterOnEnter ? submitted : search
+  const regex = activeQuery ? new RegExp(activeQuery, "i") : null
+  const filtered = regex ? items.filter((i: any) => regex.test(String(typeof searchKey === "function" ? searchKey(i) : (i?.[searchKey] ?? i?.label ?? i?.name ?? i)))) : items
+  return (
+    <div className="w-full flex flex-col gap-1">
+      <div className="relative flex items-center w-full">
+        <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
+        <Input value={search} disabled={disabled} onChange={(e) => setVal(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder ?? t("Search...")}
+          className={`pl-8 pr-8 ${className}`} {...props} />
+        {search && ( <div className="absolute right-1 top-1/2 -translate-y-1/2"> <SmartButton icon={X} size="xs" variant="ghost" tooltip={t("Clear")} onClick={reset}/> </div> )}
+      </div>
+      {children && (
+        <div className="max-h-70 overflow-y-auto space-y-0.5">
+          {filtered.length === 0 ? ( <div className="py-2 text-center text-sm text-muted-foreground">{activeQuery ? t("No matches found.") : t("No options.")}</div>
+          ) : ( filtered.map((item: any, i: number) => children(item, reset, i)) )}
+        </div>
+      )}
+    </div>
+  )
+}
+export default SearchInput

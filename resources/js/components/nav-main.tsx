@@ -19,10 +19,8 @@ const NavLink = memo(function NavLink({ item, isCurrentUrl, ButtonComponent, t }
     const isActive = Boolean(item.href && isCurrentUrl(item.href));
     return (
         <ButtonComponent asChild={Boolean(item.href)} isActive={isActive} tooltip={item.items ? undefined : { children: t(item.title) }} className="w-full pr-2 [&_svg]:!size-5">
-            {item.href ? (
-                <Link href={item.href} prefetch className="flex items-center gap-2 w-full min-w-0"><NavIcon item={item} /><span className="truncate">{t(item.title)}</span></Link>
-            ) : (
-                <div className="flex items-center gap-2 w-full min-w-0"><NavIcon item={item} /><span className="truncate">{t(item.title)}</span></div>
+            {item.href ? ( <Link href={item.href} prefetch className="flex items-center gap-2 w-full min-w-0"><NavIcon item={item} /><span className="truncate">{t(item.title)}</span></Link>
+            ) : ( <div className="flex items-center gap-2 w-full min-w-0"><NavIcon item={item} /><span className="truncate">{t(item.title)}</span></div>
             )}
         </ButtonComponent>
     );
@@ -35,57 +33,41 @@ const MenuItem = memo(function MenuItem({ item, isCurrentUrl, t }: { item: Exten
                 <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={{ children: t(item.title) }} isActive={isChildActive} className="pr-2 [&_svg]:!size-5">
-                            <NavIcon item={item} />
-                            <span className="truncate">{t(item.title)}</span>
+                            <NavIcon item={item}/> <span className="truncate">{t(item.title)}</span>
                             <ChevronRight className="ml-auto shrink-0 transition-transform duration-200 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden transition-all duration-200 ease-in-out data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                         <SidebarMenuSub className="mr-0 pr-0">
                             {item.items.map((sub) => (
-                                <SidebarMenuSubItem key={sub.title} className="pr-0"><NavLink item={sub} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuSubButton} t={t} /></SidebarMenuSubItem>
+                                <SidebarMenuSubItem key={sub.title} className="pr-0"><NavLink item={sub} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuSubButton} t={t}/></SidebarMenuSubItem>
                             ))}
                         </SidebarMenuSub>
                     </CollapsibleContent>
                 </SidebarMenuItem>
             </Collapsible>
-        );
-    }
+        ); }
     return (<SidebarMenuItem><NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} t={t} /></SidebarMenuItem>);
 });
+const flatten = (items: ExtendedNavItem[]): ExtendedNavItem[] =>
+    items.flatMap((i) => [...(i.href ? [i] : []), ...(i.items ? flatten(i.items) : [])]);
 export function NavMain({ items = [] }: { items: ExtendedNavItem[] }) {
     const { isCurrentUrl } = useCurrentUrl();
     const t = useTranslation();
     const [search, setSearch] = useState('');
-    const flattenSearchableItems = (navItems: ExtendedNavItem[]): ExtendedNavItem[] => {
-        return navItems.reduce<ExtendedNavItem[]>((acc, item) => {
-            if (item.href) acc.push(item);
-            if (item.items?.length) acc.push(...flattenSearchableItems(item.items));
-            return acc;
-        }, []);
-    };
-    const searchableItems = flattenSearchableItems(items);
+    const filtered = search.trim() ? flatten(items).filter((i) => new RegExp(search, 'i').test(t(i.title))) : null;
     return (
         <SidebarGroup className="px-2 py-0 gap-2">
             <SidebarGroupLabel className="flex items-center justify-between w-full">
-                <span>{t('Platform')}</span>
-                <SmartButton href="/settings/navigation" variant="ghost" icon={Pencil} size="xs" tooltip={t('Manage navigation')} />
+                <span>{t('Platform')}</span> <SmartButton href="/settings/navigation" variant="ghost" icon={Pencil} size="xs" tooltip={t('Manage navigation')} />
             </SidebarGroupLabel>
-            <SearchInput items={searchableItems} searchKey={(item) => t(item.title)} value={search} onChange={setSearch}>
-                {({ filteredItems }) => (
-                    <SidebarMenu className="mt-1">
-                        {search.trim() ? (
-                            filteredItems.map((item) => (
-                                <SidebarMenuItem key={`${item.title}-${item.href}`}>
-                                    <NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} t={t} />
-                                </SidebarMenuItem>
-                            ))
-                        ) : (
-                            items.map((item) => (<MenuItem key={item.title} item={item} isCurrentUrl={isCurrentUrl} t={t} />))
-                        )}
-                    </SidebarMenu>
-                )}
-            </SearchInput>
+            <SearchInput value={search} onChange={setSearch}/>
+            <SidebarMenu className="mt-1">
+                {filtered ? filtered.map((item) => (
+                    <SidebarMenuItem key={`${item.title}-${item.href}`}><NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} t={t}/></SidebarMenuItem> ))
+                : items.map((item) => (<MenuItem key={item.title} item={item} isCurrentUrl={isCurrentUrl} t={t} />))}
+            </SidebarMenu>
         </SidebarGroup>
     );
 }
+export default NavMain;
