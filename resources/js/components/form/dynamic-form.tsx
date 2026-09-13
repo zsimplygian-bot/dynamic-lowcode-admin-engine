@@ -6,7 +6,6 @@ import { AsyncState } from "@/components/async-state"
 import { ACTION_MODES, ActionMode } from "@/lib/action-modes"
 import { useApi } from "@/hooks/use-api"
 import { useTranslation } from "@/hooks/use-translation"
-
 interface DynamicFormProps {
   mode?: ActionMode
   tableName?: string
@@ -16,52 +15,36 @@ interface DynamicFormProps {
   initialValues?: Record<string, any>
   onSuccess?: (pageProps?: any) => void
 }
-
 export const DynamicForm = ({ mode = "store", tableName, endpoint, recordId, fields: passedFields, initialValues, onSuccess }: DynamicFormProps) => {
   const t = useTranslation()
   const config = ACTION_MODES[mode] ?? ACTION_MODES.store
   const isReadonly = mode === "info" || mode === "delete"
   const [customValues, setCustomValues] = useState<Record<string, any>>({})
-
   useEffect(() => { setCustomValues({}) }, [initialValues, recordId])
-
   const schemaUrl = !passedFields && tableName ? `/schema/${tableName}/fields` : null
   const recordUrl = recordId && tableName && mode !== "store" ? `/crud/${tableName}/${recordId}` : null
-
   const { data: fetchedFields, isLoading: loadingSchema } = useApi<FieldConfig[]>(schemaUrl, { select: (r: any) => r?.data ?? r })
   const { data: fetchedValues, isLoading: loadingRecord } = useApi<Record<string, any>>(recordUrl, { select: (r: any) => r?.data ?? r })
-
   const activeFields = passedFields ?? fetchedFields ?? []
   const isLoading = Boolean((schemaUrl && (loadingSchema || !fetchedFields)) || (recordUrl && (loadingRecord || !fetchedValues)))
-
   const handleCustomChange = useCallback((name: string, value: any) => {
     setCustomValues((prev) => (prev[name] === value ? prev : { ...prev, [name]: value }))
   }, [])
-
   const action = endpoint ?? `/crud/${tableName}${recordId && mode !== "store" ? `/${recordId}` : ""}`
   const formValues = useMemo(() => ({ ...initialValues, ...fetchedValues, ...customValues }), [initialValues, fetchedValues, customValues])
   const formOptions = useMemo(() => ({ preserveScroll: true, onSuccess: (p: any) => onSuccess?.(p?.props) }), [onSuccess])
-
   return (
     <AsyncState isLoading={isLoading}>
       <Form key={recordId ? `record-${recordId}-${Boolean(fetchedValues)}` : "new"} action={action} method={config.method ?? "post"}
         options={formOptions} onSubmit={(e) => { if (mode === "info") e.preventDefault() }} className="flex flex-col h-full min-h-0">
         {({ processing, errors }) => (
-          <>
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          <><div className="flex-1 overflow-y-auto space-y-2 pr-1">
               <FormGroup fields={activeFields} errors={errors} values={formValues} isReadonly={isReadonly} onChange={handleCustomChange} />
             </div>
             {mode !== "info" && (
               <div className="pt-4 flex items-center justify-end shrink-0 w-full gap-2 mt-2">
-                <SmartButton
-                  type="submit"
-                  label={t(config.label)}
-                  loadingLabel={t(config.loadingLabel)}
-                  variant={config.variant}
-                  buttonColor={config.buttonColor}
-                  icon={config.icon}
-                  isLoading={processing}
-                />
+                <SmartButton type="submit" label={t(config.label)} loadingLabel={t(config.loadingLabel)} variant={config.variant}
+                  buttonColor={config.buttonColor} icon={config.icon} isLoading={processing} />
               </div>
             )}
           </>

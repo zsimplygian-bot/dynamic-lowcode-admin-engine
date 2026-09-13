@@ -16,24 +16,20 @@ import { SearchInput } from "@/components/search-input"
 import { Input } from "@/components/ui/input"
 import { useApi } from "@/hooks/use-api"
 import { useTranslation } from "@/hooks/use-translation"
-
 interface DynamicTableContentProps {
   tableName: string
   crudEndpoint?: string
   dataEndpoint?: string
   maxHeight?: string
 }
-
 const EMPTY_ARR: any[] = []
 const PAGE_SIZES = [10, 15, 20, 50, 100, 250, 500]
 const DEFAULT_STORAGE = {
   query: { pageIndex: 0, pageSize: undefined as number | undefined, search: "", appliedSearchValues: {}, dateRange: {}, sortBy: undefined, sortOrder: undefined },
   ui: { columnVisibility: {} as Record<string, boolean> },
 }
-
 export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/table/${tableName}/data`, maxHeight = "75vh" }: DynamicTableContentProps) {
   const t = useTranslation()
-
   // 1. Almacenamiento local síncrono
   const storageKey = `dt_${tableName}`
   const [storage, setStorage] = useState(() => {
@@ -45,7 +41,6 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       return DEFAULT_STORAGE
     }
   })
-
   const updateStorage = (updater: any) => {
     setStorage((prev: any) => {
       const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
@@ -53,20 +48,16 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       return next
     })
   }
-
   const clearStorage = () => {
     try { localStorage.removeItem(storageKey) } catch {}
     setStorage(DEFAULT_STORAGE)
   }
-
   const patchQuery = (patch: Record<string, any>, resetPage = false) =>
     updateStorage((prev: any) => ({ ...prev, query: { ...prev.query, ...patch, ...(resetPage && { pageIndex: 0 }) } }))
-
   // 2. Consulta API
   const { query, ui } = storage
   const { search = "", appliedSearchValues = {}, dateRange = {}, sortBy, sortOrder } = query
   const rawPageIndex = query.pageIndex || 0
-
   const apiConfig = useMemo(() => ({
     params: {
       ...appliedSearchValues,
@@ -78,14 +69,12 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       ...(dateRange.to && { to: dateRange.to }),
     }
   }), [query])
-
   const { data: res, isLoading: loading, error, refetch: fetchData } = useApi(dataEndpoint, { enabled: Boolean(dataEndpoint), config: apiConfig })
   const data = res?.data ?? EMPTY_ARR
   const columns = res?.columns ?? EMPTY_ARR
   const totalRows = res?.total ?? 0
   const backendPerPage = res?.per_page ?? 10
   const pageSize = query.pageSize || backendPerPage
-
   // 3. Columnas y ordenamiento
   const { columnVisibility, visibleColumns } = useMemo(() => {
     const visibility: Record<string, boolean> = {}
@@ -96,15 +85,12 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
     })
     return { columnVisibility: visibility, visibleColumns: visible }
   }, [columns, ui.columnVisibility])
-
   const toggleColumn = (accessor: string) =>
     updateStorage((prev: any) => ({ ...prev, ui: { ...prev.ui, columnVisibility: { ...prev.ui.columnVisibility, [accessor]: !columnVisibility[accessor] } } }))
-
   const handleSort = (accessor: string) => {
     const next = sortBy !== accessor ? "asc" : sortOrder === "asc" ? "desc" : undefined
     patchQuery({ sortBy: next ? accessor : undefined, sortOrder: next }, true)
   }
-
   // 4. Paginación
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
   const pageIndex = Math.max(0, Math.min(rawPageIndex, totalPages - 1))
@@ -118,7 +104,6 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
     goToLastPage: () => goTo(totalPages),
     changePageSize: (size: number) => patchQuery({ pageSize: Math.max(size, 1) }, true),
   }
-
   // 5. Búsqueda y Helpers
   const idKey = `id_${tableName}`
   const getId = useCallback((row: any) => row?.[idKey] ?? row?.id, [idKey])
@@ -190,5 +175,4 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
     </div>
   )
 }
-
 export default DynamicTableContent

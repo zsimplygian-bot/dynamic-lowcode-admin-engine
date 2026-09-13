@@ -25,7 +25,7 @@ const parseDate = (v?: any) => {
 }
 const fmt = (d?: Date, sep = "-") => 
   d ? `${d.getFullYear()}${sep}${String(d.getMonth() + 1).padStart(2, "0")}${sep}${String(d.getDate()).padStart(2, "0")}` : ""
-export const DatePicker = memo(({ mode = "single", variant = "field", value, onChange, placeholder = "-", disabled = false, className, iconSize = 21 }: DatePickerProps) => {
+export const DatePicker = memo(({ mode = "single", variant = "field", value, onChange, placeholder, disabled = false, className, iconSize = 21 }: DatePickerProps) => {
   const isField = variant === "field"
   const { selected, label } = useMemo(() => {
     if (mode === "single") {
@@ -44,10 +44,8 @@ export const DatePicker = memo(({ mode = "single", variant = "field", value, onC
       <Button variant={isField ? "ghost" : "default"} disabled={disabled} className={cn("cursor-pointer [&_svg]:pointer-events-none transition-colors", 
       isField ? inputStyles("h-9 items-center justify-between px-3 py-1 font-normal hover:bg-transparent", 
       label ? "hover:text-foreground" : "text-muted-foreground") : cn("flex h-9 items-center justify-center shrink-0", textLabel ? "gap-2 px-3" : "w-9 p-0 aspect-square"), className)}>
-        {isField ? (
-          <><span className="truncate">{textLabel}</span><CalendarIcon style={{ width: iconSize, height: iconSize }} className="shrink-0 text-muted-foreground ml-2" /></>
-        ) : (
-          <><CalendarIcon style={{ width: iconSize, height: iconSize }} className="shrink-0" />{textLabel && <span>{textLabel}</span>}</>
+        {isField ? ( <><span className="truncate">{textLabel}</span><CalendarIcon style={{ width: iconSize, height: iconSize }} className="shrink-0 text-muted-foreground ml-2" /></>
+        ) : ( <><CalendarIcon style={{ width: iconSize, height: iconSize }} className="shrink-0" />{textLabel && <span>{textLabel}</span>}</>
         )}
       </Button>
     }>
