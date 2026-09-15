@@ -3,7 +3,6 @@ import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SmartButton } from "@/components/smart-button"
 import { useTranslation } from "@/hooks/use-translation"
-
 export const SearchInput = ({ items = [], searchKey, value: valueProp, defaultValue = "", onChange, onSearchSubmit, filterOnEnter = false, placeholder, className = "",
   listClassName = "max-h-70 overflow-y-auto space-y-0.5", listStyle, actions, disabled, children, ...props }: any) => {
   const t = useTranslation()
@@ -36,10 +35,10 @@ export const SearchInput = ({ items = [], searchKey, value: valueProp, defaultVa
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2 w-full">
         <div className="relative flex items-center flex-1 min-w-0">
-          <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-2 size-5 text-muted-foreground pointer-events-none" />
           <Input value={search} disabled={disabled} onChange={(e) => setVal(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder ?? t("Search...")}
-            className={`pl-8 pr-8 ${className}`} {...props} />
-          {search && ( <div className="absolute right-1 top-1/2 -translate-y-1/2"> <SmartButton icon={X} size="xs" variant="ghost" tooltip={t("Clear")} onClick={reset}/> </div> )}
+            className={`pl-8 pr-8 text-sm ${className}`} {...props} />
+          {search && ( <div className="absolute right-1 top-1/2 -translate-y-1/2"> <SmartButton icon={X}  variant="ghost" tooltip={t("Clear")} onClick={reset}/> </div> )}
         </div>
         {typeof actions === "function" ? actions({ filtered, total: items.length, reset }) : actions}
       </div>

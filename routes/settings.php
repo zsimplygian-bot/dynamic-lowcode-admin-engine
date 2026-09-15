@@ -9,6 +9,7 @@ use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\TableController;
 use App\Http\Controllers\Settings\TableFieldController;
+use App\Http\Controllers\Settings\UserRoleController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -25,9 +26,11 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
     Route::put('/table/{table}/field/{field}', [TableFieldController::class, 'update'])->name('tables.fields.update');
     Route::delete('/table/{table}/field/{field}', [TableFieldController::class, 'destroy'])->name('tables.fields.destroy');
 
-    // Gestión de roles y asignación de usuarios
+    // Gestión de roles
     Route::resource('role', RoleController::class)->except(['create', 'edit'])->names('role');
-    Route::post('/role/users/{user}', [RoleController::class, 'assignRole'])->name('role.assign');
+
+    // Asignación de roles a usuarios (REST completo)
+    Route::resource('user-role', UserRoleController::class)->only(['store', 'update', 'destroy'])->names('user-role');
 });
 
 Route::middleware(['auth'])->group(function () {

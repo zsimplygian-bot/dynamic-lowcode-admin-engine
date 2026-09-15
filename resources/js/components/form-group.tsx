@@ -39,8 +39,7 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
     onChange(name, v)
   } : undefined
   const common = { id: name, name, disabled, required: field.required, placeholder: field.placeholder, onChange: handleChange, onSelect: handleChange,
-    ...(isFile ? { defaultValue: typeof value === "string" ? value : undefined } : isControlled ? { value: strVal } : { defaultValue: strVal })
-  }
+    ...(isFile ? { defaultValue: typeof value === "string" ? value : undefined } : isControlled ? { value: strVal } : { defaultValue: strVal })}
   switch (field.type) {
     case "checkbox": return (
       <div className="flex items-center space-x-2">
@@ -55,8 +54,8 @@ const RenderControl = memo(({ field, name, value, disabled, onChange }: { field:
       const [d = "", t = ""] = strVal.split(" ")
       return (
         <div className="grid grid-cols-2 gap-1.5">
-          <DatePicker {...common} value={d} onChange={(v) => handleChange?.(`${v || d} ${t || "00:00"}`.trim())} />
-          <Clock {...common} value={t} onChange={(v) => handleChange?.(`${d} ${v || t}`.trim())} />
+          <DatePicker id={`${name}-date`} disabled={disabled} required={field.required} value={d} onChange={(v) => handleChange?.(`${v || d} ${t || "00:00"}`.trim())} />
+          <Clock id={`${name}-time`} disabled={disabled} required={field.required} value={t} onChange={(v) => handleChange?.(`${d || "0000-00-00"} ${v || t}`.trim())} />
         </div>
       )
     }

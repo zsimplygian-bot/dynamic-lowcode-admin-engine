@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
 import { NewRecordButton } from '@/components/new-record-button';
 import { SmartButton } from '@/components/smart-button';
 import { DynamicIcon } from '@/components/dynamic-icon';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 const ENTITIES_SCHEMA = [
     { key: 'cliente', label: 'Cliente', color: 'bg-rose-500', icon: 'Users', isPrimary: true },
     { key: 'mascota', label: 'Mascota', color: 'bg-emerald-500', icon: 'PawPrint', isPrimary: true },
@@ -36,12 +36,11 @@ function DynamicCard({ label, count, icon, colorClass, tableName, isPrimary }) {
     );
 }
 export default function DynamicCards({ counts = {} }) {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useLocalStorage('dynamic_cards_is_open', true);
     const renderGrid = (items, gridClasses) => (
         <div className={`grid gap-3 ${gridClasses}`}>
             {items.map((item) => (
-                <DynamicCard key={item.key} {...{ label: item.label, count: counts?.[item.key], icon: item.icon, colorClass: item.color, 
-                    tableName: item.key, isPrimary: item.isPrimary }} />
+                <DynamicCard key={item.key} {...{ label: item.label, count: counts?.[item.key], icon: item.icon, colorClass: item.color, tableName: item.key, isPrimary: item.isPrimary }} />
             ))}
         </div>
     );
@@ -49,7 +48,7 @@ export default function DynamicCards({ counts = {} }) {
         <div className="w-full rounded-2xl">
             <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase">REGISTROS ACTUALES</h2>
-                <SmartButton {...{ onClick: () => setIsOpen(!isOpen), icon: isOpen ? ChevronUp : ChevronDown, variant: 'ghost' }} />
+                <SmartButton {...{ onClick: () => setIsOpen((prev) => !prev), icon: isOpen ? ChevronUp : ChevronDown, variant: 'ghost' }} />
             </div>
             <div className="flex flex-col gap-4 pt-2">
                 {renderGrid(ENTITIES_SCHEMA.filter(i => i.isPrimary), "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4")}
