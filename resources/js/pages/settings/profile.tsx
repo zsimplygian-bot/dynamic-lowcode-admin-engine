@@ -9,24 +9,18 @@ import { useTranslation } from '@/hooks/use-translation'
 import { edit } from '@/routes/profile'
 import { send } from '@/routes/verification'
 import type { Auth } from '@/types'
-
 type PageProps = { auth: Auth }
-
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
   const t = useTranslation()
   const { auth } = usePage<PageProps>().props
-
   return (
-    <>
-      <Head title={t('Profile settings')} />
+    <><Head title={t('Profile settings')} />
       <h1 className="sr-only">{t('Profile settings')}</h1>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Heading variant="small" title={t('Profile')} description={t('Update your profile photo, name, and email address')} />
         <Form {...ProfileController.update.form()} options={{ preserveScroll: true }} className="space-y-6">
           {({ processing, errors }) => (
-            <>
-              <FormGroup
-                errors={errors}
+            <><FormGroup errors={errors}
                 fields={[
                   { id: 'avatar', name: 'avatar', label: t('Profile photo'), type: 'image', defaultValue: auth.user.avatar },
                   { id: 'name', name: 'name', label: t('Name'), type: 'text', placeholder: t('Full name'), defaultValue: auth.user.name },
@@ -59,5 +53,4 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     </>
   )
 }
-
 Profile.layout = { breadcrumbs: [{ title: 'Profile settings', href: edit() }] }

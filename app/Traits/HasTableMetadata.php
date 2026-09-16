@@ -1,76 +1,41 @@
 <?php
-
 namespace App\Traits;
-
 use Illuminate\Support\Facades\Cache;
-
 trait HasTableMetadata
 {
     use HasSchemaCache, InfersColumnDefinition, HasExtraColumns;
-
-    protected array $hiddenByDefault = [
-        'creater_id' => true,
-        'updated_at' => true,
-        'updater_id' => true,
-    ];
-
-    protected array $nonSearchableColumns = [
-        'creater_id' => true,
-        'created_at' => true,
-        'updater_id' => true,
-        'updated_at' => true,
-    ];
-
-    protected array $nonSearchableTypes = [
-        'file'  => true,
-        'image' => true,
-    ];
-
-    public function getTableColumns(string $table): array
+    protected array $hiddenByDefault = ['creater_id', 'updated_at', 'updater_id'];
+    protected array $nonSearchableColumns = ['creater_id', 'created_at', 'updater_id', 'updated_at'];
+    protected array $nonSearchableTypes = ['file', 'image'];
+    public function getTableMetadata(string $table): array
     {
-        // Cambiamos el prefijo para invalidar automáticamente la caché previa
-        return Cache::rememberForever("schema_metadata_v3_{$table}", function () use ($table) {
-            $rawColumns = $this->getRawTableColumns($table);
-            if (empty($rawColumns)) return [];
-
-            $pkName = "id_{$table}";
+        return Cache::rememberForever("schema_datatable_columns_v1_{$table}", function () use ($table) {
             $columns = [];
-
-            foreach ($rawColumns as $col) {
+            foreach ($this->getTableColumns($table) as $col) {
                 $base = $this->buildBaseColumnDefinition($col, $table);
                 $name = $base['name'];
-
-                $isForeign = ($name !== $pkName) && str_starts_with($name, 'id_');
-
-                // 1. Inyecta la columna base (FK)
-                $columns[] = [
-                    'accessor'   => $name,
-                    'header'     => $base['label'],
-                    'type'       => $base['type'],
-                    'searchable' => !isset($this->nonSearchableColumns[$name]) && !isset($this->nonSearchableTypes[$base['type']]),
-                    'hidden'     => $isForeign || isset($this->hiddenByDefault[$name]),
+                $type = $base['type'] ?? 'text';
+                $isForeign = $base['is_foreign'];
+                $searchable = !in_array($name, $this->nonSearchableColumns, true) && !in_array($type, $this->nonSearchableTypes, true);
+                $hidden = $isForeign || in_array($name, $this->hiddenByDefault, true);
+                $column = [
+                    'accessor' => $name,
+                    'header' => $base['label'],
+                    'type' => $type,
                 ];
-
-                // 2. Inyecta la columna descriptiva asociada usando inferLabel
+                if ($searchable) $column['searchable'] = true;
+                if ($hidden) $column['hidden'] = true;
+                $columns[] = $column;
                 if ($isForeign) {
                     $relatedName = substr($name, 3);
                     $columns[] = [
-                        'accessor'   => $relatedName,
-                        'header'     => $this->inferLabel($relatedName, null, false), // <--- Genera 'ESTADO CITA' en lugar de 'ESTADO_CITA'
-                        'type'       => 'text',
-                        'searchable' => false,
-                        'hidden'     => false,
+                        'accessor' => $relatedName,
+                        'header' => $this->inferLabel($relatedName, null, false),
                     ];
                 }
             }
             $this->appendExtraColumnsToMetadata($table, $columns);
             return $columns;
         });
-    }
-
-    public function clearTableMetadataCache(string $table): void
-    {
-        $this->clearSchemaCache($table);
-        Cache::forget("schema_metadata_v3_{$table}");
     }
 }

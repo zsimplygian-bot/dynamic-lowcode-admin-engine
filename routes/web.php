@@ -21,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/locale', LocaleController::class)->name('locale');
 
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
+    
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
     Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
 

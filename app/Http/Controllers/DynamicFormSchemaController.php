@@ -7,58 +7,29 @@ use Illuminate\Support\Facades\Cache;
 class DynamicFormSchemaController extends Controller
 {
     use HasSchemaCache, InfersColumnDefinition;
-    private const IGNORED_COLUMNS = [
-        'created_at'        => true,
-        'updated_at'        => true,
-        'deleted_at'        => true,
-        'remember_token'    => true,
-        'creater_id'        => true,
-        'creator_id'        => true,
-        'updater_id'        => true,
-        'deleter_id'        => true,
-        'user_id_created'   => true,
-    ];
+    private const IGNORED_FIELDS = ['created_at', 'updated_at', 'creater_id', 'updater_id', 'remember_token'];
     public function getTableSchema(string $table): array
     {
-        return Cache::rememberForever("compiled_schema_v3_{$table}", function () use ($table) {
-            $rawColumns = $this->getRawTableColumns($table);
-            if (empty($rawColumns)) return [];
+        return Cache::rememberForever("schema_form_fields_v1_{$table}", function () use ($table) {
             $fields = [];
-            foreach ($rawColumns as $col) {
+            foreach ($this->getTableColumns($table) as $col) {
                 $base = $this->buildBaseColumnDefinition($col, $table);
                 $name = $base['name'];
-                if (isset(self::IGNORED_COLUMNS[$name])) continue;
+                if (in_array($name, self::IGNORED_FIELDS, true)) continue;
                 $isPrimary = $base['is_primary'];
-                $isForeign = $base['is_foreign'];
-                $type      = $isPrimary ? 'hidden' : $base['type'];
+                $type = $isPrimary ? 'hidden' : $base['type'];
+                $isRequired = !$base['is_nullable'] && !$isPrimary;
                 $fieldData = [
-                    'name'        => $name,
-                    'label'       => $base['label'],
-                    'type'        => $type,
-                    'required'    => !$base['is_nullable'] && !$isPrimary,
-                    'is_foreign'  => $isForeign,
+                    'name' => $name,
+                    'label' => $base['label'],
+                    'type' => $type,
                 ];
-                if ($type === 'image') {
-                    $fieldData['accept'] = 'image/*';
-                }
+                if ($isRequired) $fieldData['required'] = true;
+                if ($type === 'image') $fieldData['accept'] = 'image/*';
                 $fields[] = $fieldData;
             }
             return $fields;
         });
     }
-    public function fields(string $table): JsonResponse
-    {
-        $schema = $this->getTableSchema($table);
-        if (empty($schema)) {
-            return response()->json(['message' => "La tabla '{$table}' no existe o no contiene columnas registradas."], 404);
-        }
-        
-        // Devolvemos el array directamente
-        return response()->json($schema);
-    }
-    public function clearFormSchemaCache(string $table): void
-    {
-        $this->clearSchemaCache($table);
-        Cache::forget("compiled_schema_v3_{$table}");
-    }
+    public function fields(string $table): JsonResponse { return response()->json($this->getTableSchema($table)); }
 }

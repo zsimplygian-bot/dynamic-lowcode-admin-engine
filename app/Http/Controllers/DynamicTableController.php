@@ -9,20 +9,23 @@ use Inertia\Response;
 class DynamicTableController extends Controller
 {
     use HasTableMetadata, HasDynamicQuery;
-    public function show(string $table): Response { return Inertia::render('dynamic-table', ['tableName' => $table]); }
+    public function show(string $table): Response
+    {
+        return Inertia::render('dynamic-table', ['tableName' => $table]);
+    }
     public function data(Request $request, string $table): JsonResponse
     {
         if (!$this->hasTableInSchema($table)) {
             return response()->json(['message' => "La tabla '{$table}' no existe."], 404);
         }
-        $columns = $this->getTableColumns($table);
+        $columns = $this->getTableMetadata($table);
         $perPage = (int) $request->input('per_page', 10);
-        $data    = $this->buildTableQuery($request, $table, $columns)->paginate($perPage);
+        $data = $this->buildTableQuery($request, $table, $columns)->paginate($perPage);
         return response()->json([
-            'columns'  => $columns,
-            'data'     => $data->items(),
-            'total'    => $data->total(),
-            'page'     => $data->currentPage(),
+            'columns' => $columns,
+            'data' => $data->items(),
+            'total' => $data->total(),
+            'page' => $data->currentPage(),
             'per_page' => $data->perPage(),
         ]);
     }

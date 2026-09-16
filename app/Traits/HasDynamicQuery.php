@@ -49,7 +49,7 @@ trait HasDynamicQuery
             }
         }
         // 5. Ordenamiento dinámico (Soporta subconsultas y columnas extras)
-        $sortBy    = $request->input('sort_by');
+        $sortBy = $request->filled('sort_by') ? $request->input('sort_by') : null;
         $sortOrder = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
         $pk        = in_array("id_{$table}", array_column($columns, 'accessor')) ? "id_{$table}" : "id";
         $rawCol  = $sortBy ? ($specialMap[$sortBy] ?? "{$table}.{$sortBy}") : "{$table}.{$pk}";

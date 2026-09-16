@@ -28,9 +28,7 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
 
     // Gestión de roles
     Route::resource('role', RoleController::class)->except(['create', 'edit'])->names('role');
-
-    // Asignación de roles a usuarios (REST completo)
-    Route::resource('user-role', UserRoleController::class)->only(['store', 'update', 'destroy'])->names('user-role');
+    Route::resource('user-role', UserRoleController::class)->except(['create', 'edit'])->names('user-role');
 });
 
 Route::middleware(['auth'])->group(function () {
