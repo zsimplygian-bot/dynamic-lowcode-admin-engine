@@ -16,5 +16,5 @@ export default function AppearanceToggleDropdown() {
       { label: t("System"), icon: Monitor, action: () => updateAppearance("system") },
     ], [updateAppearance, t]
   );
-  return ( <div> <SmartDropdown label={t("Toggle theme")} icon={CurrentIcon} variant="ghost" items={items} /> </div> );
+  return ( <div> <SmartDropdown buttonLabel="Toggle theme" label={t("Toggle theme")} icon={CurrentIcon} variant="ghost" items={items} /> </div> );
 }

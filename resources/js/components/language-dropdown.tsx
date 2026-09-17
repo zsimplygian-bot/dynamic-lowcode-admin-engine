@@ -21,7 +21,7 @@ export const LanguageDropdown = memo(function LanguageDropdown() {
   }));
 
   return (
-    <SmartDropdown
+    <SmartDropdown buttonLabel="Change languaje"
       icon={Languages}
       variant="ghost"
       label="Language / Idioma / 言語"

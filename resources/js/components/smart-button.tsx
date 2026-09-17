@@ -6,6 +6,7 @@ import { SmartTooltip } from "@/components/smart-tooltip"
 import { SmartModal } from "@/components/smart-modal"
 import { Loader2, Undo2 } from "lucide-react"
 import { BaseTriggerProps, RenderIcon, sizeClasses, colorClasses } from "@/lib/trigger-utils"
+
 export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, BaseTriggerProps {
   iconPosition?: "left" | "right"
   label?: React.ReactNode
@@ -16,10 +17,12 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   confirmation?: { title?: React.ReactNode; description?: React.ReactNode; confirmText?: string; cancelText?: string }
   href?: string
   prefetch?: boolean
+  onSuccess?: (...args: any[]) => void
 }
+
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
   { icon: Icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
-    buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, ...props
+    buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
   }, ref
 ) => {
   const [openConfirm, setOpenConfirm] = useState(false)
@@ -53,15 +56,16 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
     <>{rendered}
       <SmartModal {...{ open: openConfirm, onOpenChange: setOpenConfirm, title: confirmation.title ?? "Confirmar acción", description: confirmation.description, size: "sm" }}>
         {({ close }) => (
-          <div className="flex justify-center gap-50 pt-2">
+          <div className="flex justify-center gap-2 pt-2">
             <Button {...{ variant: "outline", disabled: isConfirmLoading, onClick: close }}> <RenderIcon icon={Undo2} size={modalIconSize} />
               <span>{confirmation.cancelText ?? "Cancelar"}</span>
             </Button>
-            <Button {...{ variant,  disabled: isConfirmLoading, className: cn(buttonColor && variant === "default" && colorClasses[buttonColor]),
+            <Button {...{ variant, disabled: isConfirmLoading, className: cn(buttonColor && variant === "default" && colorClasses[buttonColor]),
                 onClick: async (e) => {
                   try {
                     setIsConfirmLoading(true)
                     await onClick?.(e)
+                    onSuccess?.()
                     close()
                   } finally {
                     setIsConfirmLoading(false)

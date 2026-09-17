@@ -17,7 +17,7 @@ class DynamicActivityController extends Controller
             return response()->json(['message' => "La tabla '{$table}' no existe."], 404);
         }
 
-        $columns = $this->getTableColumns($table);
+        $columns = $this->getTableMetadata($table);
         $records = $this->buildTableQuery($request, $table, $columns)->get();
 
         return response()->json([

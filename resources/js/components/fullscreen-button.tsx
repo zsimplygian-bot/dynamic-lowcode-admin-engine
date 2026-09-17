@@ -21,6 +21,6 @@ export function useFullscreen() {
 export const FullscreenButton = () => {
   const { isFullscreen, toggleFullscreen } = useFullscreen()
   const t = useTranslation()
-  return ( <SmartButton variant="ghost" onClick={toggleFullscreen} icon={isFullscreen ? Minimize : Maximize} tooltip={isFullscreen ? t("Exit fullscreen") : t("Fullscreen")} />
+  return ( <SmartButton variant="ghost" onClick={toggleFullscreen} icon={isFullscreen ? Minimize : Maximize} label={isFullscreen ? t("Exit fullscreen") : t("Fullscreen")} />
   )
 }

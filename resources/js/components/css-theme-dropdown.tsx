@@ -45,7 +45,7 @@ export default function CssThemeDropdown() {
   ], [])
 
   return (
-    <SmartDropdown icon={Paintbrush} variant="ghost" label={t("Customization")} items={items} disableHover 
+    <SmartDropdown icon={Paintbrush} variant="ghost" buttonLabel="Customization" label={t("Customization")} items={items} disableHover 
       labelExtra={<SmartBadge label={currentMode} className="uppercase" />} />
   )
 }
