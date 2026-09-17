@@ -22,7 +22,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
           {({ processing, errors }) => (
             <><FormGroup errors={errors}
                 fields={[
-                  { id: 'avatar', name: 'avatar', label: t('Profile photo'), type: 'image', defaultValue: auth.user.avatar },
+                  { id: 'avatar', name: 'avatar', label: t('Profile photo'), type: 'file', accept: 'image/*', defaultValue: auth.user.avatar },
                   { id: 'name', name: 'name', label: t('Name'), type: 'text', placeholder: t('Full name'), defaultValue: auth.user.name },
                   { id: 'email', name: 'email', label: t('Email'), type: 'email', placeholder: t('Email address'), defaultValue: auth.user.email },
                 ]}

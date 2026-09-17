@@ -29,13 +29,13 @@ class AppearanceController extends Controller
     {
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
-            'app_icon' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'app_icon' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
         ]);
         $settings = $this->getSettings();
         // Pasa directamente el array u objeto de settings
         $data = $this->handleFilesUpload($request, 'icons', $validated, $settings);
         Storage::disk('local')->put($this->jsonPath, json_encode(array_merge($settings, $data), JSON_PRETTY_PRINT));
         Cache::forget('inertia_appearance_settings');
-        return $this->notify('Appearance settings updated.', 'success', 'appearance.edit');
+        return $this->notify('Appearance settings updated.');
     }
 }

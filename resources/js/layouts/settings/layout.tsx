@@ -11,22 +11,20 @@ import { index as tablesIndex } from '@/routes/tables';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
-import { User, ShieldCheck, Palette, Compass, TableProperties, DatabaseZap, Lock } from 'lucide-react';
-
+import { User, ShieldCheck, Palette, Compass, TableProperties, DatabaseZap, Lock, KeyRound } from 'lucide-react';
 const sidebarNavItems: NavItem[] = [
     { title: 'Profile', href: editProfile(), icon: User },
     { title: 'Security', href: editSecurity(), icon: ShieldCheck },
     { title: 'Roles & Access', href: '/settings/role', icon: Lock },
+    { title: 'Permissions', href: '/settings/permission', icon: KeyRound },
     { title: 'Appearance', href: editAppearance(), icon: Palette },
     { title: 'Navigation', href: editNavigation(), icon: Compass },
     { title: 'Database', href: tablesIndex(), icon: TableProperties },
     { title: 'Cache & System', href: '/settings/cache', icon: DatabaseZap },
 ];
-
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const t = useTranslation();
-
     return (
         <div className="px-4 py-6">
             <Heading title={t('Settings')} description={t('Manage your profile and account settings')} />

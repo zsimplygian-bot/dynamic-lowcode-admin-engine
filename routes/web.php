@@ -43,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('api')->group(function () {
         // Rutas específicas primero
-
+        Route::get('/dashboard/metrics/{table}', [DashboardController::class, 'metrics'])->name('dashboard.metrics');
         Route::controller(CitaController::class)->name('citas.')->group(function () {
             Route::get('/citas/proximas', 'proximas')->name('proximas');
             Route::post('/cita/{id}/atender', 'atender')->name('atender');

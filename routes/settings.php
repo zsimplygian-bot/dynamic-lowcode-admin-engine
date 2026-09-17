@@ -5,11 +5,14 @@ use App\Http\Controllers\Settings\CacheController;
 use App\Http\Controllers\Settings\DatabaseIEController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController;
-use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\TableController;
 use App\Http\Controllers\Settings\TableFieldController;
+use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\UserRoleController;
+use App\Http\Controllers\Settings\PermissionController;
+use App\Http\Controllers\Settings\RolePermissionController;
+use App\Http\Controllers\Settings\UserPermissionController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +32,9 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
     // Gestión de roles
     Route::resource('role', RoleController::class)->except(['create', 'edit'])->names('role');
     Route::resource('user-role', UserRoleController::class)->except(['create', 'edit'])->names('user-role');
+    Route::resource('permission', PermissionController::class)->except(['create', 'edit'])->names('permission');
+    Route::resource('role-permission', RolePermissionController::class)->except(['create', 'edit'])->names('role-permission');
+    Route::resource('user-permission', UserPermissionController::class)->except(['create', 'edit'])->names('user-permission');
 });
 
 Route::middleware(['auth'])->group(function () {

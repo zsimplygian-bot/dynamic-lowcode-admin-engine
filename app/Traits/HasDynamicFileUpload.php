@@ -10,27 +10,29 @@ trait HasDynamicFileUpload
 
     protected function handleFilesUpload(Request $request, string $tabla, array $data, object|array|null $existingRecord = null): array
     {
-        $existingRecord = (object) ($existingRecord ?? []);
-
         // 1. Manejo de eliminación explícita (_remove_{key})
-        if (!empty((array) $existingRecord)) {
-            foreach ((array) $existingRecord as $key => $value) {
-                if ($request->boolean("_remove_{$key}")) {
-                    $this->deleteFileAndThumb($value);
-                    $data[$key] = null;
+        if ($existingRecord) {
+            $recordData = is_object($existingRecord) ? $existingRecord : (object) $existingRecord;
+
+            foreach ($request->all() as $paramKey => $paramValue) {
+                if (str_starts_with($paramKey, '_remove_') && ($paramValue === '1' || $paramValue === 1 || $paramValue === true || $paramValue === 'true')) {
+                    $fileKey = str_replace('_remove_', '', $paramKey);
+                    $oldValue = is_object($recordData) ? ($recordData->{$fileKey} ?? null) : ($recordData[$fileKey] ?? null);
+
+                    if (!empty($oldValue)) {
+                        $this->deleteFileAndThumb($oldValue);
+                    }
+                    $data[$fileKey] = null;
                 }
             }
         }
 
         // 2. Obtener archivos válidos
         $files = array_filter($request->allFiles(), fn($f) => $f->isValid());
-        if (empty($files)) {
-            return $data;
-        }
 
         // 3. Procesar y guardar nuevos archivos
         foreach ($files as $key => $file) {
-            $oldValue = $existingRecord->{$key} ?? null;
+            $oldValue = is_object($existingRecord) ? ($existingRecord->{$key} ?? null) : ($existingRecord[$key] ?? null);
             if (!empty($oldValue)) {
                 $this->deleteFileAndThumb($oldValue);
             }
