@@ -8,9 +8,7 @@ import { SmartTooltip } from '@/components/smart-tooltip'
 import { FormGroup } from '@/components/form-group'
 import { DatePicker, type DateRange } from '@/components/date-picker'
 import { AsyncState } from '@/components/async-state'
-
 const EMPTY_ARR: any[] = []
-
 const TABLES_OPTIONS = [
   { id: 'cliente', label: 'Cliente' },
   { id: 'mascota', label: 'Mascota'},
@@ -24,43 +22,34 @@ const TABLES_OPTIONS = [
   { id: 'raza', label: 'Raza' },
   { id: 'motivo', label: 'Motivo' },
 ]
-
 const SIZE_OPTIONS = [
   { id: 'full', label: 'Todo el largo (100%)' },
   { id: 'half', label: 'La mitad (50%)' },
   { id: 'third', label: 'El tercio (33%)' },
   { id: 'quarter', label: 'Un cuarto (25%)' },
 ]
-
 const DEFAULT_WIDGETS: any[] = []
-
 const TYPE_BTNS = [
   { type: 'counter', icon: Hash, tip: 'Contador' },
   { type: 'bar', icon: BarChart2, tip: 'Barras' },
 ] as const
-
 const SIZE_CONFIG: Record<string, string> = {
   full: 'col-span-12',
   half: 'col-span-12 md:col-span-6',
   third: 'col-span-12 md:col-span-6 lg:col-span-4',
   quarter: 'col-span-12 md:col-span-6 lg:col-span-3',
 }
-
 const CARD_CONFIG_FIELDS = [
   { name: 'title', label: 'WIDGET TITLE', required: true },
   { name: 'tableName', label: 'TABLE', type: 'select', options: TABLES_OPTIONS },
   { name: 'size', label: 'WIDTH', type: 'select', options: SIZE_OPTIONS },
 ]
-
 const fmtDate = (d?: string) => d ? d.split('-').reverse().join('/') : ''
-
 const WidgetConfigModal = memo(function WidgetConfigModal({ widget, onSave }: any) {
   const [form, setForm] = useState({ title: widget.title || 'NEW METRIC', tableName: widget.tableName, size: widget.size ?? 'half' })
-
   const handleOpen = (open: boolean) => {
     if (open) setForm({ title: widget.title || 'NEW METRIC', tableName: widget.tableName, size: widget.size ?? 'half' })
   }
-
   return (
     <SmartModal title="CONFIGURAR TARJETA" onOpenChange={handleOpen} trigger={<SmartButton icon={Settings2} variant="outline" size="sm" tooltip="Configurar" />} >
       {({ close }) => (
@@ -75,29 +64,24 @@ const WidgetConfigModal = memo(function WidgetConfigModal({ widget, onSave }: an
     </SmartModal>
   )
 })
-
 const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate, onRemove }: any) {
   const [dateRange, setDateRange] = useState<DateRange>({})
-
   const apiConfig = useMemo(() => ({
     params: {
       ...(dateRange?.from && { from: String(dateRange.from) }),
       ...(dateRange?.to && { to: String(dateRange.to) }),
     }
   }), [dateRange?.from, dateRange?.to])
-
   const { data: res, isLoading: loading, error, refetch } = useApi(
     widget.tableName ? `/api/dashboard/metrics/${widget.tableName}` : null,
     { config: apiConfig }
   )
-
   const series = res?.series ?? EMPTY_ARR
   const count = res?.count ?? initialCount
   const maxValue = useMemo(() => Math.max(...series.map((s: any) => Number(s.y) || 0), 1), [series])
   const avgValue = series.length ? (count / series.length).toFixed(1) : '0'
   const sizeSpan = SIZE_CONFIG[widget.size ?? 'half'] ?? 'col-span-12 md:col-span-6'
   const displayTitle = widget.title?.trim() || 'CUSTOM METRIC'
-
   return (
     <div className={`flex flex-col justify-between rounded-2xl border bg-card p-6 shadow-xs gap-4 overflow-hidden transition-all ${sizeSpan}`}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -111,11 +95,9 @@ const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate
             <SmartButton key={type} icon={icon} size="sm" variant={widget.type === type ? 'default' : 'outline'} onClick={() => onUpdate(widget.id, { type })} tooltip={tip} />
           ))}
           <WidgetConfigModal widget={widget} onSave={(patch: any) => onUpdate(widget.id, patch)} />
-          <SmartButton icon={Trash2} variant="destructive" size="sm" tooltip="Eliminar" onClick={() => onRemove(widget.id)}
-            confirmation={{ title: "Eliminar Tarjeta", description: "¿Estás seguro de que deseas eliminar esta tarjeta de métrica?" }} />
+          <SmartButton icon={Trash2} variant="destructive" size="sm" tooltip="Eliminar" onClick={() => onRemove(widget.id)} confirmation />
         </div>  
       </div>
-
       <div className="flex items-center justify-center min-h-[220px] w-full overflow-hidden">
         <AsyncState isLoading={loading} error={error} minHeight="min-h-[220px]" onRetry={refetch}>
           {widget.type === 'counter' ? (
@@ -149,36 +131,29 @@ const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate
     </div>
   )
 })
-
 export default function CustomDashboardWidgets({ counts = {} }: { counts?: Record<string, number> }) {
   const [widgets, setWidgets] = useLocalStorage('custom_dashboard_widgets', DEFAULT_WIDGETS)
-
   const addWidget = useCallback(() => {
     const uuid = typeof crypto !== 'undefined' && crypto.randomUUID 
       ? crypto.randomUUID() 
       : `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-
     setWidgets((prev: any[]) => [
       ...prev, 
       { id: uuid, title: 'NEW METRIC', tableName: 'cliente', type: 'counter', size: 'half' }
     ])
   }, [setWidgets])
-
   const removeWidget = useCallback((id: string) => {
     setWidgets((prev: any[]) => prev.filter((w) => w.id !== id))
   }, [setWidgets])
-
   const updateWidget = useCallback((id: string, patch: any) => {
     setWidgets((prev: any[]) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
   }, [setWidgets])
-
   return (
     <div className="w-full space-y-4 overflow-hidden">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-bold tracking-wider">CUSTOM METRICS</h2> 
+        <h2 className="text-sm font-bold tracking-wider">CUSTOM METRICS</h2>
         <SmartButton icon={Plus} label="Card" size="sm" variant="outline" onClick={addWidget} />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
         {widgets.map((widget: any) => (
           <WidgetCard key={widget.id} widget={widget} initialCount={counts[widget.tableName] ?? 0} onUpdate={updateWidget} onRemove={removeWidget} />

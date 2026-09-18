@@ -14,7 +14,7 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   tooltip?: React.ReactNode
   tooltipSide?: "top" | "right" | "bottom" | "left"
   isLoading?: boolean
-  confirmation?: { title?: React.ReactNode; description?: React.ReactNode; confirmText?: string; cancelText?: string }
+  confirmation?: boolean | { title?: React.ReactNode; description?: React.ReactNode; confirmText?: string; cancelText?: string }
   href?: string
   prefetch?: boolean
   onSuccess?: (...args: any[]) => void
@@ -52,13 +52,18 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
   ) : ( <Button {...buttonProps}>{content}</Button> )
   const rendered = tooltip ? <SmartTooltip {...{ content: tooltip, side: tooltipSide }}>{buttonEl}</SmartTooltip> : buttonEl
   if (!confirmation) return rendered
+
+  const confirmConfig = typeof confirmation === "object" ? confirmation : {}
+  const modalTitle = confirmConfig.title ?? "Confirmar acción"
+  const modalDescription = confirmConfig.description ?? "¿Estás seguro de ejecutar esta acción?"
+
   return (
     <>{rendered}
-      <SmartModal {...{ open: openConfirm, onOpenChange: setOpenConfirm, title: confirmation.title ?? "Confirmar acción", description: confirmation.description, size: "sm" }}>
+      <SmartModal {...{ open: openConfirm, onOpenChange: setOpenConfirm, title: modalTitle, description: modalDescription, size: "sm" }}>
         {({ close }) => (
           <div className="flex justify-center gap-2 pt-2">
             <Button {...{ variant: "outline", disabled: isConfirmLoading, onClick: close }}> <RenderIcon icon={Undo2} size={modalIconSize} />
-              <span>{confirmation.cancelText ?? "Cancelar"}</span>
+              <span>{confirmConfig.cancelText ?? "Cancelar"}</span>
             </Button>
             <Button {...{ variant, disabled: isConfirmLoading, className: cn(buttonColor && variant === "default" && colorClasses[buttonColor]),
                 onClick: async (e) => {
@@ -75,7 +80,7 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
             >
               <span className="inline-flex items-center gap-1.5">
                 <RenderIcon icon={isConfirmLoading ? Loader2 : Icon} size={modalIconSize} className={isConfirmLoading ? "animate-spin" : undefined} />
-                <span>{isConfirmLoading ? "Cargando..." : (confirmation.confirmText ?? "Confirmar")}</span>
+                <span>{isConfirmLoading ? "Cargando..." : (confirmConfig.confirmText ?? "Confirmar")}</span>
               </span>
             </Button>
           </div>
