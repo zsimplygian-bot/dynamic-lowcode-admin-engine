@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { useVirtualList } from "@/hooks/use-virtual-list"
 import { useApi } from "@/hooks/use-api"
 import { useTranslation } from "@/hooks/use-translation"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { cn } from "@/lib/utils"
 const EMPTY_ARR: any[] = []
 const PAGE_SIZES = [10, 15, 20, 50, 100, 250, 500]
@@ -41,7 +42,7 @@ export const SmartTable = memo((props: any) => {
               {visibleColumns.map((col: any) => {
                 const isSorted = sortBy === col.accessor
                 return (
-                  <TableHead key={col.accessor} className="px-0 sticky top-0 bg-background z-10 shadow-sm whitespace-nowrap">
+                  <TableHead key={col.accessor} className="px-0 sticky top-0 bg-background z-10 shadow-sm whitespace-nowrap text-left">
                     <SmartButton label={col.header} size="sm" iconPosition="right" variant="ghost" onClick={() => handleSort?.(col.accessor)}
                       icon={!isSorted ? ChevronsUpDown : sortOrder === "desc" ? ChevronDown : ChevronUp}
                       className={cn("text-muted-foreground hover:text-foreground", isSorted && "text-primary opacity-100 font-medium")} />
@@ -54,11 +55,9 @@ export const SmartTable = memo((props: any) => {
           <TableBody>
             {isTableLoading || error ? (
               <TableRow><TableCell colSpan={totalCols} className="text-center"><AsyncState isLoading={isTableLoading} error={error} loadingLabel="Cargando información..." onRetry={fetchData} minHeight="min-h-[100px]" /></TableCell></TableRow>
-            ) : !totalRows ? (
-              <TableRow><TableCell colSpan={totalCols} className="text-center text-muted-foreground">No hay resultados disponibles.</TableCell></TableRow>
+            ) : !totalRows ? ( <TableRow><TableCell colSpan={totalCols} className="text-center text-muted-foreground">No hay resultados disponibles.</TableCell></TableRow>
             ) : (
-              <>
-                {virtualized && paddingTop > 0 && <tr style={{ height: `${paddingTop}px` }}><td colSpan={totalCols} className="p-0" /></tr>}
+              <>{virtualized && paddingTop > 0 && <tr style={{ height: `${paddingTop}px` }}><td colSpan={totalCols} className="p-0" /></tr>}
                 {visibleRows.map((row: any, i: number) => (
                   <TableRowMemo key={getRowKey?.(row, startIndex + i) ?? i} row={row} columns={visibleColumns} renderCell={renderCell} renderActions={renderActions} />
                 ))}
@@ -77,11 +76,11 @@ const SearchFormContent = memo(function SearchFormContent({ fields = EMPTY_ARR, 
   const has = Object.values(vals).some((v) => v != null && v !== "")
   if (!fields.length) return <span className="text-xs text-muted-foreground px-2 py-2">No hay campos disponibles</span>
   return (
-    <div className="flex flex-col gap-2 p-1" onClick={(e) => e.stopPropagation()}>
-      <div className="w-100 pl-2 max-h-[400px] overflow-y-auto">
+    <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+      <div className="w-100 pl-2 max-h-[400px] overflow-y-auto pr-1">
         <FormGroup fields={fields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
       </div>
-      <div className="flex items-center gap-2 pt-2 border-t">
+      <div className="flex items-center gap-2 pt-1 border-t">
         <SmartButton variant="default" size="sm" icon={Check} disabled={!has} className="flex-1 justify-center" onClick={() => has && onApply(vals)} label="Aplicar" />
         <ResetButton onReset={() => { setVals({}); onClear() }} canReset={has} size="sm" variant="ghost" className="flex-1 justify-center" label="Limpiar" tooltip="" />
       </div>
@@ -91,31 +90,29 @@ const SearchFormContent = memo(function SearchFormContent({ fields = EMPTY_ARR, 
 export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/table/${tableName}/data`, maxHeight = "75vh" }: any) {
   const baseId = useId()
   const t = useTranslation()
-  const storageKey = `dt_${tableName}`, idKey = `id_${tableName}`
   const [mounted, setMounted] = useState(false)
-  const [storage, setStorage] = useState(DEFAULT_STORAGE)
+  const storageKey = `dt_${tableName}`, idKey = `id_${tableName}`, columnsStorageKey = `dt_columns_${tableName}`
+  useEffect(() => setMounted(true), [])
+  const [storage, setStorage] = useLocalStorage(storageKey, DEFAULT_STORAGE)
+  const [persistedColumns, setPersistedColumns] = useLocalStorage<any[] | null>(columnsStorageKey, null)
+  const activeColumns = mounted ? persistedColumns : null
+  const columnsUrl = !activeColumns && tableName ? `/schema/${tableName}/columns` : null
+  const { data: fetchedColumns, isLoading: loadingColumns } = useApi<any[]>(columnsUrl, {
+    enabled: Boolean(columnsUrl),
+    select: (r: any) => r?.data ?? r
+  })
   useEffect(() => {
-    try {
-      const item = localStorage.getItem(storageKey)
-      if (item) setStorage({ ...DEFAULT_STORAGE, ...JSON.parse(item) })
-    } catch {}
-    setMounted(true)
-  }, [storageKey])
-  const save = useCallback((updater: any) => {
-    setStorage((prev: any) => {
-      const next = typeof updater === "function" ? updater(prev) : updater
-      try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch {}
-      return next
-    })
-  }, [storageKey])
+    if (mounted && fetchedColumns && fetchedColumns.length > 0 && !persistedColumns) {
+      setPersistedColumns(fetchedColumns)
+    }
+  }, [mounted, fetchedColumns, persistedColumns, setPersistedColumns])
+  const columns = activeColumns ?? fetchedColumns ?? EMPTY_ARR
+  const hasColumns = columns.length > 0
   const patchQuery = useCallback((patch: any, resetPage = false) => {
-    save((prev: any) => ({ ...prev, query: { ...prev.query, ...patch, ...(resetPage && { pageIndex: 0 }) } }))
-  }, [save])
-  const clearStorage = useCallback(() => {
-    try { localStorage.removeItem(storageKey) } catch {}
-    setStorage(DEFAULT_STORAGE)
-  }, [storageKey])
-  const { query = {}, ui = {} } = storage
+    setStorage((prev: any) => ({ ...prev, query: { ...prev.query, ...patch, ...(resetPage && { pageIndex: 0 }) } }))
+  }, [setStorage])
+  const clearStorage = useCallback(() => setStorage(DEFAULT_STORAGE), [setStorage])
+  const { query = {}, ui = {} } = mounted ? storage : DEFAULT_STORAGE
   const { search = "", appliedSearchValues = {}, dateRange = {}, sortBy, sortOrder, pageIndex: rawPageIndex = 0 } = query
   const apiConfig = useMemo(() => ({
     params: {
@@ -127,9 +124,13 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       ...(dateRange?.to && { to: dateRange.to }),
     }
   }), [appliedSearchValues, rawPageIndex, query.pageSize, search, sortBy, sortOrder, dateRange?.from, dateRange?.to])
-  const { data: res, isLoading: loading, error, refetch: fetchData } = useApi(dataEndpoint, { enabled: Boolean(dataEndpoint), config: apiConfig })
-  const data = res?.data ?? EMPTY_ARR, columns = res?.columns ?? EMPTY_ARR, totalRows = res?.total ?? 0
+  const { data: res, isLoading: loadingData, error, refetch: fetchData } = useApi(dataEndpoint, {
+    enabled: Boolean(dataEndpoint && hasColumns),
+    config: apiConfig
+  })
+  const data = res?.data ?? EMPTY_ARR, totalRows = res?.total ?? 0
   const pageSize = query.pageSize || res?.per_page || 10
+  const loading = !mounted || loadingColumns || loadingData
   const { columnVisibility, visibleColumns } = useMemo(() => {
     const vis: Record<string, boolean> = {}, list: any[] = []
     for (const c of columns) {
@@ -139,8 +140,9 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
     }
     return { columnVisibility: vis, visibleColumns: list }
   }, [columns, ui.columnVisibility])
-  const toggleColumn = useCallback((key: string) => { save((prev: any) => ({ ...prev, ui: { ...prev.ui, columnVisibility: { ...prev.ui?.columnVisibility, [key]: !columnVisibility[key] } } }))
-  }, [save, columnVisibility])
+  const toggleColumn = useCallback((key: string) => {
+    setStorage((prev: any) => ({ ...prev, ui: { ...prev.ui, columnVisibility: { ...prev.ui?.columnVisibility, [key]: !columnVisibility[key] } } }))
+  }, [setStorage, columnVisibility])
   const handleSort = useCallback((key: string) => {
     const next = sortBy !== key ? "asc" : sortOrder === "asc" ? "desc" : undefined
     patchQuery({ sortBy: next ? key : undefined, sortOrder: next }, true)
@@ -153,7 +155,7 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
   const getRowKey = useCallback((row: any, i: number) => getId(row) ?? i, [getId])
   const searchFields = useMemo(() => columns.filter((c: any) => c.searchable).map((c: any) => ({ id: c.accessor, name: c.accessor, label: c.header, type: c.type })), [columns])
   const activeSearchCount = Object.values(appliedSearchValues).filter(Boolean).length
-  const isFiltered = mounted && Boolean(activeSearchCount || search || dateRange?.from || dateRange?.to || sortBy || pageIndex > 0 || (query.pageSize && query.pageSize !== (res?.per_page ?? 10)))
+  const isFiltered = Boolean(activeSearchCount || search || dateRange?.from || dateRange?.to || sortBy || pageIndex > 0 || (query.pageSize && query.pageSize !== (res?.per_page ?? 10)))
   const searchMenuItems = useMemo<SDItem[]>(() => [
     { type: "custom", custom: <SearchFormContent fields={searchFields} appliedValues={appliedSearchValues} onApply={(v: any) => 
       patchQuery({ appliedSearchValues: v }, true)} onClear={() => patchQuery({ appliedSearchValues: {} }, true)} /> }
@@ -161,13 +163,30 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
   const toggleColumnItems = useMemo(() => columns.map(({ header: label, accessor: key, hidden }: any) => ({
     type: "checkbox" as const, label, checked: columnVisibility[key] ?? !hidden, onChange: () => toggleColumn(key)
   })), [columns, columnVisibility, toggleColumn])
-  const exportToExcel = useCallback(() => {
-    if (!data.length || !columns.length) return
-    const ws = XLSX.utils.aoa_to_sheet([columns.map((c: any) => c.header), ...data.map((r: any) => columns.map((c: any) => r[c.accessor]))])
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, tableName.toUpperCase())
-    XLSX.writeFile(wb, `${tableName}_${Date.now()}.xlsx`)
-  }, [tableName, columns, data])
+  const exportToExcel = useCallback(async () => {
+    if (!columns.length) return
+    try {
+      const q = new URLSearchParams()
+      if (apiConfig.params) {
+        Object.entries(apiConfig.params).forEach(([k, v]) => {
+          if (v != null && v !== "") q.append(k, String(v))
+        })
+      }
+      const rawRes = await fetch(`/table/${tableName}/export?${q.toString()}`)
+      const json = await rawRes.json()
+      const exportData = json?.data ?? EMPTY_ARR
+      if (!exportData.length) return
+      const ws = XLSX.utils.aoa_to_sheet([
+        columns.map((c: any) => c.header),
+        ...exportData.map((r: any) => columns.map((c: any) => r[c.accessor]))
+      ])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, tableName.toUpperCase())
+      XLSX.writeFile(wb, `${tableName}_${Date.now()}.xlsx`)
+    } catch (e) {
+      console.error("Error al exportar:", e)
+    }
+  }, [tableName, columns, apiConfig.params])
   const exportMenuItems = useMemo(() => [{ label: t("Excel"), color: "text-green-500", icon: FileSpreadsheetIcon, action: exportToExcel }], [exportToExcel, t])
   const pageSizeItems = useMemo(() => PAGE_SIZES.map((n) => ({ label: String(n), action: () => changePageSize(n) })), [changePageSize])
   const renderCell = useCallback((accessor: string, row: any, type?: string) => <CellFormatter accessor={accessor} row={row} rowId={getId(row)} type={type} tableName={tableName} />, [tableName, getId])
@@ -187,7 +206,7 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       <SmartTable data={data} visibleColumns={visibleColumns} sortBy={sortBy} sortOrder={sortOrder} loading={loading} error={error} handleSort={handleSort} getRowKey={getRowKey} fetchData={fetchData} renderCell={renderCell} renderActions={renderActions} />
       <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 md:gap-4 mt-2 text-sm w-full flex-none">
         <div className="flex items-center justify-center gap-2 pl-1">
-          <div className="text-left"> <div className="font-bold tabular-nums text-xs sm:text-sm">{totalRows}</div> <div className="text-muted-foreground">{t("Records")}</div> </div>
+          <div className="text-left"> <div className="font-bold">{totalRows}</div> <div className="text-muted-foreground">{t("Records")}</div> </div>
           <div className="flex items-center gap-1.5 leading-tight border-l pl-2">
             <span>{t("Page")}</span>
             <Input id={`${baseId}-page`} name={`${baseId}-page`} key={pageIndex} type="number" min={1} max={totalPages} defaultValue={pageIndex + 1} className="w-16 h-8 text-sm text-left" 
@@ -197,7 +216,7 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
         <div className="flex items-center justify-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-muted-foreground">
             <span>{t("Rows:")}</span>
-            <SmartDropdown buttonLabel={String(pageSize)} items={pageSizeItems} labelExtra={<Input id={`${baseId}-pagesize`} name={`${baseId}-pagesize`} type="number" min={1} placeholder={t("Custom...")} className="w-36 h-8 text-xs" 
+            <SmartDropdown buttonLabel={String(pageSize)} items={pageSizeItems} labelExtra={<Input id={`${baseId}-pagesize`} name={`${baseId}-pagesize`} type="number" min={1} placeholder={t("Custom...")} className="w-36 h-8 text-sm" 
               onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { changePageSize(+e.currentTarget.value); e.currentTarget.value = "" } }} />} />
           </div>
           <div className="flex items-center gap-1">

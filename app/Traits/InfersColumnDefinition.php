@@ -17,6 +17,12 @@ trait InfersColumnDefinition
 
     protected const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'creater_id', 'updater_id', 'remember_token'];
 
+    protected const IMAGE_KEYWORDS = ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto'];
+    protected const FILE_KEYWORDS  = ['documento', 'comprobante', 'pdf', 'file', 'anexo', 'archivo'];
+    protected const EMAIL_KEYWORDS = ['email', 'correo'];
+    protected const PHONE_KEYWORDS = ['telefono', 'celular', 'phone', 'tel'];
+    protected const PASS_KEYWORDS  = ['password', 'contrasena', 'contraseña', 'clave_acceso', 'clave'];
+
     protected function isSystemColumn(string $columnName, ?string $pkField = null): bool
     {
         return in_array($columnName, self::SYSTEM_COLUMNS, true) || ($pkField !== null && $columnName === $pkField);
@@ -42,6 +48,18 @@ trait InfersColumnDefinition
         return 'text';
     }
 
+    protected function resolveFormInputType(string $name, string $baseType, bool $isForeign): string
+    {
+        if ($isForeign) return 'select';
+        if (Str::contains($name, array_merge(self::IMAGE_KEYWORDS, self::FILE_KEYWORDS))) return 'file';
+        if ($baseType === 'text' || $baseType === 'textarea') {
+            if (Str::contains($name, self::EMAIL_KEYWORDS)) return 'email';
+            if (Str::contains($name, self::PHONE_KEYWORDS)) return 'tel';
+            if (Str::contains($name, self::PASS_KEYWORDS)) return 'password';
+        }
+        return $baseType;
+    }
+
     protected function inferLabel(string $columnName, ?string $comment = null, bool $isPrimaryId = false): string
     {
         if ($isPrimaryId) return 'ID';
@@ -58,14 +76,18 @@ trait InfersColumnDefinition
         $name = $col['name'] ?? '';
         $isPrimaryId = ($name === 'id' || $name === "id_{$tableName}");
         $isForeignKey = (!$isPrimaryId && str_starts_with($name, 'id_'));
+        $baseType = $this->inferBaseType($col, $tableName);
 
         return [
             'name'        => $name,
             'label'       => $this->inferLabel($name, $col['comment'] ?? null, $isPrimaryId),
-            'type'        => $this->inferBaseType($col, $tableName),
+            'base_type'   => $baseType,
+            'ui_type'     => $this->resolveFormInputType($name, $baseType, $isForeignKey),
             'is_primary'  => $isPrimaryId,
             'is_foreign'  => $isForeignKey,
             'is_nullable' => $col['nullable'] ?? true,
+            'db_type'     => $col['type'] ?? '',
+            'default'     => $col['default'] ?? null,
         ];
     }
 }

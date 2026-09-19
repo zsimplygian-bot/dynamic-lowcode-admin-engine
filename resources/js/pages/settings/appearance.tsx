@@ -3,6 +3,7 @@ import { Save } from 'lucide-react'
 import AppearanceTabs from '@/components/appearance-tabs'
 import Heading from '@/components/heading'
 import { SmartButton } from '@/components/smart-button'
+import CssThemeDropdown from "@/components/css-theme-dropdown"
 import { FormGroup } from '@/components/form-group'
 import { useTranslation } from '@/hooks/use-translation'
 import { edit as editAppearance } from '@/routes/appearance'
@@ -19,7 +20,10 @@ export default function Appearance() {
     <><Head title={t('Appearance settings')} />
       <div className="space-y-6">
         <Heading variant="small" title={t('Appearance')} description={t('Update appearance settings and preferences')} />
-        <AppearanceTabs />
+        <div className="flex items-center gap-2">
+                <AppearanceTabs />
+                <CssThemeDropdown />
+              </div>
         <Form {...AppearanceController.update.form()} options={{ preserveScroll: true }} className="space-y-6">
           {({ processing, errors }) => (
             <><FormGroup errors={errors}

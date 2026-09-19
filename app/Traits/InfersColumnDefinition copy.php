@@ -12,7 +12,7 @@ trait InfersColumnDefinition
         'time' => ['time'],
         'json' => ['json', 'jsonb'],
     ];
-    protected const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'creater_id',  'updater_id', 'remember_token',];
+    protected const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'creater_id',  'updater_id',];
     protected const FILE_KEYWORDS = ['archivo', 'imagen', 'icon', 'logo', 'avatar', 'photo', 'foto', 'documento', 'comprobante'];
     protected const EMAIL_KEYWORDS = ['email', 'correo'];
     protected const PHONE_KEYWORDS = ['telefono', 'celular', 'phone', 'tel'];

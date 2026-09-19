@@ -23,13 +23,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
     
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
+    Route::get('/schema/{table}/columns', [DynamicTableController::class, 'columns']);
     Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');
 
-    Route::controller(DynamicTableController::class)->prefix('table')->name('table.')->group(function () {
-        Route::get('/{table}', 'show')->name('show');
-        Route::get('/{table}/data', 'data')->name('data');
-        Route::get('/{table}/record/{id}', 'findRecord')->name('record');
-    });
+Route::controller(DynamicTableController::class)->prefix('table')->name('table.')->group(function () {
+    Route::get('/{table}', 'show')->name('show');
+    Route::get('/{table}/data', 'data')->name('data');
+    Route::get('/{table}/export', 'export')->name('export');
+    Route::get('/{table}/record/{id}', 'findRecord')->name('record');
+});
 
     Route::controller(DynamicCrudController::class)->prefix('crud/{tabla}')->name('crud.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -44,13 +46,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('api')->group(function () {
         // Rutas específicas primero
         Route::get('/dashboard/metrics/{table}', [DashboardController::class, 'metrics'])->name('dashboard.metrics');
+        
+        // RUTA ESPECÍFICA DE HISTORIA (AGREGAR AQUÍ)
+        Route::get('/historia/{id}/actividades', [HistoriaController::class, 'actividades'])->name('historia.actividades');
+
         Route::controller(CitaController::class)->name('citas.')->group(function () {
             Route::get('/citas/proximas', 'proximas')->name('proximas');
             Route::post('/cita/{id}/atender', 'atender')->name('atender');
             Route::post('/cita/{id}/cancelar', 'cancelar')->name('cancelar');
         });
 
-        // Ruta genérica dinámica al final
+        // Ruta genérica dinámica siempre al final
         Route::get('/{tableName}/{id}/actividades', [DynamicActivityController::class, 'actividades'])->name('dynamic.actividades');
     });
 });

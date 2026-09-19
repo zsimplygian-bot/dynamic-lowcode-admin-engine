@@ -1,8 +1,12 @@
 <?php
 namespace App\Traits;
+
 use Illuminate\Database\Query\Builder;
+
 trait HasExtraColumns
 {
+    use FormatsDateDifference;
+
     protected function getExtraColumnsConfig(string $table): array
     {
         return [
@@ -15,8 +19,27 @@ trait HasExtraColumns
                 'searchable' => true,
                 'rawQuery'   => '(SELECT COUNT(*) FROM mascota WHERE mascota.id_cliente = cliente.id_cliente)',
             ]],
+            'mascota' => [[
+                'accessor'   => 'edad',
+                'header'     => 'EDAD',
+                'type'       => 'text',
+                'after'      => 'fecha_nacimiento',
+                'sortable'   => true,
+                'searchable' => true,
+                'rawQuery'   => "CASE 
+                    WHEN TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE) < 1 
+                        THEN CONCAT(TIMESTAMPDIFF(MONTH, mascota.fecha_nacimiento, CURRENT_DATE), IF(TIMESTAMPDIFF(MONTH, mascota.fecha_nacimiento, CURRENT_DATE) = 1, ' mes', ' meses'))
+                    WHEN TIMESTAMPDIFF(MONTH, mascota.fecha_nacimiento, CURRENT_DATE) % 12 = 0 
+                        THEN CONCAT(TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE), IF(TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE) = 1, ' año', ' años'))
+                    ELSE CONCAT(
+                        TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE), IF(TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE) = 1, ' año y ', ' años y '),
+                        TIMESTAMPDIFF(MONTH, mascota.fecha_nacimiento, CURRENT_DATE) % 12, IF(TIMESTAMPDIFF(MONTH, mascota.fecha_nacimiento, CURRENT_DATE) % 12 = 1, ' mes', ' meses')
+                    )
+                END",
+            ]],
         ][$table] ?? [];
     }
+
     protected function appendExtraColumnsToMetadata(string $table, array &$columns): void
     {
         foreach ($this->getExtraColumnsConfig($table) as $extra) {
@@ -41,6 +64,7 @@ trait HasExtraColumns
             $idx !== false ? array_splice($columns, $idx + 1, 0, [$colDef]) : $columns[] = $colDef;
         }
     }
+
     protected function applyExtraColumns(Builder $query, string $table): array
     {
         $map = [];
