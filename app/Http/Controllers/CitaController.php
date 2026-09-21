@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 use App\Traits\HasNotify;
 use Illuminate\Http\{JsonResponse, RedirectResponse};
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
 class CitaController extends Controller
 {
     use HasNotify;
@@ -17,17 +19,27 @@ class CitaController extends Controller
             ->where('c.id_estado_cita', 1)
             ->where('c.fecha', '>=', now()->startOfDay())
             ->orderBy('c.fecha')
-            ->get();
+            ->get()
+            ->map(function ($cita) {
+                $fechaCita = Carbon::parse($cita->fecha);
+                $cita->tiempo_restante = $fechaCita->diffForHumans(['parts' => 2]);
+                $cita->es_hoy = $fechaCita->isToday();
+                return $cita;
+            });
+
         return response()->json($data);
     }
+
     public function atender(string $id): RedirectResponse
     {
         return $this->updateEstado($id, 2, 'Cita atendida correctamente.');
     }
+
     public function cancelar(string $id): RedirectResponse
     {
         return $this->updateEstado($id, 3, 'Cita cancelada correctamente.');
     }
+
     private function updateEstado(string $id, int $estado, string $msg, string $type = 'success'): RedirectResponse
     {
         DB::table('cita')->where('id_cita', $id)->update(['id_estado_cita' => $estado]);

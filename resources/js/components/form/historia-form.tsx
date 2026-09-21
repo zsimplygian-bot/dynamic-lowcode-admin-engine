@@ -81,9 +81,9 @@ export const HistoriaForm = memo(({
   }, [listaActividades])
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh] pr-1">
+    <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh]">
       <div className="w-full lg:w-[450px] shrink-0">{children}</div>
-      <div className="w-full lg:w-[500px] shrink-0 flex flex-col gap-3">
+      <div className="w-full lg:w-[485px] shrink-0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground tracking-wide uppercase">{sectionTitle}</h3>
           {isEditable && recordId && (

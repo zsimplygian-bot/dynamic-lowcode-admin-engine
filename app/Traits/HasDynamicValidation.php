@@ -35,14 +35,18 @@ trait HasDynamicValidation
 
                 if ($this->isSystemColumn($name)) continue;
 
-                $ruleType = self::TYPE_TO_RULE[$base['base_type']] ?? 'string';
+                $ruleType = str_starts_with($name, 'id_') 
+    ? 'numeric' 
+    : (self::TYPE_TO_RULE[$base['base_type']] ?? 'string');
                 $columnRules = [
                     (!$base['is_nullable'] && $base['default'] === null) ? 'required' : 'nullable',
                     ...(self::FIELD_PRESETS[$name] ?? [$ruleType])
                 ];
 
-                if ($ruleType === 'string' && $base['ui_type'] !== 'file' && !str_contains($base['db_type'], 'text') && sscanf($base['db_type'], '%*[^0-9]%d', $length) === 1) {
-                    $columnRules[] = "max:{$length}";
+                if ($ruleType === 'string' && $base['ui_type'] !== 'file' && !str_contains($base['db_type'], 'text')) {
+                    if (sscanf($base['db_type'], '%*[^0-9]%d', $length) === 1 && $length > 0) {
+                        $columnRules[] = "max:{$length}";
+                    }
                 }
 
                 $compiled[$name] = $columnRules;
@@ -62,4 +66,4 @@ trait HasDynamicValidation
 
         return $request->validate($rules);
     }
-}
+}   

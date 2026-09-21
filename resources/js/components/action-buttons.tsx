@@ -54,7 +54,7 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
     <div className="flex items-center gap-1">
       <SmartDropdown label={t("Actions")} icon={MoreVertical} variant="ghost" items={dropdownItems} size={size} {...props} />
       {action && activeConfig && (
-        <SmartModal open={true} onOpenChange={(o) => { if (!o) setAction(null) }} title={modalTitle} description={modalDescription} size={isHistoria ? "5xl" : "md"} className={isHistoria ? "max-w-[95vw] lg:max-w-[1000px]" : undefined}>
+        <SmartModal open={true} onOpenChange={(o) => { if (!o) setAction(null) }} title={modalTitle} description={modalDescription} size={isHistoria ? "5xl" : "md"} className={isHistoria ? "lg:max-w-[1000px]" : undefined}>
           {({ close }) => {
             const formContent = (
               <DynamicForm mode={action} recordId={row_id} tableName={tableName} fields={fields} initialValues={initialValues}
