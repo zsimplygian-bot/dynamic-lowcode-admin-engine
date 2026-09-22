@@ -31,6 +31,7 @@ class DynamicFormSchemaController extends Controller
                     'type'  => $type,
                 ];
 
+                if (!empty($base['options'])) $fieldData['options'] = $base['options'];
                 if (!$base['is_nullable'] && !$isPrimary) $fieldData['required'] = true;
                 if ($type === 'file') {
                     $fieldData['accept'] = Str::contains($name, self::IMAGE_KEYWORDS) ? 'image/*' : '*/*';

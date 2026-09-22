@@ -91,7 +91,7 @@ class TableController extends Controller
             Schema::create($newName, function ($table) use ($newName) {
                 $table->increments("id_{$newName}");
                 $table->string($newName, 50);
-                $table->integer('creator_id')->unsigned();
+                $table->integer('creater_id')->unsigned();
                 $table->integer('updater_id')->unsigned()->nullable();
                 $table->timestamps();
             }); 

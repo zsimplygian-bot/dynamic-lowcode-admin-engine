@@ -153,7 +153,7 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
   const changePageSize = useCallback((size: number) => patchQuery({ pageSize: Math.max(size, 1) }, true), [patchQuery])
   const getId = useCallback((row: any) => row?.[idKey] ?? row?.id, [idKey])
   const getRowKey = useCallback((row: any, i: number) => getId(row) ?? i, [getId])
-  const searchFields = useMemo(() => columns.filter((c: any) => c.searchable).map((c: any) => ({ id: c.accessor, name: c.accessor, label: c.header, type: c.type })), [columns])
+  const searchFields = useMemo(() => columns.filter((c: any) => c.searchable).map((c: any) => ({ id: c.accessor, name: c.accessor, label: c.header, type: c.type, options: c.options })), [columns])
   const activeSearchCount = Object.values(appliedSearchValues).filter(Boolean).length
   const isFiltered = Boolean(activeSearchCount || search || dateRange?.from || dateRange?.to || sortBy || pageIndex > 0 || (query.pageSize && query.pageSize !== (res?.per_page ?? 10)))
   const searchMenuItems = useMemo<SDItem[]>(() => [

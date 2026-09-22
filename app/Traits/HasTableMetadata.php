@@ -27,6 +27,10 @@ trait HasTableMetadata
                     'type'     => $uiType,
                 ];
 
+                if (!empty($base['options'])) {
+                    $column['options'] = $base['options'];
+                }
+
                 if (!in_array($name, self::NON_SEARCHABLE_COLS, true) && !in_array($uiType, self::NON_SEARCHABLE_TYPES, true)) {
                     $column['searchable'] = true;
                 }

@@ -3,6 +3,7 @@ namespace App\Traits;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 
 trait HasDynamicValidation
 {
@@ -35,17 +36,23 @@ trait HasDynamicValidation
 
                 if ($this->isSystemColumn($name)) continue;
 
-                $ruleType = str_starts_with($name, 'id_') 
-    ? 'numeric' 
-    : (self::TYPE_TO_RULE[$base['base_type']] ?? 'string');
                 $columnRules = [
                     (!$base['is_nullable'] && $base['default'] === null) ? 'required' : 'nullable',
-                    ...(self::FIELD_PRESETS[$name] ?? [$ruleType])
                 ];
 
-                if ($ruleType === 'string' && $base['ui_type'] !== 'file' && !str_contains($base['db_type'], 'text')) {
-                    if (sscanf($base['db_type'], '%*[^0-9]%d', $length) === 1 && $length > 0) {
-                        $columnRules[] = "max:{$length}";
+                if (!empty($base['options'])) {
+                    $columnRules[] = Rule::in(array_column($base['options'], 'id'));
+                } else {
+                    $ruleType = str_starts_with($name, 'id_') 
+                        ? 'numeric' 
+                        : (self::TYPE_TO_RULE[$base['base_type']] ?? 'string');
+
+                    array_push($columnRules, ...(self::FIELD_PRESETS[$name] ?? [$ruleType]));
+
+                    if ($ruleType === 'string' && $base['ui_type'] !== 'file' && !str_contains($base['db_type'], 'text')) {
+                        if (sscanf($base['db_type'], '%*[^0-9]%d', $length) === 1 && $length > 0) {
+                            $columnRules[] = "max:{$length}";
+                        }
                     }
                 }
 
@@ -66,4 +73,4 @@ trait HasDynamicValidation
 
         return $request->validate($rules);
     }
-}   
+}

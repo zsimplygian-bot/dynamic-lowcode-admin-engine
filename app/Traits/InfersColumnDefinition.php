@@ -9,13 +9,14 @@ trait InfersColumnDefinition
         'number'         => ['int', 'integer', 'bigint', 'smallint', 'tinyint', 'mediumint', 'int4', 'int8', 'decimal', 'numeric', 'float', 'double', 'real'],
         'textarea'       => ['text', 'mediumtext', 'longtext'],
         'checkbox'       => ['boolean', 'bool'],
+        'select'         => ['enum'],
         'date'           => ['date'],
         'datetime-local' => ['datetime', 'timestamp'],
         'time'           => ['time'],
         'json'           => ['json', 'jsonb'],
     ];
 
-    protected const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'creater_id', 'updater_id', 'remember_token'];
+    protected const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'creater_id', 'creator_id', 'updater_id'];
 
     protected const IMAGE_KEYWORDS = ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto'];
     protected const FILE_KEYWORDS  = ['documento', 'comprobante', 'pdf', 'file', 'anexo', 'archivo'];
@@ -26,6 +27,13 @@ trait InfersColumnDefinition
     protected function isSystemColumn(string $columnName, ?string $pkField = null): bool
     {
         return in_array($columnName, self::SYSTEM_COLUMNS, true) || ($pkField !== null && $columnName === $pkField);
+    }
+
+    protected function parseEnumOptions(string $typeDef): array
+    {
+        if (!str_starts_with($typeDef, 'enum(')) return [];
+        preg_match_all("/'([^']+)'/", $typeDef, $matches);
+        return array_map(fn($val) => ['id' => $val, 'label' => Str::title(str_replace('_', ' ', $val))], $matches[1] ?? []);
     }
 
     protected function inferBaseType(array $col, string $tableName): string
@@ -88,6 +96,7 @@ trait InfersColumnDefinition
             'is_nullable' => $col['nullable'] ?? true,
             'db_type'     => $col['type'] ?? '',
             'default'     => $col['default'] ?? null,
+            'options'     => $this->parseEnumOptions($col['type'] ?? ''),
         ];
     }
 }

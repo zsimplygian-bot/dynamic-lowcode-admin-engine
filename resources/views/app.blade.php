@@ -4,6 +4,22 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        @php
+            $jsonPath = storage_path('app/private/settings/appearance.json');
+            $appIcon = null;
+
+            if (file_exists($jsonPath)) {
+                $settings = json_decode(file_get_contents($jsonPath), true);
+                $appIcon = $settings['app_icon'] ?? null;
+            }
+
+            $iconUrl = $appIcon 
+                ? asset(ltrim(str_replace('\\', '/', $appIcon), '/')) . '?v=' . filemtime($jsonPath) 
+                : asset('favicon.ico');
+        @endphp
+
+        <link rel="icon" type="image/png" href="{{ $iconUrl }}">
+
         {{-- Inline script to apply custom theme CSS vars --}}
         <script>
             (function() {
