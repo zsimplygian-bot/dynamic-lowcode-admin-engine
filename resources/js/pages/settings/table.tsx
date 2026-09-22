@@ -9,6 +9,7 @@ import { SimpleList } from '@/components/simple-list';
 import DatabaseIEController from '@/actions/App/Http/Controllers/Settings/DatabaseIEController';
 import { Tabs } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
+
 export default function TablesManager({ dbTables = [] }) {
     const t = useTranslation();
     const [activeSection, setActiveSection] = useState('tables');
@@ -16,16 +17,23 @@ export default function TablesManager({ dbTables = [] }) {
         { id: 'tables', label: t('Tables'), icon: TableIcon },
         { id: 'backups', label: t('Backups'), icon: Database },
     ];
-    const fields = [ { name: 'name', label: t('TABLE NAME'), placeholder: t('e.g. users'), required: true } ];
-    const backupFields = [ { id: 'backup', label: t('Select .sql file'), type: 'file', accept: '.sql', required: true } ];
+
+    const fields = [{ name: 'name', label: t('TABLE NAME'), placeholder: t('e.g. users'), required: true }];
+    const backupFields = [
+        { id: 'backup', label: t('Select .sql file'), type: 'file', accept: '.sql', required: true },
+        { id: 'keep_protected', label: t('KEEP PROTECTED TABLES (USERS, ROLES, SESSIONS, ETC.)?'), type: 'checkbox', defaultValue: 1 },
+    ];
+
     return (
-        <>  <Head title={t('Table Management')} />
+        <>
+            <Head title={t('Table Management')} />
             <div className="space-y-4">
                 <Heading variant="small" title={t('Database')} description={t('Manage active tables, backups, and data imports.')} />
                 <Tabs activeTab={activeSection} onTabChange={setActiveSection} tabs={sectionTabs} />
                 {activeSection === 'tables' ? (
                     <SimpleList items={dbTables} icon={TableIcon} searchKey="name" endpoint="/settings/table" fields={fields} renderExtra={(table) => (
-                        <>  {table.rows_count !== undefined && <SmartBadge icon={Layers} label={`${table.rows_count}`} variant="secondary" />}
+                        <>
+                            {table.rows_count !== undefined && <SmartBadge icon={Layers} label={`${table.rows_count}`} variant="secondary" />}
                             {table.size_mb !== undefined && <SmartBadge label={`${table.size_mb} MB`} variant="secondary" />}
                             <SmartButton href={`/settings/table/${table.id ?? table.name.split('.').pop()}`} icon={Settings2} size="xs" tooltip={t('View columns')} />
                         </>
@@ -52,4 +60,5 @@ export default function TablesManager({ dbTables = [] }) {
         </>
     );
 }
+
 TablesManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/table' }] };

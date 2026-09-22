@@ -20,11 +20,10 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   onSuccess?: (...args: any[]) => void
 }
 
-export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
-  { icon: Icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
-    buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
-  }, ref
-) => {
+export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
+  icon: Icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
+  buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
+}, ref) => {
   const [openConfirm, setOpenConfirm] = useState(false)
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
   const text = label ?? children
@@ -33,11 +32,21 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
   const config = sizeClasses[size]
   const finalIconSize = iconSize ?? config.iconSize
   const modalIconSize = sizeClasses.md.iconSize
-  const iconEl = <RenderIcon icon={busy ? Loader2 : Icon} size={finalIconSize} className={busy ? "animate-spin" : undefined} />
-  const textEl = text && <span>{busy ? (loadingLabel ?? text) : text}</span>
-  const content = ( <span className="inline-flex items-center gap-2"> {iconPosition === "right" ? <>{textEl}{iconEl}</> : <>{iconEl}{textEl}</>} </span> )
+
   const ariaLabel = props["aria-label"] ?? (!text && typeof tooltip === "string" ? tooltip : undefined)
-  const finalClassName = cn( "", !text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], buttonClassName, className )
+  const finalClassName = cn(!text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], buttonClassName, className)
+
+  const iconEl = <RenderIcon icon={busy ? Loader2 : Icon} size={finalIconSize} className={busy ? "animate-spin" : undefined} />
+  const textEl = busy ? (loadingLabel ?? text) : text
+
+  const childrenContent = (
+    <>
+      {iconPosition === "left" && iconEl}
+      {textEl && <span>{textEl}</span>}
+      {iconPosition === "right" && iconEl}
+    </>
+  )
+
   const buttonProps = {
     ref, type: href ? undefined : type, variant, disabled: isDisabled, "aria-label": ariaLabel, className: finalClassName,
     onClick: confirmation ? (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -45,12 +54,20 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
     } : onClick,
     ...props,
   }
+
   const buttonEl = href ? (
-    <Button {...{ ...buttonProps, asChild: true }}>
-      <Link {...{ href: isDisabled ? "#" : href, prefetch, onClick: isDisabled ? (e) => e.preventDefault() : undefined, tabIndex: isDisabled ? -1 : undefined }}> {content} </Link>
+    <Button {...buttonProps} asChild>
+      <Link href={isDisabled ? "#" : href} prefetch={prefetch} onClick={isDisabled ? (e) => e.preventDefault() : undefined} tabIndex={isDisabled ? -1 : undefined}>
+        {childrenContent}
+      </Link>
     </Button>
-  ) : ( <Button {...buttonProps}>{content}</Button> )
-  const rendered = tooltip ? <SmartTooltip {...{ content: tooltip, side: tooltipSide }}>{buttonEl}</SmartTooltip> : buttonEl
+  ) : (
+    <Button {...buttonProps}>
+      {childrenContent}
+    </Button>
+  )
+
+  const rendered = tooltip ? <SmartTooltip content={tooltip} side={tooltipSide}>{buttonEl}</SmartTooltip> : buttonEl
   if (!confirmation) return rendered
 
   const confirmConfig = typeof confirmation === "object" ? confirmation : {}
@@ -59,29 +76,27 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>((
 
   return (
     <>{rendered}
-      <SmartModal {...{ open: openConfirm, onOpenChange: setOpenConfirm, title: modalTitle, description: modalDescription, size: "sm" }}>
+      <SmartModal open={openConfirm} onOpenChange={setOpenConfirm} title={modalTitle} description={modalDescription} size="sm">
         {({ close }) => (
           <div className="flex justify-center gap-2 pt-2">
-            <Button {...{ variant: "outline", disabled: isConfirmLoading, onClick: close }}> <RenderIcon icon={Undo2} size={modalIconSize} />
+            <Button variant="outline" disabled={isConfirmLoading} onClick={close}>
+              <RenderIcon icon={Undo2} size={modalIconSize} />
               <span>{confirmConfig.cancelText ?? "Cancelar"}</span>
             </Button>
-            <Button {...{ variant, disabled: isConfirmLoading, className: cn(buttonColor && variant === "default" && colorClasses[buttonColor]),
-                onClick: async (e) => {
-                  try {
-                    setIsConfirmLoading(true)
-                    await onClick?.(e)
-                    onSuccess?.()
-                    close()
-                  } finally {
-                    setIsConfirmLoading(false)
-                  }
-                },
+            <Button variant={variant} disabled={isConfirmLoading} className={cn(buttonColor && variant === "default" && colorClasses[buttonColor])}
+              onClick={async (e) => {
+                try {
+                  setIsConfirmLoading(true)
+                  await onClick?.(e)
+                  onSuccess?.()
+                  close()
+                } finally {
+                  setIsConfirmLoading(false)
+                }
               }}
             >
-              <span className="inline-flex items-center gap-1.5">
-                <RenderIcon icon={isConfirmLoading ? Loader2 : Icon} size={modalIconSize} className={isConfirmLoading ? "animate-spin" : undefined} />
-                <span>{isConfirmLoading ? "Cargando..." : (confirmConfig.confirmText ?? "Confirmar")}</span>
-              </span>
+              <RenderIcon icon={isConfirmLoading ? Loader2 : Icon} size={modalIconSize} className={isConfirmLoading ? "animate-spin" : undefined} />
+              <span>{isConfirmLoading ? "Cargando..." : (confirmConfig.confirmText ?? "Confirmar")}</span>
             </Button>
           </div>
         )}

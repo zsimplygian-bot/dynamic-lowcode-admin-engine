@@ -13,6 +13,7 @@ trait HasProtectedTables
         'migrations',
         'model_has_permissions',
         'model_has_roles',
+        'navigation',
         'password_reset_tokens',
         'permissions',
         'personal_access_tokens',

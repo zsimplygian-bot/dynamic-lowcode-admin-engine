@@ -24,10 +24,6 @@
         <script>
             (function() {
                 const root = document.documentElement;
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    root.classList.add('dark');
-                }
-
                 try {
                     const saved = localStorage.getItem("app_custom_css_vars_v2");
                     if (saved) {
