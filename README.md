@@ -1,4 +1,4 @@
-# 🚀 Nombre de tu Proyecto
+# 🚀 Dynamic Low-Code Admin Engine
 
 [![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
@@ -20,10 +20,10 @@
 
 ## 🛠️ Stack Tecnológico
 
-- **Backend:** Laravel 11+
+- **Backend:** Laravel 13
 - **Frontend:** React + Inertia.js + TypeScript
 - **Estilos:** Tailwind CSS + Shadcn UI
-- **Base de Datos:** MySQL / PostgreSQL
+- **Base de Datos:** MySQL (InnoDB)
 
 ---
 
