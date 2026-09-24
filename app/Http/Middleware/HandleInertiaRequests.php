@@ -17,7 +17,6 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        // 1. Establece el idioma activo desde la sesión
         if (session()->has('locale')) {
             app()->setLocale(session('locale'));
         }
@@ -40,6 +39,10 @@ class HandleInertiaRequests extends Middleware
             'logoUrl'        => $app['app_icon'] ?? null,
             'logoThumbUrl'   => $app['app_icon_thumb'] ?? null,
             'appSettings'    => $app,
+            'flash'          => array_merge($request->session()->get('flash', []), [
+                'toast' => fn () => $request->session()->get('toast'),
+                'id'    => fn () => $request->session()->get('id'),
+            ], array_filter($request->session()->all(), fn ($key) => str_starts_with($key, 'id_'), ARRAY_FILTER_USE_KEY)),
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
                     'avatar'       => $user->avatar,

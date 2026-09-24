@@ -21,8 +21,8 @@ class DynamicCRUDController extends Controller
         return response()->json([ 'data' => $this->getModel($tableName)->findOrFail($id), ]);
     }
 
-    public function store(Request $request, string $tableName): RedirectResponse { return $this->persist($request, $tableName); }
-    public function update(Request $request, string $tableName, string $id): RedirectResponse { return $this->persist($request, $tableName, $id); }
+    public function store(Request $request, string $tableName): JsonResponse|RedirectResponse { return $this->persist($request, $tableName); }
+    public function update(Request $request, string $tableName, string $id): JsonResponse|RedirectResponse { return $this->persist($request, $tableName, $id); }
 
     public function destroy(string $tableName, string $id): RedirectResponse
     {
@@ -30,15 +30,22 @@ class DynamicCRUDController extends Controller
     }
 
     private function persist(Request $request, string $tableName, ?string $id = null): RedirectResponse
-    {
-        $isUpdate  = $id !== null;
-        $model     = $this->getModel($tableName);
-        $record    = $isUpdate ? $model->findOrFail($id) : $model->newInstance();
-        $validated = $this->validateDynamicData($request, $tableName, $isUpdate);
-        $this->validator->validateByTable($tableName, $validated, $isUpdate);
-        $finalData = $this->handleFilesUpload($request, $tableName, $validated, $isUpdate ? $record : null);
-        $record->fill($finalData)->save();
-        $message   = $isUpdate ? 'Registro actualizado correctamente.' : 'Registro creado correctamente.';
-        return $this->notify($message);
-    }
+{
+    $isUpdate  = $id !== null;
+    $model     = $this->getModel($tableName);
+    $record    = $isUpdate ? $model->findOrFail($id) : $model->newInstance();
+    $validated = $this->validateDynamicData($request, $tableName, $isUpdate);
+    $this->validator->validateByTable($tableName, $validated, $isUpdate);
+    $finalData = $this->handleFilesUpload($request, $tableName, $validated, $isUpdate ? $record : null);
+    $record->fill($finalData)->save();
+    $message   = $isUpdate ? 'Registro actualizado correctamente.' : 'Registro creado correctamente.';
+
+    $primaryKey = "id_" . strtolower($tableName);
+    $recordId  = $record->{$primaryKey} ?? $record->getKey();
+
+    session()->flash('id', $recordId);
+    session()->flash($primaryKey, $recordId);
+
+    return $this->notify($message, 'success', null, ['id' => $recordId, $primaryKey => $recordId]);
+}
 }

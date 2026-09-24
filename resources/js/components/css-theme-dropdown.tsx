@@ -74,6 +74,7 @@ export function useCssTheme() {
     const observer = new MutationObserver(() => {
       const isDark = document.documentElement.classList.contains("dark")
       const newMode = isDark ? "dark" : "light"
+      localStorage.setItem("theme", newMode)
       setCurrentMode(newMode)
       applyDom(newMode, styles)
     })
