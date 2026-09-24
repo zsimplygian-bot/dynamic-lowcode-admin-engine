@@ -5,7 +5,7 @@ use App\Models\DynamicModel;
 use App\Traits\{HasDynamicFileUpload, HasDynamicValidation, HasNotify, HasProtectedTables};
 use Illuminate\Http\{JsonResponse, RedirectResponse, Request};
 
-class DynamicCRUDController extends Controller
+class DynamicCrudController extends Controller
 {
     use HasDynamicFileUpload, HasDynamicValidation, HasNotify, HasProtectedTables;
 
