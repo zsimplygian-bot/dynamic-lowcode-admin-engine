@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamps();
         });
         Schema::create('database_history', function (Blueprint $table) {
-            $table->increments();
+            $table->increments(id);
             $table->enum('action', ['import', 'export']);
             $table->string('filename', 255)->nullable();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
