@@ -16,16 +16,25 @@ class DatabaseIEController extends Controller
         $filename = 'backup-' . date('Y-m-d_H-i-s') . '.sql';
 
         return response()->streamDownload(function () {
-            $tables = DB::select('SHOW TABLES');$dbName = config('database.connections.mysql.database');
+            $tables = DB::select('SHOW TABLES');
+            $dbName = config('database.connections.mysql.database');
             $key = "Tables_in_{$dbName}";
 
             echo "SET SESSION sql_mode = '';\n";
-            echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
+            echo "SET FOREIGN_KEY_CHECKS=0;\n";
+            echo "SET UNIQUE_CHECKS=0;\n\n";
 
-            foreach ($tables as $table) {$tableName = $table->$key ?? array_values((array) $table)[0];$create = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
+            foreach ($tables as $table) {
+                $tableName = $table->$key ?? array_values((array) $table)[0];
+                $create = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
+                $createSql = $create->{'Create Table'};
+
+                // Remueve todas las definiciones de FOREIGN KEY y CONSTRAINT del CREATE TABLE
+                $createSql = preg_replace('/,\s*CONSTRAINT\s+`[^`]+`\s+FOREIGN\key\s+[^,\n\r]+/i', '', $createSql);
+                $createSql = preg_replace('/,\s*FOREIGN\key\s+[^,\n\r]+/i', '',$createSql);
 
                 echo "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                echo $create->{'Create Table'} . ";\n\n";
+                echo $createSql . ";\n\n";
 
                 $rows = DB::table($tableName)->get();$batch = [];
 
@@ -43,6 +52,7 @@ class DatabaseIEController extends Controller
                 }
                 echo "\n";
             }
+            echo "SET UNIQUE_CHECKS=1;\n";
             echo "SET FOREIGN_KEY_CHECKS=1;\n";
         }, $filename, ['Content-Type' => 'application/sql']);
     }
@@ -50,7 +60,7 @@ class DatabaseIEController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'backup'         => 'required|file',
+            'backup' => 'required|file',
             'keep_protected' => 'boolean',
         ]);
 
@@ -61,6 +71,7 @@ class DatabaseIEController extends Controller
 
             DB::statement("SET SESSION sql_mode = '';");
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            DB::statement('SET UNIQUE_CHECKS=0;');
 
             if ($keepProtected) {
                 $queries = array_filter(array_map('trim', explode(";\n", $sql)));
@@ -68,7 +79,6 @@ class DatabaseIEController extends Controller
                 foreach ($queries as$query) {
                     if (empty($query)) continue;
 
-                    // Extraer nombre de tabla involucrada en el query
                     if (preg_match('/(?:INTO|TABLE|FROM|EXISTS)\s+[`"]?([a-zA-Z0-9_]+)[`"]?/i', $query,$matches)) {
                         $targetTable =$matches[1] ?? '';
                         if ($this->isBlacklisted($targetTable)) {
@@ -82,10 +92,12 @@ class DatabaseIEController extends Controller
                 DB::unprepared($sql);
             }
 
+            DB::statement('SET UNIQUE_CHECKS=1;');
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
             return $this->notify('Base de datos restaurada con éxito.');
         } catch (\Throwable $e) {
+            DB::statement('SET UNIQUE_CHECKS=1;');
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
             return $this->notify('Ocurrió un error al importar el respaldo: ' . $e->getMessage(), 'error');
         }
