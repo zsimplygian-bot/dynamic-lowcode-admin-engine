@@ -5,22 +5,20 @@ import { SmartButton } from '@/components/smart-button';
 import { SmartBadge } from '@/components/smart-badge';
 import { SimpleList } from '@/components/simple-list';
 import { useTranslation } from '@/hooks/use-translation';
-
 function getFieldIcon(type, isPrimary) {
     if (isPrimary) return Key;
-    const t = type?.toLowerCase() ?? '';
+    const t = type ?? '';
+    if (t.includes('tinyint') || t.includes('bool')) return ToggleLeft;
     if (t.includes('int')) return Binary;
     if (t.includes('decimal') || t.includes('float') || t.includes('double')) return Hash;
-    if (t.includes('tinyint') || t.includes('bool')) return ToggleLeft;
     if (t.includes('enum')) return ListFilter;
-    if (t.includes('date') && !t.includes('time')) return Calendar;
     if (t.includes('time') || t.includes('datetime') || t.includes('timestamp')) return Clock;
+    if (t.includes('date')) return Calendar;
     if (t.includes('text')) return TextQuote;
     if (t.includes('json')) return Code2;
     return Type;
 }
-
-export default function TableFieldsManager({ tableName, fieldsList = [] }) {
+export default function TableFieldsManager({ tableName, fieldsList }) {
     const t = useTranslation();
     const fields = [
         { name: 'name', label: t('NAME'), placeholder: 'email, id_cliente, price', required: true },
@@ -46,18 +44,15 @@ export default function TableFieldsManager({ tableName, fieldsList = [] }) {
         { name: 'auto_increment', label: t('AUTO INCREMENT?'), type: 'checkbox' },
         { name: 'is_unsigned', label: t('UNSIGNED (NO NEGATIVES)?'), type: 'checkbox' },
     ];
-
     return (
-        <>
-            <Head title={`${t('Fields of')} ${tableName}`} />
+        <>  <Head title={`${t('Fields of')} ${tableName}`} />
             <div>
                 <div className="flex items-center gap-2">
                     <SmartButton href="/settings/table" icon={ArrowLeft} variant="outline" size="sm" />
                     <Heading title={`${t('Structure of:')} ${tableName}`} description={t('Manage the fields and data types belonging to this table.')} />
                 </div>
-                <SimpleList items={fieldsList} icon={(field) => getFieldIcon(field.type, field.is_primary)} subtitleKey="comment" searchKey="name" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(field) => (
-                    <>
-                        <SmartBadge label={field.raw_type ?? field.type} color="cyan" />
+                <SimpleList items={fieldsList} icon={(field) => getFieldIcon(field.type, field.is_primary)} subtitleKey="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(field) => (
+                    <>  <SmartBadge label={field.raw_type ?? field.type} color="cyan" />
                         {field.is_primary && <SmartBadge label="PK" color="amber" />}
                         {field.is_foreign && <SmartBadge label="FK" color="purple" />}
                         {field.auto_increment && <SmartBadge label="AI" color="blue" />}
@@ -68,5 +63,4 @@ export default function TableFieldsManager({ tableName, fieldsList = [] }) {
         </>
     );
 }
-
 TableFieldsManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/table' }, { title: 'Table Fields', href: '#' }] };

@@ -17,9 +17,8 @@ export function Tabs<T extends string = string>({ activeTab, onTabChange, tabs, 
             {tabs.map(({ id, label, icon: Icon }) => {
                 const isActive = activeTab === id;
                 return (
-                    <Button {...{ key: id, type: "button", variant: isActive ? "secondary" : "ghost", size: "sm", onClick: () => onTabChange(id), className: `flex-1 h-8 gap-2 ${isActive ? 'shadow-sm' : 'text-muted-foreground'}` }}>
-                        {Icon && <Icon {...{ className: "size-5" }} />}
-                        {label}
+                    <Button {...{ key: id, type: "button", variant: isActive ? "secondary" : "ghost", size: "sm", onClick: () => onTabChange(id), 
+                    className: `flex-1 h-8 gap-2 ${isActive ? 'shadow-sm' : 'text-muted-foreground'}` }}> {Icon && <Icon {...{ className: "size-5" }} />} {label}
                     </Button>
                 );
             })}

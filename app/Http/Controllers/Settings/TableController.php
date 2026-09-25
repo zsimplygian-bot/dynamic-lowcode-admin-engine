@@ -2,13 +2,13 @@
 namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Traits\{HasNotify, HasProtectedTables};
-use Illuminate\Http\{RedirectResponse, Request};
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{DB, Schema};
-use Inertia\{Inertia, Response};
+use Inertia\Inertia;
 class TableController extends Controller
 {
     use HasNotify, HasProtectedTables;
-    public function index(): Response
+    public function index()
     {
         $dbTables = collect(Schema::getTables())
             ->reject(fn (array $table) => $this->isBlacklisted($table['name']))
@@ -24,15 +24,7 @@ class TableController extends Controller
     }
     public function show(string $tableName)
     {
-        if ($this->isBlacklisted($tableName) || !Schema::hasTable($tableName)) {
-            return $this->notify("You do not have permission to access table '{$tableName}'.", 'error');
-        }
-
-        $foreignColumns = collect(Schema::getForeignKeys($tableName))
-            ->pluck('columns')
-            ->flatten()
-            ->toArray();
-
+        $foreignColumns = collect(Schema::getForeignKeys($tableName))->flatMap(fn ($fk) => $fk['columns'])->all();
         $fieldsList = collect(Schema::getColumns($tableName))->map(function (array $col) use ($foreignColumns) {
             preg_match('/\((.*?)\)/', $col['type'], $match);
             return [
@@ -50,58 +42,38 @@ class TableController extends Controller
                 'comment'        => $col['comment'],
             ];
         });
-
         return Inertia::render('settings/table-field', compact('tableName', 'fieldsList'));
     }
-    public function store(Request $request): RedirectResponse { return $this->persist($request); }
-    public function update(Request $request, string $tableName): RedirectResponse 
-    { 
-        if ($this->isBlacklisted($tableName) || !Schema::hasTable($tableName)) {
-            return $this->notify("Table '{$tableName}' cannot be modified.", 'error');
-        }
-        return $this->persist($request, $tableName); 
-    }
-    private function persist(Request $request, ?string $currentTableName = null): RedirectResponse
+    public function store(Request $request) { return $this->persist($request); }
+    public function update(Request $request, string $tableName) { return $this->persist($request, $tableName); }
+    private function persist(Request $request, ?string $currentTableName = null)
     {
         $validated = $request->validate(['name' => ['required', 'string', 'alpha_dash', 'max:64']]);
         $newName   = strtolower(trim($validated['name']));
-        if ($this->isBlacklisted($newName)) {
-            $this->notify("The name '{$newName}' is reserved by the system.", 'error', 'name');
-        }
+        if ($this->isBlacklisted($newName)) { $this->notify("The name '{$newName}' is reserved by the system.", 'error', 'name'); }
+        if (($currentTableName !== $newName) && Schema::hasTable($newName)) {  $this->notify("Table '{$newName}' already exists.", 'error', 'name'); }
         if ($currentTableName) {
             if ($currentTableName !== $newName) {
-                if (Schema::hasTable($newName)) {
-                    $this->notify("A table named '{$newName}' already exists.", 'error', 'name');
-                }
                 Schema::table($currentTableName, function ($table) use ($currentTableName, $newName) {
-                    if (Schema::hasColumn($currentTableName, "id_{$currentTableName}")) {
-                        $table->renameColumn("id_{$currentTableName}", "id_{$newName}");
-                    }
-                    if (Schema::hasColumn($currentTableName, $currentTableName)) {
-                        $table->renameColumn($currentTableName, $newName);
+                    foreach (["id_{$currentTableName}" => "id_{$newName}", $currentTableName => $newName] as $from => $to) {
+                        if (Schema::hasColumn($currentTableName, $from)) $table->renameColumn($from, $to);
                     }
                 });
                 Schema::rename($currentTableName, $newName);
             }
-            $message = "Table '{$newName}' updated successfully.";
-        } else {
-            if (Schema::hasTable($newName)) {
-                $this->notify("Table '{$newName}' already exists in the database.", 'error', 'name');
-            }
-            Schema::create($newName, function ($table) use ($newName) {
-                $table->increments("id_{$newName}");
-                $table->string($newName, 50);
-                $table->integer('creater_id')->unsigned();
-                $table->integer('updater_id')->unsigned()->nullable();
-                $table->timestamps();
-            }); 
-            $message = "Table '{$newName}' created successfully.";
+            return $this->notify("Table '{$newName}' updated successfully.");
         }
-        return $this->notify($message);
+        Schema::create($newName, function ($table) use ($newName) {
+            $table->increments("id_{$newName}");
+            $table->string($newName, 50);
+            $table->integer('creater_id')->unsigned();
+            $table->integer('updater_id')->unsigned()->nullable();
+            $table->timestamps();
+        });
+        return $this->notify("Table '{$newName}' created successfully.");
     }
-    public function destroy(string $tableName): RedirectResponse
+    public function destroy(string $tableName)
     {
-        if ($this->isBlacklisted($tableName)) { return $this->notify("Table '{$tableName}' cannot be deleted.", 'error'); }
         Schema::disableForeignKeyConstraints();
         Schema::dropIfExists($tableName);
         Schema::enableForeignKeyConstraints();
