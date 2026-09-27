@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, memo, useId } from "react"
 import * as XLSX from "xlsx"
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, DownloadIcon, FileSpreadsheetIcon, EyeIcon, Filter, Check, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import { Table, TableHead, TableRow, TableBody, TableCell } from "@/components/ui/table"
 import { SmartButton } from "@/components/smart-button"
 import { SmartDropdown, SDItem } from "@/components/smart-dropdown"
@@ -44,7 +43,7 @@ export const SmartTable = memo((props: any) => {
                 return (
                   <TableHead key={col.accessor} className="px-0 sticky top-0 bg-background z-10 shadow-sm whitespace-nowrap text-left">
                     <SmartButton label={col.header} size="sm" iconPosition="right" variant="ghost" onClick={() => handleSort?.(col.accessor)}
-                      icon={!isSorted ? ChevronsUpDown : sortOrder === "desc" ? ChevronDown : ChevronUp}
+                      icon={!isSorted ? "chevrons-up-down" : sortOrder === "desc" ? "chevron-down" : "chevron-up"}
                       className={cn("text-muted-foreground hover:text-foreground", isSorted && "text-primary opacity-100 font-medium")} />
                   </TableHead>
                 )
@@ -81,7 +80,7 @@ const SearchFormContent = memo(function SearchFormContent({ fields = EMPTY_ARR, 
         <FormGroup fields={fields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
       </div>
       <div className="flex items-center gap-2 pt-1 border-t">
-        <SmartButton variant="default" size="sm" icon={Check} disabled={!has} className="flex-1 justify-center" onClick={() => has && onApply(vals)} label="Aplicar" />
+        <SmartButton variant="default" size="sm" icon="check" disabled={!has} className="flex-1 justify-center" onClick={() => has && onApply(vals)} label="Aplicar" />
         <ResetButton onReset={() => { setVals({}); onClear() }} canReset={has} size="sm" variant="ghost" className="flex-1 justify-center" label="Limpiar" tooltip="" />
       </div>
     </div>
@@ -187,7 +186,7 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       console.error("Error al exportar:", e)
     }
   }, [tableName, columns, apiConfig.params])
-  const exportMenuItems = useMemo(() => [{ label: t("Excel"), color: "text-green-500", icon: FileSpreadsheetIcon, action: exportToExcel }], [exportToExcel, t])
+  const exportMenuItems = useMemo(() => [{ label: t("Excel"), color: "text-green-500", icon: "file-spreadsheet", action: exportToExcel }], [exportToExcel, t])
   const pageSizeItems = useMemo(() => PAGE_SIZES.map((n) => ({ label: String(n), action: () => changePageSize(n) })), [changePageSize])
   const renderCell = useCallback((accessor: string, row: any, type?: string) => <CellFormatter accessor={accessor} row={row} rowId={getId(row)} type={type} tableName={tableName} />, [tableName, getId])
   const renderActions = useCallback((row: any) => <ActionButtons row_id={getId(row)} tableName={tableName} endpoint={crudEndpoint} onSuccess={fetchData} />, [tableName, crudEndpoint, fetchData, getId])
@@ -196,11 +195,11 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
       <div className="flex items-center gap-2 flex-wrap w-full flex-none">
         <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={fetchData} />
         <div><SearchInput key={search} defaultValue={search} onSearchSubmit={(s) => patchQuery({ search: s }, true)} filterOnEnter /></div>
-        <SmartDropdown icon={Filter} variant="default" badge={activeSearchCount > 0 ? activeSearchCount : undefined} align="start" items={searchMenuItems} label="Filtro avanzado" disableHover />
+        <SmartDropdown icon="filter" variant="default" badge={activeSearchCount > 0 ? activeSearchCount : undefined} align="start" items={searchMenuItems} label="Filtro avanzado" disableHover />
         <DatePicker variant="button" mode="range" value={dateRange} onChange={(r) => patchQuery({ dateRange: r || {} }, true)} />
         <ResetButton onReset={clearStorage} canReset={!!isFiltered} />
-        <SmartDropdown label={t("Export")} icon={DownloadIcon} items={exportMenuItems} />
-        <SmartDropdown label={t("Visible columns:")} icon={EyeIcon} items={toggleColumnItems} />
+        <SmartDropdown label={t("Export")} icon="download" items={exportMenuItems} />
+        <SmartDropdown label={t("Visible columns:")} icon="eye" items={toggleColumnItems} />
         <AsyncState isLoading={loading} variant="inline" />
       </div>
       <SmartTable data={data} visibleColumns={visibleColumns} sortBy={sortBy} sortOrder={sortOrder} loading={loading} error={error} handleSort={handleSort} getRowKey={getRowKey} fetchData={fetchData} renderCell={renderCell} renderActions={renderActions} />
@@ -220,10 +219,10 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
               onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { changePageSize(+e.currentTarget.value); e.currentTarget.value = "" } }} />} />
           </div>
           <div className="flex items-center gap-1">
-            <SmartButton icon={ChevronsLeft} tooltip={t("First page")} disabled={pageIndex === 0} onClick={() => goTo(1)} />
-            <SmartButton icon={ChevronLeft} tooltip={t("Previous page")} disabled={pageIndex === 0} onClick={() => goTo(pageIndex)} />
-            <SmartButton icon={ChevronRight} tooltip={t("Next page")} disabled={pageIndex >= totalPages - 1} onClick={() => goTo(pageIndex + 2)} />
-            <SmartButton icon={ChevronsRight} tooltip={t("Last page")} disabled={pageIndex >= totalPages - 1} onClick={() => goTo(totalPages)} />
+            <SmartButton icon="chevrons-left" tooltip={t("First page")} disabled={pageIndex === 0} onClick={() => goTo(1)} />
+            <SmartButton icon="chevron-left" tooltip={t("Previous page")} disabled={pageIndex === 0} onClick={() => goTo(pageIndex)} />
+            <SmartButton icon="chevron-right" tooltip={t("Next page")} disabled={pageIndex >= totalPages - 1} onClick={() => goTo(pageIndex + 2)} />
+            <SmartButton icon="chevrons-right" tooltip={t("Last page")} disabled={pageIndex >= totalPages - 1} onClick={() => goTo(totalPages)} />
           </div>
         </div>
       </div>

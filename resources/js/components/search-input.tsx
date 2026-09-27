@@ -42,7 +42,7 @@ export const SearchInput = ({ items = [], searchKey = "name", value: valueProp, 
     <div className="relative flex items-center flex-1 min-w-0">
       <Search className="absolute left-2 size-5 text-muted-foreground pointer-events-none" />
       <Input id={id ?? defaultId} name={name ?? id ?? defaultId} value={search} disabled={disabled} onChange={(e) => setVal(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder ?? t("Search...")} className={`pl-8 pr-8 text-sm ${className}`} {...props} />
-      {search && <div className="absolute right-1 top-1/2 -translate-y-1/2"><SmartButton icon={X} variant="ghost" tooltip={t("Clear")} onClick={reset} /></div>}
+      {search && <div className="absolute right-1 top-1/2 -translate-y-1/2"><SmartButton icon='x' variant="ghost" tooltip={t("Clear")} onClick={reset} /></div>}
     </div>
   )
 }

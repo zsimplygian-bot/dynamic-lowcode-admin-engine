@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { DynamicIcon } from '@/components/dynamic-icon';
 import { SmartButton } from '@/components/smart-button';
 import { SearchInput } from '@/components/search-input';
@@ -98,7 +98,7 @@ export function NavMain({ items = [] }: { items: ExtendedNavItem[] }) {
     return (
         <SidebarGroup className="px-2 py-0 gap-2">
             <SidebarGroupLabel className="flex items-center justify-between w-full">
-                <span>{t('Platform')}</span> <SmartButton href="/settings/navigation" variant="ghost" icon={Pencil} size="xs" tooltip={t('Manage navigation')} />
+                <span>{t('Platform')}</span> <SmartButton href="/settings/navigation" variant="ghost" icon='pencil' size="xs" tooltip={t('Manage navigation')} />
             </SidebarGroupLabel>
             <SearchInput value={search} onChange={setSearch}/>
             <SidebarMenu className="mt-1">

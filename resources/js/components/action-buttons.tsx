@@ -1,5 +1,4 @@
 import { memo, useState } from "react"
-import { CopyIcon, MoreVertical, PrinterIcon } from "lucide-react"
 import { toast } from "sonner"
 import { SmartDropdown } from "@/components/smart-dropdown"
 import { SmartModal } from "@/components/smart-modal"
@@ -33,9 +32,9 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
   const resolvedEndpoint = endpoint || `/crud/${tableName}`
 
   const dropdownItems = [
-    { key: "copy", label: t("Copy ID"), icon: CopyIcon, action: () => { if (row_id) { navigator.clipboard.writeText(String(row_id)); toast.success(t("ID copied")) } } },
+    { key: "copy", label: t("Copy ID"), icon: "copy", action: () => { if (row_id) { navigator.clipboard.writeText(String(row_id)); toast.success(t("ID copied")) } } },
     { key: "info", label: t(ACTION_MODES.info.label), icon: ACTION_MODES.info.icon, color: ACTION_MODES.info.textColor, action: () => setAction("info") },
-    ...(isHistoria ? [{ key: "print", label: t("Print"), icon: PrinterIcon, color: "text-sky-500", action: () => { if (row_id) window.open(`/historia/${row_id}/pdf`, "_blank") } }] : []),
+    ...(isHistoria ? [{ key: "print", label: t("Print"), icon: "printer", color: "text-sky-500", action: () => { if (row_id) window.open(`/historia/${row_id}/pdf`, "_blank") } }] : []),
     { key: "update", label: t(ACTION_MODES.update.label), icon: ACTION_MODES.update.icon, color: ACTION_MODES.update.textColor, action: () => setAction("update") },
     { key: "delete", label: t(ACTION_MODES.delete.label), icon: ACTION_MODES.delete.icon, color: ACTION_MODES.delete.textColor, action: () => setAction("delete") }
   ]
@@ -52,7 +51,7 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
 
   return (
     <div className="flex items-center gap-1">
-      <SmartDropdown label={t("Actions")} icon={MoreVertical} variant="ghost" items={dropdownItems} size={size} {...props} />
+      <SmartDropdown label={t("Actions")} icon="more-vertical" variant="ghost" items={dropdownItems} size={size} {...props} />
       {action && activeConfig && (
         <SmartModal open={true} onOpenChange={(o) => { if (!o) setAction(null) }} title={modalTitle} description={modalDescription} size={isHistoria ? "5xl" : "md"} className={isHistoria ? "lg:max-w-[1000px]" : undefined}>
           {({ close }) => {

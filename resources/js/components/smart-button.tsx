@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SmartTooltip } from "@/components/smart-tooltip"
 import { SmartModal } from "@/components/smart-modal"
-import { Loader2, Undo2 } from "lucide-react"
-import { BaseTriggerProps, RenderIcon, sizeClasses, colorClasses } from "@/lib/trigger-utils"
-
-export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, BaseTriggerProps {
+import { DynamicIcon } from "@/components/dynamic-icon"
+import { BaseTriggerProps, sizeClasses, colorClasses } from "@/lib/trigger-utils"
+export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, Omit<BaseTriggerProps, 'icon'> {
+  icon?: string
   iconPosition?: "left" | "right"
   label?: React.ReactNode
   loadingLabel?: React.ReactNode
@@ -19,9 +19,8 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   prefetch?: boolean
   onSuccess?: (...args: any[]) => void
 }
-
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
-  icon: Icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
+  icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
   buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
 }, ref) => {
   const [openConfirm, setOpenConfirm] = useState(false)
@@ -31,22 +30,13 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
   const isDisabled = disabled || busy
   const config = sizeClasses[size]
   const finalIconSize = iconSize ?? config.iconSize
-  const modalIconSize = sizeClasses.md.iconSize
-
   const ariaLabel = props["aria-label"] ?? (!text && typeof tooltip === "string" ? tooltip : undefined)
   const finalClassName = cn(!text ? config.iconOnly : config.btn, buttonColor && variant === "default" && colorClasses[buttonColor], buttonClassName, className)
-
-  const iconEl = <RenderIcon icon={busy ? Loader2 : Icon} size={finalIconSize} className={busy ? "animate-spin" : undefined} />
+  const activeIcon = busy ? "loader-2" : icon
+  const iconEl = activeIcon && <DynamicIcon name={activeIcon} style={{ width: finalIconSize, height: finalIconSize }} className={busy ? "animate-spin" : undefined} />
   const textEl = busy ? (loadingLabel ?? text) : text
-
-  const childrenContent = (
-    <>
-      {iconPosition === "left" && iconEl}
-      {textEl && <span>{textEl}</span>}
-      {iconPosition === "right" && iconEl}
-    </>
+  const childrenContent = ( <> {iconPosition === "left" && iconEl} {textEl && <span>{textEl}</span>} {iconPosition === "right" && iconEl} </>
   )
-
   const buttonProps = {
     ref, type: href ? undefined : type, variant, disabled: isDisabled, "aria-label": ariaLabel, className: finalClassName,
     onClick: confirmation ? (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -54,33 +44,24 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
     } : onClick,
     ...props,
   }
-
   const buttonEl = href ? (
     <Button {...buttonProps} asChild>
-      <Link href={isDisabled ? "#" : href} prefetch={prefetch} onClick={isDisabled ? (e) => e.preventDefault() : undefined} tabIndex={isDisabled ? -1 : undefined}>
-        {childrenContent}
-      </Link>
+      <Link href={isDisabled ? "#" : href} prefetch={prefetch} onClick={isDisabled ? (e) => e.preventDefault() : undefined} tabIndex={isDisabled ? -1 : undefined}> {childrenContent} </Link>
     </Button>
-  ) : (
-    <Button {...buttonProps}>
-      {childrenContent}
-    </Button>
+  ) : ( <Button {...buttonProps}> {childrenContent} </Button>
   )
-
   const rendered = tooltip ? <SmartTooltip content={tooltip} side={tooltipSide}>{buttonEl}</SmartTooltip> : buttonEl
   if (!confirmation) return rendered
-
   const confirmConfig = typeof confirmation === "object" ? confirmation : {}
   const modalTitle = confirmConfig.title ?? "Confirmar acción"
   const modalDescription = confirmConfig.description ?? "¿Estás seguro de ejecutar esta acción?"
-
   return (
     <>{rendered}
       <SmartModal open={openConfirm} onOpenChange={setOpenConfirm} title={modalTitle} description={modalDescription} size="sm">
         {({ close }) => (
           <div className="flex justify-center gap-2 pt-2">
             <Button variant="outline" disabled={isConfirmLoading} onClick={close}>
-              <RenderIcon icon={Undo2} size={modalIconSize} />
+              <DynamicIcon name="undo-2" className="size-4" />
               <span>{confirmConfig.cancelText ?? "Cancelar"}</span>
             </Button>
             <Button variant={variant} disabled={isConfirmLoading} className={cn(buttonColor && variant === "default" && colorClasses[buttonColor])}
@@ -95,7 +76,7 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
                 }
               }}
             >
-              <RenderIcon icon={isConfirmLoading ? Loader2 : Icon} size={modalIconSize} className={isConfirmLoading ? "animate-spin" : undefined} />
+              <DynamicIcon name={isConfirmLoading ? "loader-2" : (icon ?? "check")} className={cn("size-4", isConfirmLoading && "animate-spin")} />
               <span>{isConfirmLoading ? "Cargando..." : (confirmConfig.confirmText ?? "Confirmar")}</span>
             </Button>
           </div>

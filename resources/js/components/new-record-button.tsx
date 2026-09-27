@@ -31,45 +31,30 @@ export const NewRecordButton = ({ tableName = "registro", endpoint, fields, init
 
   const handleCreateSuccess = (res: any) => {
     setIsStoreOpen(false)
-    const flashData = pageProps?.flash
-    const detectedId = extractId(res) || extractId(flashData)
+    const detectedId = extractId(res) || extractId(pageProps?.flash)
     onSuccess?.(detectedId || res)
-    if (isHistoria && detectedId) {
-      setCreatedId(detectedId)
-    }
+    if (isHistoria && detectedId) setCreatedId(detectedId)
   }
 
   useEffect(() => {
     if (isHistoria && !createdId && pageProps?.flash) {
       const flashId = extractId(pageProps.flash)
-      if (flashId && !isStoreOpen) {
-        setCreatedId(flashId)
-      }
+      if (flashId && !isStoreOpen) setCreatedId(flashId)
     }
   }, [pageProps])
 
   return (
     <>
-      <SmartModal open={isStoreOpen} onOpenChange={setIsStoreOpen} title={title} description={description}
-        trigger={<SmartButton tooltip={`${t("Nuevo")} ${tableName}`} icon={storeConfig.icon} buttonColor={storeConfig.buttonColor} variant={storeConfig.variant} {...props} />} >
-        {({ close }) => (
-          <DynamicForm tableName={tableName} endpoint={endpoint} fields={fields} initialValues={initialValues} onSuccess={(res: any) => { close(); handleCreateSuccess(res); }} />
-        )}
+      <SmartModal open={isStoreOpen} onOpenChange={setIsStoreOpen} title={title} description={description} trigger={<SmartButton tooltip={`${t("Nuevo")} ${tableName}`} icon={storeConfig.icon} buttonColor={storeConfig.buttonColor} variant={storeConfig.variant} {...props} />}>
+        {({ close }) => <DynamicForm tableName={tableName} endpoint={resolvedEndpoint} fields={fields} initialValues={initialValues} onSuccess={(res: any) => { close(); handleCreateSuccess(res); }} />}
       </SmartModal>
       {isHistoria && createdId && (
         <SmartModal open={true} onOpenChange={(o) => { if (!o) setCreatedId(null) }} title={updateTitle} description={updateDescription} size="5xl" className="lg:max-w-[1000px]">
-          {({ close }) => {
-            const formContent = (
-              <DynamicForm mode="update" recordId={createdId} tableName={tableName} fields={fields} initialValues={initialValues}
-                endpoint={`${resolvedEndpoint}/${createdId}`} onSuccess={(id: any) => { onSuccess?.(id); close(); setCreatedId(null); }}
-              />
-            )
-            return (
-              <HistoriaForm mode="update" recordId={createdId} tableName={tableName} onSuccess={onSuccess}>
-                {formContent}
-              </HistoriaForm>
-            )
-          }}
+          {({ close }) => (
+            <HistoriaForm mode="update" recordId={createdId} tableName={tableName} onSuccess={onSuccess}>
+              <DynamicForm mode="update" recordId={createdId} tableName={tableName} fields={fields} initialValues={initialValues} endpoint={`${resolvedEndpoint}/${createdId}`} onSuccess={(id: any) => { onSuccess?.(id); close(); setCreatedId(null); }} />
+            </HistoriaForm>
+          )}
         </SmartModal>
       )}
     </>

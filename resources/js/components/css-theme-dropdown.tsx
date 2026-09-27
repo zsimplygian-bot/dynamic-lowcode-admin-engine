@@ -1,5 +1,4 @@
-import { useState, useEffect, memo, useMemo } from "react"
-import { Paintbrush, Save } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
 import { SmartDropdown, SDItem } from "@/components/smart-dropdown"
 import { SmartButton } from "@/components/smart-button"
@@ -8,11 +7,9 @@ import { ResetButton } from "@/components/reset-button"
 import { FormGroup, FieldConfig } from "@/components/form-group"
 import { useTranslation } from "@/hooks/use-translation"
 import { useLocalStorage } from "@/hooks/use-local-storage"
-
 export interface ThemeVar {
   label: string; variable: string; type?: "color" | "text" | "number"
 }
-
 export const THEME_VARS: ThemeVar[] = [
   { label: "Background", variable: "--background", type: "color" },
   { label: "Foreground", variable: "--foreground", type: "color" },
@@ -48,12 +45,9 @@ export const THEME_VARS: ThemeVar[] = [
   { label: "Chart 4", variable: "--chart-4", type: "color" },
   { label: "Chart 5", variable: "--chart-5", type: "color" },
 ]
-
 export type ThemeMode = "light" | "dark"
 type StylesState = Record<ThemeMode, Record<string, string>>
-
 const STORAGE_KEY = "app_custom_css_vars_v2"
-
 const applyDom = (mode: ThemeMode, styles: StylesState) => {
   if (typeof document === "undefined") return
   const active = styles[mode] || {}
@@ -62,13 +56,11 @@ const applyDom = (mode: ThemeMode, styles: StylesState) => {
     else document.documentElement.style.removeProperty(variable)
   })
 }
-
 export function useCssTheme() {
   const [styles, setStyles] = useLocalStorage<StylesState>(STORAGE_KEY, { light: {}, dark: {} })
   const [currentMode, setCurrentMode] = useState<ThemeMode>(() =>
     typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
   )
-
   useEffect(() => {
     applyDom(currentMode, styles)
     const observer = new MutationObserver(() => {
@@ -81,44 +73,35 @@ export function useCssTheme() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     return () => observer.disconnect()
   }, [styles, currentMode])
-
   const saveTheme = (newModeStyles: Record<string, string>) => {
     setStyles((prev) => ({ ...prev, [currentMode]: newModeStyles }))
   }
-
   const resetTheme = () => {
     setStyles({ light: {}, dark: {} })
     THEME_VARS.forEach(({ variable }) => document.documentElement.style.removeProperty(variable))
   }
-
   return { currentMode, activeStyles: styles[currentMode] || {}, saveTheme, resetTheme }
 }
-
-const ThemeFormContent = memo(function ThemeFormContent() {
+function ThemeFormContent() {
   const t = useTranslation()
   const { currentMode, activeStyles, saveTheme, resetTheme } = useCssTheme()
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
-
   useEffect(() => {
     setDraftValues(activeStyles)
   }, [activeStyles, currentMode])
-
   const handleFieldChange = (name: string, value: string) => {
     setDraftValues((prev) => ({ ...prev, [name]: value }))
     document.documentElement.style.setProperty(name, value)
   }
-
   const handleSave = () => {
     saveTheme(draftValues)
     toast.success(t("Theme saved successfully"))
   }
-
   const handleReset = () => {
     setDraftValues({})
     resetTheme()
     toast.info(t("Theme reset to default"))
   }
-
   const defaultStyles = useMemo(() => {
     if (typeof window === "undefined") return {}
     const computed = getComputedStyle(document.documentElement)
@@ -128,20 +111,16 @@ const ThemeFormContent = memo(function ThemeFormContent() {
     })
     return acc
   }, [currentMode])
-
   const { fields, formValues } = useMemo(() => {
     const fieldsAcc: FieldConfig[] = []
     const valuesAcc: Record<string, any> = {}
-
     THEME_VARS.forEach(({ label, variable, type }) => {
       const fallback = defaultStyles[variable] || ""
       fieldsAcc.push({ id: variable, name: variable, label: t(label), type, placeholder: fallback })
       valuesAcc[variable] = draftValues[variable] ?? activeStyles[variable] ?? fallback
     })
-
     return { fields: fieldsAcc, formValues: valuesAcc }
   }, [defaultStyles, draftValues, activeStyles, t])
-
   return (
     <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
       <div className="w-80 pl-2 max-h-[400px] overflow-y-auto pr-1">
@@ -149,19 +128,17 @@ const ThemeFormContent = memo(function ThemeFormContent() {
       </div>
       <div className="flex items-center gap-1.5 pt-1 border-t">
         <ResetButton onReset={handleReset} label={t("Reset")} variant="ghost" buttonClassName="w-1/2 justify-center" />
-        <SmartButton onClick={handleSave} label={t("Save")} icon={Save} variant="default" buttonClassName="w-1/2 justify-center" />
+        <SmartButton onClick={handleSave} label={t("Save")} icon="save" variant="default" buttonClassName="w-1/2 justify-center" />
       </div>
     </div>
   )
-})
-
+}
 export default function CssThemeDropdown() {
   const t = useTranslation()
   const { currentMode } = useCssTheme()
-
-  const items: SDItem[] = useMemo(() => [{ type: "custom", custom: <ThemeFormContent /> }], [])
-
+  const items: SDItem[] = [{ type: "custom", custom: <ThemeFormContent /> }]
   return (
-    <SmartDropdown icon={Paintbrush} variant="ghost" buttonLabel="Customization" label={t("Customization")} items={items} disableHover labelExtra={<SmartBadge label={currentMode} className="uppercase" />} />
+    <SmartDropdown icon="paintbrush" variant="ghost" buttonLabel="Customization" label={t("Customization")} items={items} disableHover 
+      labelExtra={<SmartBadge label={currentMode} className="uppercase" />} />
   )
 }

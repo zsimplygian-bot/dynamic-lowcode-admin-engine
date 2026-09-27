@@ -1,12 +1,10 @@
 import { Form, Head, usePage, Link } from '@inertiajs/react'
-import { Save } from 'lucide-react'
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController'
 import DeleteUser from '@/components/delete-user'
 import Heading from '@/components/heading'
 import { FormGroup } from '@/components/form-group'
 import { SmartButton } from '@/components/smart-button'
 import { useTranslation } from '@/hooks/use-translation'
-import { edit } from '@/routes/profile'
+import { edit, update } from '@/routes/profile'
 import { send } from '@/routes/verification'
 import type { Auth } from '@/types'
 type PageProps = { auth: Auth }
@@ -18,7 +16,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
       <h1 className="sr-only">{t('Profile settings')}</h1>
       <div className="space-y-4">
         <Heading variant="small" title={t('Profile')} description={t('Update your profile photo, name, and email address')} />
-        <Form {...ProfileController.update.form()} options={{ preserveScroll: true }} className="space-y-6">
+        <Form {...update.form()} options={{ preserveScroll: true }} className="space-y-4">
           {({ processing, errors }) => (
             <><FormGroup errors={errors}
                 fields={[
@@ -43,7 +41,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                 </div>
               )}
               <div className="flex items-center gap-4">
-                <SmartButton type="submit" icon={Save} isLoading={processing} label={t('Save')} loadingLabel={t('Saving...')} data-test="update-profile-button" />
+                <SmartButton type="submit" icon="save" isLoading={processing} label={t('Save')} loadingLabel={t('Saving...')} data-test="update-profile-button" />
               </div>
             </>
           )}

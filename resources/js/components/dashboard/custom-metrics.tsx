@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback, memo } from 'react'
-import { Plus, Trash2, BarChart2, Hash, Settings2, Check, X } from 'lucide-react'
+import { useState, useMemo, useCallback } from 'react'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useApi } from '@/hooks/use-api'
 import { SmartButton } from '@/components/smart-button'
@@ -30,8 +29,8 @@ const SIZE_OPTIONS = [
 ]
 const DEFAULT_WIDGETS: any[] = []
 const TYPE_BTNS = [
-  { type: 'counter', icon: Hash, tip: 'Contador' },
-  { type: 'bar', icon: BarChart2, tip: 'Barras' },
+  { type: 'counter', icon: 'hash', tip: 'Contador' },
+  { type: 'bar', icon: 'bar-chart-2', tip: 'Barras' },
 ] as const
 const SIZE_CONFIG: Record<string, string> = {
   full: 'col-span-12',
@@ -45,26 +44,26 @@ const CARD_CONFIG_FIELDS = [
   { name: 'size', label: 'WIDTH', type: 'select', options: SIZE_OPTIONS },
 ]
 const fmtDate = (d?: string) => d ? d.split('-').reverse().join('/') : ''
-const WidgetConfigModal = memo(function WidgetConfigModal({ widget, onSave }: any) {
+function WidgetConfigModal({ widget, onSave }: any) {
   const [form, setForm] = useState({ title: widget.title || 'NEW METRIC', tableName: widget.tableName, size: widget.size ?? 'half' })
   const handleOpen = (open: boolean) => {
     if (open) setForm({ title: widget.title || 'NEW METRIC', tableName: widget.tableName, size: widget.size ?? 'half' })
   }
   return (
-    <SmartModal title="CONFIGURAR TARJETA" onOpenChange={handleOpen} trigger={<SmartButton icon={Settings2} variant="outline" size="sm" tooltip="Configurar" />} >
+    <SmartModal title="CONFIGURAR TARJETA" onOpenChange={handleOpen} trigger={<SmartButton icon="settings-2" variant="outline" size="sm" tooltip="Configurar" />} >
       {({ close }) => (
         <div className="space-y-4">
           <FormGroup fields={CARD_CONFIG_FIELDS} values={form} onChange={(name, val) => setForm((p) => ({ ...p, [name]: val }))} />
           <div className="flex justify-end gap-2 pt-2">
-            <SmartButton variant="secondary" icon={X} label="Cancelar" onClick={close} />
-            <SmartButton icon={Check} label="Listo" onClick={() => { onSave(form); close() }} />
+            <SmartButton variant="secondary" icon="x" label="Cancelar" onClick={close} />
+            <SmartButton icon="check" label="Listo" onClick={() => { onSave(form); close() }} />
           </div>
         </div>
       )}
     </SmartModal>
   )
-})
-const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate, onRemove }: any) {
+}
+function WidgetCard({ widget, initialCount = 0, onUpdate, onRemove }: any) {
   const [dateRange, setDateRange] = useState<DateRange>({})
   const apiConfig = useMemo(() => ({
     params: {
@@ -95,7 +94,7 @@ const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate
             <SmartButton key={type} icon={icon} size="sm" variant={widget.type === type ? 'default' : 'outline'} onClick={() => onUpdate(widget.id, { type })} tooltip={tip} />
           ))}
           <WidgetConfigModal widget={widget} onSave={(patch: any) => onUpdate(widget.id, patch)} />
-          <SmartButton icon={Trash2} variant="destructive" size="sm" tooltip="Eliminar" onClick={() => onRemove(widget.id)} confirmation />
+          <SmartButton icon="trash-2" variant="destructive" size="sm" tooltip="Eliminar" onClick={() => onRemove(widget.id)} confirmation />
         </div>  
       </div>
       <div className="flex items-center justify-center min-h-[220px] w-full overflow-hidden">
@@ -130,7 +129,7 @@ const WidgetCard = memo(function WidgetCard({ widget, initialCount = 0, onUpdate
       </div>
     </div>
   )
-})
+}
 export default function CustomDashboardWidgets({ counts = {} }: { counts?: Record<string, number> }) {
   const [widgets, setWidgets] = useLocalStorage('custom_dashboard_widgets', DEFAULT_WIDGETS)
   const addWidget = useCallback(() => {
@@ -152,12 +151,10 @@ export default function CustomDashboardWidgets({ counts = {} }: { counts?: Recor
     <div className="w-full space-y-4 overflow-hidden">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold tracking-wider">CUSTOM METRICS</h2>
-        <SmartButton icon={Plus} label="Card" size="sm" variant="outline" onClick={addWidget} />
+        <SmartButton icon="plus" label="Card" size="sm" variant="outline" onClick={addWidget} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-        {widgets.map((widget: any) => (
-          <WidgetCard key={widget.id} widget={widget} initialCount={counts[widget.tableName] ?? 0} onUpdate={updateWidget} onRemove={removeWidget} />
-        ))}
+        {widgets.map((widget: any) => ( <WidgetCard key={widget.id} widget={widget} initialCount={counts[widget.tableName] ?? 0} onUpdate={updateWidget} onRemove={removeWidget} /> ))}
       </div>
     </div>
   )

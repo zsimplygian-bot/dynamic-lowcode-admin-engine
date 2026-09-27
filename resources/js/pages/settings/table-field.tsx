@@ -1,22 +1,21 @@
 import { Head } from '@inertiajs/react';
-import { ArrowLeft, Binary, Calendar, Clock, Code2, Hash, Key, ListFilter, TextQuote, ToggleLeft, Type } from 'lucide-react';
 import Heading from '@/components/heading';
 import { SmartButton } from '@/components/smart-button';
 import { SmartBadge } from '@/components/smart-badge';
 import { SimpleList } from '@/components/simple-list';
 import { useTranslation } from '@/hooks/use-translation';
-function getFieldIcon(type, isPrimary) {
-    if (isPrimary) return Key;
+function getFieldIconName(type, isPrimary) {
+    if (isPrimary) return 'key';
     const t = type ?? '';
-    if (t.includes('tinyint') || t.includes('bool')) return ToggleLeft;
-    if (t.includes('int')) return Binary;
-    if (t.includes('decimal') || t.includes('float') || t.includes('double')) return Hash;
-    if (t.includes('enum')) return ListFilter;
-    if (t.includes('time') || t.includes('datetime') || t.includes('timestamp')) return Clock;
-    if (t.includes('date')) return Calendar;
-    if (t.includes('text')) return TextQuote;
-    if (t.includes('json')) return Code2;
-    return Type;
+    if (t.includes('tinyint') || t.includes('bool')) return 'toggle-left';
+    if (t.includes('int')) return 'binary';
+    if (t.includes('decimal') || t.includes('float') || t.includes('double')) return 'hash';
+    if (t.includes('enum')) return 'list-filter';
+    if (t.includes('time') || t.includes('datetime') || t.includes('timestamp')) return 'clock';
+    if (t.includes('date')) return 'calendar';
+    if (t.includes('text')) return 'text-quote';
+    if (t.includes('json')) return 'code-2';
+    return 'type';
 }
 export default function TableFieldsManager({ tableName, fieldsList }) {
     const t = useTranslation();
@@ -46,12 +45,12 @@ export default function TableFieldsManager({ tableName, fieldsList }) {
     ];
     return (
         <>  <Head title={`${t('Fields of')} ${tableName}`} />
-            <div>
+            <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                    <SmartButton href="/settings/table" icon={ArrowLeft} variant="outline" size="sm" />
+                    <SmartButton href="/settings/table" icon="arrow-left" variant="outline" size="sm" />
                     <Heading title={`${t('Structure of:')} ${tableName}`} description={t('Manage the fields and data types belonging to this table.')} />
                 </div>
-                <SimpleList items={fieldsList} icon={(field) => getFieldIcon(field.type, field.is_primary)} subtitleKey="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(field) => (
+                <SimpleList items={fieldsList} icon={(field) => getFieldIconName(field.type, field.is_primary)} subtitleKey="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(field) => (
                     <>  <SmartBadge label={field.raw_type ?? field.type} color="cyan" />
                         {field.is_primary && <SmartBadge label="PK" color="amber" />}
                         {field.is_foreign && <SmartBadge label="FK" color="purple" />}

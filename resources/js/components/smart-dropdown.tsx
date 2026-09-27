@@ -1,14 +1,14 @@
 import React, { forwardRef, memo, useCallback } from "react"
-import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { BaseTriggerProps, RenderIcon, sizeClasses, colorClasses } from "@/lib/trigger-utils"
+import { DynamicIcon } from "@/components/dynamic-icon"
+import { BaseTriggerProps, sizeClasses, colorClasses } from "@/lib/trigger-utils"
 
 type BaseItem = {
   label?: string
-  icon?: LucideIcon
+  icon?: string
   color?: string
   disabled?: boolean
   variant?: "default" | "destructive"
@@ -21,7 +21,8 @@ export type SDItem =
   | (BaseItem & { type?: "item"; custom?: React.ReactNode })
   | (BaseItem & { type: "checkbox"; checked: boolean; onChange: (v: boolean) => void })
 
-export interface SmartDropdownProps extends BaseTriggerProps {
+export interface SmartDropdownProps extends Omit<BaseTriggerProps, 'icon'> {
+  icon?: string
   buttonLabel?: React.ReactNode
   label?: string
   labelExtra?: React.ReactNode
@@ -47,7 +48,7 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
     const { checked, disabled, onChange: onCheckedChange, icon, label: text } = item
     return (
       <DropdownMenuCheckboxItem checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
-        <RenderIcon icon={icon} size={iconSize} className="mr-2 opacity-80" />
+        {icon && <DynamicIcon name={icon} style={{ width: iconSize, height: iconSize }} className="mr-2 opacity-80" />}
         <span>{text}</span>
       </DropdownMenuCheckboxItem>
     )
@@ -56,7 +57,7 @@ const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item:
   const { disabled, variant, action: onClick, icon, color, label } = item
   return (
     <DropdownMenuItem disabled={disabled} variant={variant} onClick={onClick} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
-      <RenderIcon icon={icon} size={iconSize} className="opacity-80" />
+      {icon && <DynamicIcon name={icon} style={{ width: iconSize, height: iconSize }} className="opacity-80" />}
       <span className={color}>{label}</span>
     </DropdownMenuItem>
   )
@@ -65,7 +66,7 @@ DropdownItemRow.displayName = "DropdownItemRow"
 
 export const SmartDropdown = memo(
   forwardRef<HTMLButtonElement, SmartDropdownProps>(function SmartDropdown({
-    icon: Icon,
+    icon,
     buttonLabel,
     buttonClassName: btnClassName,
     variant = "default",
@@ -105,7 +106,7 @@ export const SmartDropdown = memo(
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button ref={ref} variant={variant} className={buttonClassName}>
-            <RenderIcon icon={Icon} size={finalIconSize} />
+            {icon && <DynamicIcon name={icon} style={{ width: finalIconSize, height: finalIconSize }} />}
             {buttonLabel}
             {badge !== undefined && badge !== null && <Badge className={badgeClass}>{badge}</Badge>}
           </Button>

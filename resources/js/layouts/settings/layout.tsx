@@ -5,22 +5,16 @@ import { SmartButton } from '@/components/smart-button';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editNavigation } from '@/routes/navigation'; 
-import { index as tablesIndex } from '@/routes/tables';
-import { edit as editProfile } from '@/routes/profile';
-import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
-import { User, ShieldCheck, Palette, Compass, TableProperties, DatabaseZap, Lock, KeyRound } from 'lucide-react';
 const sidebarNavItems: NavItem[] = [
-    { title: 'Profile', href: editProfile(), icon: User },
-    { title: 'Security', href: editSecurity(), icon: ShieldCheck },
-    { title: 'Roles & Access', href: '/settings/role', icon: Lock },
-    { title: 'Permissions', href: '/settings/permission', icon: KeyRound },
-    { title: 'Appearance', href: editAppearance(), icon: Palette },
-    { title: 'Navigation', href: editNavigation(), icon: Compass },
-    { title: 'Database', href: tablesIndex(), icon: TableProperties },
-    { title: 'Cache & System', href: '/settings/cache', icon: DatabaseZap },
+    { title: 'Profile', href: '/settings/profile', icon: 'user' },
+    { title: 'Security', href: '/settings/security', icon: 'shield-check' },
+    { title: 'Roles & Access', href: '/settings/role', icon: 'lock' },
+    { title: 'Permissions', href: '/settings/permission', icon: 'key-round' },
+    { title: 'Appearance', href: '/settings/appearance', icon: 'palette' },
+    { title: 'Navigation', href: '/settings/navigation', icon: 'compass' },
+    { title: 'Database', href: '/settings/table', icon: 'table-properties' },
+    { title: 'Cache & System', href: '/settings/cache', icon: 'database-zap' },
 ];
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
@@ -30,10 +24,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <Heading title={t('Settings')} description={t('Manage your profile and account settings')} />
             <div className="flex flex-col lg:flex-row lg:space-x-12 mt-6">
                 <nav className="flex flex-col space-y-1" aria-label="Settings">
-                    {sidebarNavItems.map(({ title, href, icon: Icon }) => {
+                    {sidebarNavItems.map(({ title, href, icon }) => {
                         const isActive = isCurrentOrParentUrl(href);
                         return (
-                            <SmartButton key={title} size="sm" variant="ghost" label={t(title)} icon={Icon} href={href}
+                            <SmartButton key={title} size="sm" variant="ghost" label={t(title)} icon={icon} href={href}
                                 className={cn('w-full justify-start gap-2', isActive && 'bg-muted font-medium')}
                             />
                         );
