@@ -1,4 +1,4 @@
-import { memo, ReactNode } from "react"
+import { memo, useMemo, ReactNode } from "react"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ActionButtons } from "@/components/action-buttons"
 import { AsyncState } from "@/components/async-state"
@@ -24,7 +24,9 @@ export const ExtendedForm = memo(({ mode = "update", recordId, tableName = "", f
   const { data: response, isLoading, error, refetch: fetchRegistros } = useApi<ApiResponse<any>>(endpoint)
   const columns = response?.columns ?? []
   const listaRegistros = response?.data ?? []
-  const initialPayload = { [resolvedForeignKey]: recordId }
+    const initialPayload = useMemo(() => ({
+  [resolvedForeignKey]: { value: recordId, disabled: true }
+}), [resolvedForeignKey, recordId])
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh] pr-1">
       {children && <div className="w-full flex-1 shrink-0">{children}</div>}

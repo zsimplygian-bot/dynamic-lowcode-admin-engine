@@ -12,7 +12,6 @@ const sidebarNavItems: NavItem[] = [
     { title: 'Roles & Access', href: '/settings/role', icon: 'lock' },
     { title: 'Permissions', href: '/settings/permission', icon: 'key-round' },
     { title: 'Appearance', href: '/settings/appearance', icon: 'palette' },
-    { title: 'Navigation', href: '/settings/navigation', icon: 'compass' },
     { title: 'Database', href: '/settings/table', icon: 'table-properties' },
     { title: 'Cache & System', href: '/settings/cache', icon: 'database-zap' },
 ];

@@ -53,7 +53,8 @@ export const SmartTable = memo((props: any) => {
           </thead>
           <TableBody>
             {isTableLoading || error ? (
-              <TableRow><TableCell colSpan={totalCols} className="text-center"><AsyncState isLoading={isTableLoading} error={error} loadingLabel="Cargando información..." onRetry={fetchData} minHeight="min-h-[100px]" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={totalCols} className="text-center"><AsyncState isLoading={isTableLoading} error={error} loadingLabel="Cargando información..." 
+                onRetry={fetchData} minHeight="min-h-[100px]" /></TableCell></TableRow>
             ) : !totalRows ? ( <TableRow><TableCell colSpan={totalCols} className="text-center text-muted-foreground">No hay resultados disponibles.</TableCell></TableRow>
             ) : (
               <>{virtualized && paddingTop > 0 && <tr style={{ height: `${paddingTop}px` }}><td colSpan={totalCols} className="p-0" /></tr>}

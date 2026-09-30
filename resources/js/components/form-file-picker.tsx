@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { SmartImagePreview } from "@/components/smart-image-preview"
 import { SmartButton } from "@/components/smart-button"
-import { Upload, ImageIcon, FileText, Trash2 } from "lucide-react"
+import { DynamicIcon } from "@/components/dynamic-icon"
 import { cn } from "@/lib/utils"
 
 export interface FormFilePickerProps {
@@ -74,17 +74,17 @@ export const FormFilePicker = ({ id, name = id, defaultValue, accept, required, 
         <SmartImagePreview url={preview} thumbUrl={thumbUrl} size="md" disabled={disabled} />
       ) : (
         <div className="relative flex shrink-0 flex-col items-center justify-center size-16 rounded-full border border-dashed border-muted-foreground/60 bg-muted/60 group overflow-hidden">
-          {isImage ? <ImageIcon className="size-8 text-muted-foreground/60" /> : <FileText className="size-8 text-muted-foreground/60" />}
+          <DynamicIcon name={isImage ? "image" : "file-text"} className="size-8 text-muted-foreground/60" />
           {fileName && ext && <span className="text-[12px] font-bold uppercase text-muted-foreground leading-none mt-0.5 max-w-[90%] truncate">{ext}</span>}
         </div>
       )}
       <div className="flex-1 flex items-center justify-between h-9 px-3 border rounded-md bg-muted/20 overflow-hidden">
         <span className="truncate text-sm">{fileName ?? "No hay archivo seleccionado"}</span>
         {fileName && !disabled && (
-          <SmartButton icon={Trash2} variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />
+          <SmartButton icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />
         )}
       </div>
-      <SmartButton icon={Upload} tooltip="Seleccionar archivo" disabled={disabled} onClick={triggerSelect} />
+      <SmartButton icon="upload" tooltip="Seleccionar archivo" disabled={disabled} onClick={triggerSelect} />
     </div>
   )
 }

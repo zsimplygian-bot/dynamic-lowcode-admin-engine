@@ -21,10 +21,10 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
     Route::get('/table/export', [DatabaseIEController::class, 'export'])->name('tables.export');
     Route::post('/table/import', [DatabaseIEController::class, 'import'])->name('tables.import');
 
-    // Gestión de tablas
-    Route::resource('table', TableController::class)->except(['create', 'edit'])->names('tables');
-
-    // Gestión de campos de tabla
+ // Gestión de tablas (sin show, create ni edit)
+    Route::resource('table', TableController::class)->except(['create', 'edit', 'show'])->names('tables');
+    // Gestión de campos de tabla (el GET llama al show de TableFieldController)
+    Route::get('/table/{table}', [TableFieldController::class, 'show'])->name('tables.fields.show');
     Route::post('/table/{table}/field', [TableFieldController::class, 'store'])->name('tables.fields.store');
     Route::put('/table/{table}/field/{field}', [TableFieldController::class, 'update'])->name('tables.fields.update');
     Route::delete('/table/{table}/field/{field}', [TableFieldController::class, 'destroy'])->name('tables.fields.destroy');
@@ -54,9 +54,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Navigation
-    Route::inertia('settings/navigation', 'settings/navigation')->name('navigation.edit');
-
     // Profile destroy
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

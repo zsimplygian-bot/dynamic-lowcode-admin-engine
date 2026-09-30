@@ -1,36 +1,28 @@
 <?php
-
 namespace App\Http\Middleware;
-
+use App\Traits\HasTableMetadata;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Cache, DB, Storage};
+use Illuminate\Support\Facades\{Cache, Storage};
+use Illuminate\Support\Str;
 use Inertia\Middleware;
-
 class HandleInertiaRequests extends Middleware
 {
+    use HasTableMetadata;
     protected $rootView = 'app';
-
-    public function version(Request $request): ?string
-    {
-        return parent::version($request);
-    }
-
+    public function version(Request $request): ?string { return parent::version($request); }
     public function share(Request $request): array
     {
         if (session()->has('locale')) {
             app()->setLocale(session('locale'));
         }
-
         $locale = app()->getLocale();
         $langFile = lang_path("{$locale}.json");
-
         $app = $this->getAppearance();
         $user = $request->user();
-
         return [
             ...parent::share($request),
-            'locale'       => $locale,
-            'translations' => file_exists($langFile) 
+            'locale'         => $locale,
+            'translations'   => file_exists($langFile) 
                 ? json_decode(file_get_contents($langFile), true) 
                 : [],
             'mainNavItems'   => $this->getNavigation(),
@@ -39,10 +31,6 @@ class HandleInertiaRequests extends Middleware
             'logoUrl'        => $app['app_icon'] ?? null,
             'logoThumbUrl'   => $app['app_icon_thumb'] ?? null,
             'appSettings'    => $app,
-            'flash'          => array_merge($request->session()->get('flash', []), [
-                'toast' => fn () => $request->session()->get('toast'),
-                'id'    => fn () => $request->session()->get('id'),
-            ], array_filter($request->session()->all(), fn ($key) => str_starts_with($key, 'id_'), ARRAY_FILTER_USE_KEY)),
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
                     'avatar'       => $user->avatar,
@@ -54,54 +42,55 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen'    => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
-
     protected function getNavigation(): array
     {
-        return Cache::remember('inertia_main_nav_items', 3600, function () {
-            $fallback = [['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'LayoutGrid']];
+        return Cache::rememberForever('inertia_main_nav_items', function () {
             try {
-                $all = DB::table('navigation')
-                    ->select('id_navigation as id', 'navigation as title', 'path as href', 'emoji_navigation as icon', 'parent')
-                    ->orderBy('order_index', 'asc')
-                    ->get();
-
-                if ($all->isEmpty()) {
-                    return $fallback;
-                }
-
-                $grouped = $all->groupBy(fn ($item) => (int) ($item->parent ?? 0));
-
-                return $grouped->get(0, collect())->map(function ($p) use ($grouped) {
-                    $children = $grouped->get((int) $p->id, collect())->map(fn ($c) => [
-                        'id' => $c->id, 'title' => $c->title, 'href' => $c->href, 'icon' => $c->icon ?? 'LayoutGrid'
-                    ])->values()->all();
-
-                    return ['id' => $p->id, 'title' => $p->title, 'href' => $p->href, 'icon' => $p->icon ?? 'LayoutGrid', 'items' => $children ?: null];
-                })->values()->all();
+                $tables = collect($this->getTableMetadata())->keyBy('name');
+                $makeItem = function (string $tableName) use ($tables) {
+                    $meta = $tables->get($tableName);
+                    $rawTitle = $meta['label'] ?? $meta['title'] ?? $tableName;
+                    $formattedTitle = Str::ucfirst($rawTitle);
+                    return [
+                        'title' => $formattedTitle,
+                        'href'  => "/table/{$tableName}",
+                        'icon'  => $meta['icon'] ?? 'table',
+                    ];
+                };
+                $itemSubKeys = ['procedimiento', 'producto', 'categoria_procedimiento', 'categoria_producto', 'raza', 'motivo'];
+                $itemSubItems = collect($itemSubKeys)->map(fn ($key) => $makeItem($key))->values()->all();
+                return [
+                    ['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'layout-grid'],
+                    $makeItem('historia'),
+                    $makeItem('cita'),
+                    $makeItem('mascota'),
+                    $makeItem('cliente'),
+                    [
+                        'title' => 'Items',
+                        'icon'  => 'folder-tree',
+                        'items' => $itemSubItems,
+                    ],
+                ];
             } catch (\Throwable $e) {
-                return $fallback;
+                return [['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'layout-grid']];
             }
         });
     }
-
     protected function getAppearance(): array
     {
-        return Cache::remember('inertia_appearance_settings', 3600, function () {
+        return Cache::rememberForever('inertia_appearance_settings', function () {
             $default = ['app_name' => config('app.name'), 'app_icon' => null, 'app_icon_thumb' => null];
-
             if (Storage::disk('local')->exists('settings/appearance.json')) {
                 $json = json_decode(Storage::disk('local')->get('settings/appearance.json'), true);
                 if (is_array($json)) {
                     $settings = array_merge($default, $json);
-                    
+                
                     if (!empty($settings['app_icon'])) {
                         $settings['app_icon_thumb'] = preg_replace('/\.([^.]+)$/', '_thumb.$1', $settings['app_icon']);
                     }
-
                     return $settings;
                 }
             }
-
             return $default;
         });
     }

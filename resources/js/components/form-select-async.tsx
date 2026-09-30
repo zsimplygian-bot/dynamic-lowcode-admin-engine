@@ -5,19 +5,25 @@ import { InfoButton } from "@/components/info-button"
 import { ResetButton } from "@/components/reset-button"
 import { AsyncState } from "@/components/async-state"
 import { useApi } from "@/hooks/use-api"
+
 export interface ListaItem { id: string | number; label: string }
 export interface ListaCache { options: ListaItem[]; isFull: boolean }
+
 const cache = new Map<string, ListaCache>()
 const listeners = new Map<string, Set<() => void>>()
 const EMPTY: ListaCache = { options: [], isFull: false }
+
 export const getListaSync = (key: string): ListaCache => cache.get(key) ?? EMPTY
+
 export const subscribeCache = (key: string, cb: () => void) => {
   if (!key) return () => {}
   if (!listeners.has(key)) listeners.set(key, new Set())
   listeners.get(key)!.add(cb)
   return () => { listeners.get(key)?.delete(cb) }
 }
+
 const notify = (key: string) => listeners.get(key)?.forEach((cb) => cb())
+
 export const updateListaCache = (key: string, incoming: any, isFull = false) => {
   if (!key || !incoming) return
   const list: ListaItem[] = Array.isArray(incoming) ? incoming : (incoming.options ?? [incoming])
@@ -32,10 +38,13 @@ export const updateListaCache = (key: string, incoming: any, isFull = false) => 
   }
   notify(key)
 }
+
 export const resetLista = (key: string) => { if (cache.delete(key)) notify(key) }
+
 export interface FormSelectAsyncProps extends SelectBaseProps {
   name: string; onSelect?: (value: string) => void
 }
+
 export const FormSelectAsync = ({ id, name = "", value: valueProp, defaultValue, placeholder = "", disabled = false, className = "", onSelect }: FormSelectAsyncProps) => {
   const [open, setOpen] = useState(false)
   const [internalVal, setInternalVal] = useState(() => String(valueProp ?? defaultValue ?? ""))
@@ -45,24 +54,29 @@ export const FormSelectAsync = ({ id, name = "", value: valueProp, defaultValue,
     () => getListaSync(name)
   )
   const needsLookup = Boolean(name && currentValue && !isFull && !options.some((o) => String(o.id) === currentValue))
-  const { data: lookupData } = useApi(needsLookup ? `/lookups/${name}?id=${currentValue}` : null)
+  const { data: lookupData } = useApi(needsLookup ? `/api/lookups/${name}?id=${currentValue}` : null)
   const shouldFetchFull = Boolean(name && open && !isFull)
-  const { data: fullData, isLoading: loadingLista, refetch } = useApi(shouldFetchFull ? `/lookups/${name}` : null)
+  const { data: fullData, isLoading: loadingLista, refetch } = useApi(shouldFetchFull ? `/api/lookups/${name}` : null)
+
   useEffect(() => {
     if (lookupData) updateListaCache(name, lookupData, false)
     if (fullData) updateListaCache(name, fullData, true)
   }, [name, lookupData, fullData])
+
   const handleRefresh = () => { resetLista(name); refetch() }
+
   const handleSelectOption = (optId: string, close: () => void) => {
     const next = currentValue === optId ? "" : optId
     setInternalVal(next)
     onSelect?.(next)
     close()
   }
+
   const tableName = name.replace(/^id_/, "")
+
   return (
     <SelectBaseLayout id={id} name={name} value={currentValue} options={options} placeholder={placeholder} disabled={disabled} className={className} open={open} onOpenChange={setOpen}
-      infoAction={currentValue ? <InfoButton row_id={currentValue} tableName={tableName}  variant="ghost" onSuccess={handleRefresh} /> : null}
+      infoAction={currentValue ? <InfoButton row_id={currentValue} tableName={tableName} variant="ghost" onSuccess={handleRefresh} /> : null}
       headerActions={<><ResetButton onReset={handleRefresh} isLoading={loadingLista} size="xs" /><NewRecordButton tableName={tableName} size="xs" onSuccess={handleRefresh} /></>}
     >
       {(close) => (
@@ -73,4 +87,5 @@ export const FormSelectAsync = ({ id, name = "", value: valueProp, defaultValue,
     </SelectBaseLayout>
   )
 }
+
 export default FormSelectAsync

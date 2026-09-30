@@ -6,7 +6,6 @@ import { DynamicForm } from "@/components/form/dynamic-form"
 import { HistoriaForm } from "@/components/form/historia-form"
 import { ACTION_MODES, ActionMode } from "@/lib/action-modes"
 import { useTranslation } from "@/hooks/use-translation"
-
 interface ActionButtonsProps {
   row_id?: string | number
   tableName?: string
@@ -19,18 +18,15 @@ interface ActionButtonsProps {
   size?: "xs" | "sm" | "md" | "lg"
   [key: string]: any
 }
-
 const getEndpoint = (m: ActionMode, id?: string | number, base?: string, up?: string, del?: string) => {
   const url = (m === "update" ? up : m === "delete" ? del : undefined) || base
   return url && id !== undefined ? `${url}/${id}` : url
 }
-
 export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEndpoint, deleteEndpoint, fields, initialValues, onSuccess, size = "md", ...props }: ActionButtonsProps) => {
   const t = useTranslation()
   const [action, setAction] = useState<ActionMode | null>(null)
   const isHistoria = tableName.toLowerCase().trim() === "historia"
   const resolvedEndpoint = endpoint || `/crud/${tableName}`
-
   const dropdownItems = [
     { key: "copy", label: t("Copy ID"), icon: "copy", action: () => { if (row_id) { navigator.clipboard.writeText(String(row_id)); toast.success(t("ID copied")) } } },
     { key: "info", label: t(ACTION_MODES.info.label), icon: ACTION_MODES.info.icon, color: ACTION_MODES.info.textColor, action: () => setAction("info") },
@@ -38,7 +34,6 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
     { key: "update", label: t(ACTION_MODES.update.label), icon: ACTION_MODES.update.icon, color: ACTION_MODES.update.textColor, action: () => setAction("update") },
     { key: "delete", label: t(ACTION_MODES.delete.label), icon: ACTION_MODES.delete.icon, color: ACTION_MODES.delete.textColor, action: () => setAction("delete") }
   ]
-
   const activeConfig = action ? ACTION_MODES[action] : null
   const recordLabel = row_id ?? ''
   const modalTitle = activeConfig ? `${t(activeConfig.modalPrefix)} ${tableName.toUpperCase()} ${recordLabel}`.trim() : ""
@@ -48,7 +43,6 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
       {descriptionText}
     </div>
   ) : descriptionText
-
   return (
     <div className="flex items-center gap-1">
       <SmartDropdown label={t("Actions")} icon="more-vertical" variant="ghost" items={dropdownItems} size={size} {...props} />
@@ -60,7 +54,6 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
                 endpoint={getEndpoint(action, row_id, resolvedEndpoint, updateEndpoint, deleteEndpoint)} onSuccess={(id: any) => { onSuccess?.(id); close() }}
               />
             )
-
             return isHistoria ? (
               <HistoriaForm mode={action} recordId={row_id} tableName={tableName} onSuccess={onSuccess}>
                 {formContent}

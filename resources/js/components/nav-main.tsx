@@ -9,16 +9,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
-import type { NavItem } from '@/types';
-
-type ExtendedNavItem = NavItem & { iconName?: string };
-
+type ExtendedNavItem = { title: string; href?: string; icon?: string | any; items?: ExtendedNavItem[]; };
 const NavIcon = memo(function NavIcon({ item }: { item: ExtendedNavItem }) {
-    if (item.iconName) return <DynamicIcon name={item.iconName} className="shrink-0" />;
-    if (item.icon) return <item.icon className="shrink-0" />;
-    return null;
+    if (!item.icon) return <DynamicIcon name="table" className="shrink-0 size-4" />;
+    if (typeof item.icon === 'string') return <DynamicIcon name={item.icon} className="shrink-0 size-4" />;
+    const Icon = item.icon;
+    return <Icon className="shrink-0 size-4" />;
 });
-
 const NavLink = memo(function NavLink({ item, isCurrentUrl, ButtonComponent, t }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; ButtonComponent: any; t: (key: string) => string }) {
     const isActive = Boolean(item.href && isCurrentUrl(item.href));
     return (
@@ -29,14 +26,11 @@ const NavLink = memo(function NavLink({ item, isCurrentUrl, ButtonComponent, t }
         </ButtonComponent>
     );
 });
-
 const MenuItem = memo(function MenuItem({ item, isCurrentUrl, t }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; t: (key: string) => string }) {
     const { state } = useSidebar();
     const isCollapsed = state === 'collapsed';
-
     if (item.items?.length) {
         const isChildActive = item.items.some((sub) => sub.href && isCurrentUrl(sub.href));
-
         if (isCollapsed) {
             return (
                 <SidebarMenuItem>
@@ -61,7 +55,6 @@ const MenuItem = memo(function MenuItem({ item, isCurrentUrl, t }: { item: Exten
                 </SidebarMenuItem>
             );
         }
-
         return (
             <Collapsible asChild defaultOpen={isChildActive} className="group/collapsible">
                 <SidebarMenuItem>
@@ -82,23 +75,19 @@ const MenuItem = memo(function MenuItem({ item, isCurrentUrl, t }: { item: Exten
             </Collapsible>
         );
     }
-
     return (<SidebarMenuItem><NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} t={t} /></SidebarMenuItem>);
 });
-
 const flatten = (items: ExtendedNavItem[]): ExtendedNavItem[] =>
     items.flatMap((i) => [...(i.href ? [i] : []), ...(i.items ? flatten(i.items) : [])]);
-
 export function NavMain({ items = [] }: { items: ExtendedNavItem[] }) {
     const { isCurrentUrl } = useCurrentUrl();
     const t = useTranslation();
     const [search, setSearch] = useState('');
     const filtered = search.trim() ? flatten(items).filter((i) => new RegExp(search, 'i').test(t(i.title))) : null;
-
     return (
         <SidebarGroup className="px-2 py-0 gap-2">
             <SidebarGroupLabel className="flex items-center justify-between w-full">
-                <span>{t('Platform')}</span> <SmartButton href="/settings/navigation" variant="ghost" icon='pencil' size="xs" tooltip={t('Manage navigation')} />
+                <span>{t('Platform')}</span> <SmartButton href="/settings/table" variant="ghost" icon="pencil" size="xs" tooltip={t('Manage tables')} />
             </SidebarGroupLabel>
             <SearchInput value={search} onChange={setSearch}/>
             <SidebarMenu className="mt-1">
@@ -109,5 +98,4 @@ export function NavMain({ items = [] }: { items: ExtendedNavItem[] }) {
         </SidebarGroup>
     );
 }
-
 export default NavMain;

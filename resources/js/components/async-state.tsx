@@ -1,4 +1,4 @@
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { SmartButton } from "@/components/smart-button";
 interface AsyncStateProps {
   isLoading: boolean
@@ -39,7 +39,7 @@ export const AsyncState = ({ isLoading, error, children, minHeight = "min-h-[150
             <div className={`flex flex-col items-center justify-center gap-2 text-center ${minHeight}`}>
                 <AlertCircle className="text-destructive" />
                 <p className="text-xs text-destructive font-medium">{error}</p>
-                {onRetry && <SmartButton onClick={onRetry} label="Reintentar" icon={RefreshCw} variant="ghost" />}
+                {onRetry && <SmartButton onClick={onRetry} label="Reintentar" icon='refresh-cw' variant="ghost" />}
             </div>
         );
     }

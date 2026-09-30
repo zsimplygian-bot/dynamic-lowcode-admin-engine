@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Traits\HasDynamicQuery;
-use App\Traits\HasTableMetadata;
+use App\Traits\HasTableFieldMetadata;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -10,7 +10,7 @@ use Inertia\Response;
 
 class DynamicTableController extends Controller
 {
-    use HasTableMetadata, HasDynamicQuery;
+    use HasTableFieldMetadata, HasDynamicQuery;
 
     public function show(string $table): Response
     {
@@ -20,14 +20,13 @@ class DynamicTableController extends Controller
 
     public function columns(string $table): JsonResponse
     {
-        return response()->json($this->getTableMetadata($table));
+        return response()->json($this->getTableFieldMetadata($table));
     }
 
     public function data(Request $request, string $table): JsonResponse
     {
-        $columns = $this->getTableMetadata($table);
         $perPage = (int) $request->input('per_page', 10);
-        $data = $this->buildTableQuery($request, $table, $columns)->paginate($perPage);
+        $data = $this->buildTableQuery($request, $table, $this->getTableFieldMetadata($table))->paginate($perPage);
 
         return response()->json([
             'data' => $data->items(),
@@ -39,9 +38,8 @@ class DynamicTableController extends Controller
 
     public function export(Request $request, string $table): JsonResponse
     {
-        $columns = $this->getTableMetadata($table);
         return response()->json([
-            'data' => $this->buildTableQuery($request, $table, $columns)->get(),
+            'data' => $this->buildTableQuery($request, $table, $this->getTableFieldMetadata($table))->get(),
         ]);
     }
 }
