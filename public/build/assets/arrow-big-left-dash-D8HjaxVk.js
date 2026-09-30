@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M19 15V9`,key:`1hci5f`}],[`path`,{d:`M15 15h-3v4l-7-7 7-7v4h3v6z`,key:`16tjna`}]],n=e(`ArrowBigLeftDash`,t);export{t as __iconNode,n as default};

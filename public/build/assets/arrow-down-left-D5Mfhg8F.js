@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M17 7 7 17`,key:`15tmo1`}],[`path`,{d:`M17 17H7V7`,key:`1org7z`}]],n=e(`ArrowDownLeft`,t);export{t as __iconNode,n as default};

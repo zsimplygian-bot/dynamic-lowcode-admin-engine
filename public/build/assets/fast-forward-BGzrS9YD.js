@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`polygon`,{points:`13 19 22 12 13 5 13 19`,key:`587y9g`}],[`polygon`,{points:`2 19 11 12 2 5 2 19`,key:`3pweh0`}]],n=e(`FastForward`,t);export{t as __iconNode,n as default};

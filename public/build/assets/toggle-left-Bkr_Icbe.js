@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`rect`,{width:`20`,height:`12`,x:`2`,y:`6`,rx:`6`,ry:`6`,key:`f2vt7d`}],[`circle`,{cx:`8`,cy:`12`,r:`2`,key:`1nvbw3`}]],n=e(`ToggleLeft`,t);export{t as __iconNode,n as default};

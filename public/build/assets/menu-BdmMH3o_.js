@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`line`,{x1:`4`,x2:`20`,y1:`12`,y2:`12`,key:`1e0a9i`}],[`line`,{x1:`4`,x2:`20`,y1:`6`,y2:`6`,key:`1owob3`}],[`line`,{x1:`4`,x2:`20`,y1:`18`,y2:`18`,key:`yk5zj1`}]],n=e(`Menu`,t);export{t as __iconNode,n as default};

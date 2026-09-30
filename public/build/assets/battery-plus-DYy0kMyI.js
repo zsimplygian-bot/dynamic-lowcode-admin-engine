@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M10 9v6`,key:`17i7lo`}],[`path`,{d:`M13.5 7H16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5`,key:`jzl4pj`}],[`path`,{d:`M22 11v2`,key:`1wo06k`}],[`path`,{d:`M6.5 17H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2.5`,key:`1ar5vp`}],[`path`,{d:`M7 12h6`,key:`iekk3h`}]],n=e(`BatteryPlus`,t);export{t as __iconNode,n as default};

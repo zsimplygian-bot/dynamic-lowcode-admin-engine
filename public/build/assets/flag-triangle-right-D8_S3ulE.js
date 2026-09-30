@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M7 22V2l10 5-10 5`,key:`17n18y`}]],n=e(`FlagTriangleRight`,t);export{t as __iconNode,n as default};

@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`,key:`afitv7`}],[`path`,{d:`M8 16V8l4 4 4-4v8`,key:`141u4e`}]],n=e(`SquareM`,t);export{t as __iconNode,n as default};

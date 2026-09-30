@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`polyline`,{points:`10 9 15 4 20 9`,key:`1lr6px`}],[`path`,{d:`M4 20h7a4 4 0 0 0 4-4V4`,key:`1plgdj`}]],n=e(`CornerRightUp`,t);export{t as __iconNode,n as default};

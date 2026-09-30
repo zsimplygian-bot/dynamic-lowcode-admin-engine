@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`circle`,{cx:`12`,cy:`12`,r:`10`,key:`1mglay`}],[`polyline`,{points:`12 6 12 12 14.5 8`,key:`12zbmj`}]],n=e(`Clock1`,t);export{t as __iconNode,n as default};

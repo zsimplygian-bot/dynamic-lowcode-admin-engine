@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M8 6h10`,key:`9lnwnk`}],[`path`,{d:`M6 12h9`,key:`1g9pqf`}],[`path`,{d:`M11 18h7`,key:`c8dzvl`}]],n=e(`ChartNoAxesGantt`,t);export{t as __iconNode,n as default};

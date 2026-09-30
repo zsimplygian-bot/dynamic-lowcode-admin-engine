@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z`,key:`q3az6g`}],[`path`,{d:`M8 15h5`,key:`vxg57a`}],[`path`,{d:`M8 11h5a2 2 0 1 0 0-4h-3v10`,key:`1usi5u`}]],n=e(`ReceiptRussianRuble`,t);export{t as __iconNode,n as default};

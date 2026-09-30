@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M12 20h.01`,key:`zekei9`}]],n=e(`WifiZero`,t);export{t as __iconNode,n as default};

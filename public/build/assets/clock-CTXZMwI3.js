@@ -1,0 +1,1 @@
+import{r as e}from"./react-SIfiwpqq.js";import{t}from"./createLucideIcon-BOMkqi6M.js";var n=e({__iconNode:()=>r,default:()=>i}),r=[[`circle`,{cx:`12`,cy:`12`,r:`10`,key:`1mglay`}],[`polyline`,{points:`12 6 12 12 16 14`,key:`68esgv`}]],i=t(`Clock`,r);export{n,i as t};

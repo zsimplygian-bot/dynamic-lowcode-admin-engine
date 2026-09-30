@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`line`,{x1:`18`,x2:`18`,y1:`20`,y2:`4`,key:`cun8e5`}],[`polygon`,{points:`14,20 4,12 14,4`,key:`ypakod`}]],n=e(`StepBack`,t);export{t as __iconNode,n as default};

@@ -1,0 +1,1 @@
+import{r as e}from"./react-SIfiwpqq.js";import{t}from"./createLucideIcon-BOMkqi6M.js";var n=e({__iconNode:()=>r,default:()=>i}),r=[[`path`,{d:`M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z`,key:`a7tn18`}]],i=t(`Moon`,r);export{n,i as t};

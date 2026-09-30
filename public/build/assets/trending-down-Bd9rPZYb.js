@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`polyline`,{points:`22 17 13.5 8.5 8.5 13.5 2 7`,key:`1r2t7k`}],[`polyline`,{points:`16 17 22 17 22 11`,key:`11uiuu`}]],n=e(`TrendingDown`,t);export{t as __iconNode,n as default};

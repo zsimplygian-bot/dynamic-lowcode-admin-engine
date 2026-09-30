@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M22 2 2 22`,key:`y4kqgn`}]],n=e(`Slash`,t);export{t as __iconNode,n as default};

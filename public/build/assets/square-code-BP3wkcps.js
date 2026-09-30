@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M10 9.5 8 12l2 2.5`,key:`3mjy60`}],[`path`,{d:`m14 9.5 2 2.5-2 2.5`,key:`1bir2l`}],[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`,key:`afitv7`}]],n=e(`SquareCode`,t);export{t as __iconNode,n as default};

@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`,key:`afitv7`}],[`path`,{d:`M12 8v8`,key:`napkw2`}],[`path`,{d:`m8.5 14 7-4`,key:`12hpby`}],[`path`,{d:`m8.5 10 7 4`,key:`wwy2dy`}]],n=e(`SquareAsterisk`,t);export{t as __iconNode,n as default};

@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14`,key:`36qu9e`}],[`path`,{d:`M2 20h20`,key:`owomy5`}],[`path`,{d:`M14 12v.01`,key:`xfcn54`}]],n=e(`DoorClosed`,t);export{t as __iconNode,n as default};

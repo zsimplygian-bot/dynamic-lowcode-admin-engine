@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M12 3v6`,key:`1holv5`}],[`circle`,{cx:`12`,cy:`12`,r:`3`,key:`1v7zrd`}],[`path`,{d:`M12 15v6`,key:`a9ows0`}]],n=e(`GitCommitVertical`,t);export{t as __iconNode,n as default};

@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M16 3h3v18h-3`,key:`1yor1f`}],[`path`,{d:`M8 21H5V3h3`,key:`1qrfwo`}]],n=e(`Brackets`,t);export{t as __iconNode,n as default};

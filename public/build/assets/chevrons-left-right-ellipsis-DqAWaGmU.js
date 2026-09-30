@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`m18 8 4 4-4 4`,key:`1ak13k`}],[`path`,{d:`m6 8-4 4 4 4`,key:`15zrgr`}],[`path`,{d:`M8 12h.01`,key:`czm47f`}],[`path`,{d:`M12 12h.01`,key:`1mp3jc`}],[`path`,{d:`M16 12h.01`,key:`1l6xoz`}]],n=e(`ChevronsLeftRightEllipsis`,t);export{t as __iconNode,n as default};

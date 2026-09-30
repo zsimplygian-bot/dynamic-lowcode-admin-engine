@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M13.228 21.925A10 10 0 1 1 21.994 12.338`,key:`1fzlyi`}],[`path`,{d:`M12 6v6l1.562.781`,key:`1ujuk9`}],[`path`,{d:`m14 18 4-4 4 4`,key:`ftkppy`}],[`path`,{d:`M18 22v-8`,key:`su0gjh`}]],n=e(`ClockArrowUp`,t);export{t as __iconNode,n as default};

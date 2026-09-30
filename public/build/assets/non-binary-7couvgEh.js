@@ -1,0 +1,1 @@
+import{t as e}from"./createLucideIcon-BOMkqi6M.js";var t=[[`path`,{d:`M12 2v10`,key:`mnfbl`}],[`path`,{d:`m9 4 6 4`,key:`t8piew`}],[`path`,{d:`m9 8 6-4`,key:`sndyih`}],[`circle`,{cx:`12`,cy:`17`,r:`5`,key:`qbz8iq`}]],n=e(`NonBinary`,t);export{t as __iconNode,n as default};
