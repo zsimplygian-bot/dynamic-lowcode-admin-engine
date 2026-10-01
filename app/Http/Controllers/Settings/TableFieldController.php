@@ -67,9 +67,9 @@ class TableFieldController extends Controller
         if ((!$currentField || $currentField !== $fieldName) && Schema::hasColumn($tableName, $fieldName)) {
             $this->notify("Field '{$fieldName}' already exists.", 'error', 'name');
         }
-        if ($this->isProtectedField($tableName, $currentField ?? $fieldName)) {
-            $this->notify("Field '{$fieldName}' is protected.", 'error', 'name');
-        }
+        //if ($this->isProtectedField($tableName, $currentField ?? $fieldName)) {
+        //    $this->notify("Field '{$fieldName}' is protected.", 'error', 'name');
+        //}
         // 2. Defensa: Claves Foráneas & Mapeo de Tipos (sin const TYPES)
         $foreignTable = null;
         $targetPk = null;
