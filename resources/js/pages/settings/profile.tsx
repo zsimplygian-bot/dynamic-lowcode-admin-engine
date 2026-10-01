@@ -16,7 +16,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     <><Head title={t('Profile settings')} />
       <div className="space-y-4">
         <Heading variant="small" title={t('Profile')} description={t('Update your profile photo, name, and email address')} />
-        <Form action="/settings/profile" method="patch" options={{ preserveScroll: true }} className="space-y-4">
+        <Form action="/settings/profile" method="post" options={{ preserveScroll: true }} className="space-y-4">
           {({ processing, errors }) => (
             <><FormGroup fields={fields} errors={errors} />
               {mustVerifyEmail && auth.user.email_verified_at === null && (
