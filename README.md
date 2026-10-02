@@ -45,3 +45,18 @@ El sistema está diseñado para que todos los módulos funcionen a partir de la 
 Diseñado bajo un enfoque pragmático, simple y escalable. Aplica el principio DRY en los componentes atómicos y mantiene la UI principal agrupada para evitar la sobreingeniería de abstracciones innecesarias. 
 
 Como caso de uso base, está preconfigurado para un **sistema de administración veterinaria**, incluyendo las tablas relacionadas y modelos necesarios para demostrar la generación automática de módulos.
+
+---
+
+## 🏗️ Preview
+
+La base de datos es la única fuente de verdad para el armado principal de los módulos, modificas la tabla y el resto se actualiza solo, solo se debe limpiar el caché:
+- **Configuración de tabla:**.
+<img width="1916" height="937" alt="Captura de pantalla 2026-10-02 124019" src="https://github.com/user-attachments/assets/315e3c77-3453-4ae8-8550-bb0abc954b0d" />
+
+- **Vista previa de datatable**.
+<img width="1596" height="280" alt="Captura de pantalla 2026-10-02 124219" src="https://github.com/user-attachments/assets/a42540a7-7538-45c6-8e25-342118213182" />
+
+- **Vista previa de formulario**.
+<img width="672" height="927" alt="Captura de pantalla 2026-10-02 124329" src="https://github.com/user-attachments/assets/9497bb55-2fc6-4dbb-8758-47646c5d7d7f" />
+
