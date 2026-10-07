@@ -1,35 +1,18 @@
 <?php
-
 namespace App\Traits;
-
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\{Cache, Schema};
 use Illuminate\Support\Str;
-
 trait HasTableFieldMetadata
 {
+    public function getTableColumns(string $table): array
+    {
+        return Cache::rememberForever("table_cols_{$table}", fn() => Schema::getColumnListing($table));
+    }
     public function getTableFieldMetadata(string $table): array
     {
-        $columns = [];
-
-        foreach (Schema::getColumnListing($table) as $name) {
-            $isForeign = str_ends_with($name, '_id');
-
-            $col = [
-                'accessor' => $name,
-                'header'   => Str::upper(str_replace('_', ' ', $name)),
-            ];
-            if ($isForeign) $col['hidden'] = true;
-            $columns[] = $col;
-
-            if ($isForeign) {
-                $rel = substr($name, 0, -3);
-                $columns[] = [
-                    'accessor' => $rel,
-                    'header'   => Str::upper(str_replace('_', ' ', $rel)),
-                ];
-            }
-        }
-
-        return $columns;
+        return Cache::rememberForever("table_meta_{$table}", fn() => array_map(function ($name) {
+            $key = str_ends_with($name, '_id') ? substr($name, 0, -3) : $name;
+            return ['accessor' => $key, 'header' => Str::upper(str_replace('_', ' ', $key))];
+        }, $this->getTableColumns($table)));
     }
 }

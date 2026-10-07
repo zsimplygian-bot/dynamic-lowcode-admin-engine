@@ -3,6 +3,7 @@ namespace App\Traits;
 trait HasProtectedTables
 {
     protected array $protectedTables = [
+        'audit',
         'cache', 
         'cache_locks', 
         'database_history', 
@@ -11,8 +12,7 @@ trait HasProtectedTables
         'jobs', 
         'migrations', 
         'model_has_permissions', 
-        'model_has_roles', 
-        'navigation',
+        'model_has_roles',
         'password_reset_tokens', 
         'permissions', 
         'personal_access_tokens',
