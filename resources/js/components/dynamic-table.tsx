@@ -10,23 +10,26 @@ import { DatePicker } from "@/components/date-picker"
 import { CellFormatter } from "@/components/datatable/cell-formatter"
 import { AsyncState } from "@/components/async-state"
 import { SearchInput } from "@/components/search-input"
-import { FormGroup } from "@/components/form-group"
+import { FormGroup, FieldConfig } from "@/components/form-group"
 import { Input } from "@/components/ui/input"
 import { useVirtualList } from "@/hooks/use-virtual-list"
 import { useApi } from "@/hooks/use-api"
 import { useTranslation } from "@/hooks/use-translation"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { cn } from "@/lib/utils"
+
 const EMPTY_ARR: any[] = []
 const PAGE_SIZES = [10, 15, 20, 50, 100, 250, 500]
 const DEFAULT_STORAGE = { query: { pageIndex: 0, appliedSearchValues: {}, dateRange: {} }, ui: { columnVisibility: {} } }
 const defaultRenderCell = (acc: string, row: any) => row?.[acc] ?? ""
+
 const TableRowMemo = memo(({ row, columns, renderCell, renderActions }: any) => (
   <TableRow className="group transition-colors hover:bg-muted/50 h-[33px]">
     {columns.map((c: any) => <TableCell key={c.accessor} className="px-4 py-0.5 whitespace-nowrap">{renderCell(c.accessor, row, c.type)}</TableCell>)}
     {renderActions && <TableCell className="sticky right-0 text-right bg-background group-hover:bg-muted/100 shadow-left w-[1%] px-0 py-0 whitespace-nowrap">{renderActions(row)}</TableCell>}
   </TableRow>
 ), (prev, next) => prev.row === next.row && prev.columns === next.columns)
+
 export const SmartTable = memo((props: any) => {
   const { data = EMPTY_ARR, visibleColumns = EMPTY_ARR, sortBy, sortOrder, loading, error, handleSort, getRowKey, fetchData, renderCell = defaultRenderCell, renderActions, virtualized = true } = props.tableState || props
   const totalCols = visibleColumns.length + (renderActions ? 1 : 0), totalRows = data.length
@@ -70,23 +73,56 @@ export const SmartTable = memo((props: any) => {
     </div>
   )
 })
-const SearchFormContent = memo(function SearchFormContent({ fields = EMPTY_ARR, appliedValues = {}, onApply, onClear }: any) {
+
+interface SearchFormContentProps {
+  tableName?: string
+  searchFields?: FieldConfig[]
+  appliedValues?: Record<string, any>
+  onApply: (values: Record<string, any>) => void
+  onClear: () => void
+}
+
+const SearchFormContent = memo(function SearchFormContent({ tableName, searchFields: passedFields, appliedValues = {}, onApply, onClear }: SearchFormContentProps) {
   const [vals, setVals] = useState(appliedValues)
+  const searchFieldsStorageKey = tableName ? `dt_search_fields_${tableName}` : ""
+  const [persistedFields, setPersistedFields] = useLocalStorage<FieldConfig[] | null>(searchFieldsStorageKey, null)
+
+  const schemaUrl = !passedFields && !persistedFields && tableName ? `/schema/${tableName}/fields` : null
+  const { data: fetchedFields, isLoading, error, refetch } = useApi<FieldConfig[]>(schemaUrl, {
+    enabled: Boolean(schemaUrl),
+    select: (r: any) => r?.data ?? r
+  })
+
+  useEffect(() => {
+    if (fetchedFields && fetchedFields.length > 0 && !persistedFields) {
+      setPersistedFields(fetchedFields)
+    }
+  }, [fetchedFields, persistedFields, setPersistedFields])
+
+  const fields = passedFields ?? persistedFields ?? fetchedFields ?? []
+
   useEffect(() => setVals(appliedValues || {}), [appliedValues])
   const has = Object.values(vals).some((v) => v != null && v !== "")
-  if (!fields.length) return <span className="text-xs text-muted-foreground px-2 py-2">No hay campos disponibles</span>
+
   return (
-    <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+    <div className="flex flex-col gap-2 min-w-[280px]" onClick={(e) => e.stopPropagation()}>
       <div className="w-100 pl-2 max-h-[400px] overflow-y-auto pr-1">
-        <FormGroup fields={fields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
+        <AsyncState isLoading={isLoading} error={error} onRetry={refetch} minHeight="min-h-[120px]">
+          {fields.length === 0 ? (
+            <span className="text-xs text-muted-foreground px-2 py-2 block text-center">No hay campos disponibles para filtrar</span>
+          ) : (
+            <FormGroup fields={fields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
+          )}
+        </AsyncState>
       </div>
       <div className="flex items-center gap-2 pt-1 border-t">
-        <SmartButton variant="default" size="sm" icon="check" disabled={!has} className="flex-1 justify-center" onClick={() => has && onApply(vals)} label="Aplicar" />
+        <SmartButton variant="default" size="sm" icon="check" disabled={!has || isLoading} className="flex-1 justify-center" onClick={() => has && onApply(vals)} label="Aplicar" />
         <ResetButton onReset={() => { setVals({}); onClear() }} canReset={has} size="sm" variant="ghost" className="flex-1 justify-center" label="Limpiar" tooltip="" />
       </div>
     </div>
   )
 })
+
 export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/table/${tableName}/data`, maxHeight = "75vh" }: any) {
   const baseId = useId()
   const t = useTranslation()
@@ -153,13 +189,15 @@ export function DynamicTableContent({ tableName, crudEndpoint, dataEndpoint = `/
   const changePageSize = useCallback((size: number) => patchQuery({ pageSize: Math.max(size, 1) }, true), [patchQuery])
   const getId = useCallback((row: any) => row?.[idKey] ?? row?.id, [idKey])
   const getRowKey = useCallback((row: any, i: number) => getId(row) ?? i, [getId])
-  const searchFields = useMemo(() => columns.filter((c: any) => c.searchable).map((c: any) => ({ id: c.accessor, name: c.accessor, label: c.header, type: c.type, options: c.options })), [columns])
+
   const activeSearchCount = Object.values(appliedSearchValues).filter(Boolean).length
   const isFiltered = Boolean(activeSearchCount || search || dateRange?.from || dateRange?.to || sortBy || pageIndex > 0 || (query.pageSize && query.pageSize !== (res?.per_page ?? 10)))
+  
   const searchMenuItems = useMemo<SDItem[]>(() => [
-    { type: "custom", custom: <SearchFormContent fields={searchFields} appliedValues={appliedSearchValues} onApply={(v: any) => 
+    { type: "custom", custom: <SearchFormContent tableName={tableName} appliedValues={appliedSearchValues} onApply={(v: any) => 
       patchQuery({ appliedSearchValues: v }, true)} onClear={() => patchQuery({ appliedSearchValues: {} }, true)} /> }
-  ], [searchFields, appliedSearchValues, patchQuery])
+  ], [tableName, appliedSearchValues, patchQuery])
+
   const toggleColumnItems = useMemo(() => columns.map(({ header: label, accessor: key, hidden }: any) => ({
     type: "checkbox" as const, label, checked: columnVisibility[key] ?? !hidden, onChange: () => toggleColumn(key)
   })), [columns, columnVisibility, toggleColumn])

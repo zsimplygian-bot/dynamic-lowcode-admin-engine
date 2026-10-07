@@ -1,57 +1,35 @@
 <?php
+
 namespace App\Traits;
 
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 trait HasTableFieldMetadata
 {
-    use HasSchemaCache, InfersColumnDefinition, HasExtraColumns;
-
-    protected const HIDDEN_BY_DEFAULT    = ['creater_id', 'updated_at', 'updater_id'];
-    protected const NON_SEARCHABLE_COLS  = ['creater_id', 'created_at', 'updater_id', 'updated_at'];
-    protected const NON_SEARCHABLE_TYPES = ['file', 'image'];
-
     public function getTableFieldMetadata(string $table): array
     {
-        return Cache::rememberForever("schema_datatable_columns_v2_{$table}", function () use ($table) {
-            $columns = [];
-            foreach ($this->getTableColumns($table) as $col) {
-                $base      = $this->buildBaseColumnDefinition($col, $table);
-                $name      = $base['name'];
-                $uiType    = $base['ui_type'];
-                $isForeign = $base['is_foreign'];
+        $columns = [];
 
-                $column = [
-                    'accessor' => $name,
-                    'header'   => $base['label'],
-                    'type'     => $uiType,
+        foreach (Schema::getColumnListing($table) as $name) {
+            $isForeign = str_ends_with($name, '_id');
+
+            $col = [
+                'accessor' => $name,
+                'header'   => Str::upper(str_replace('_', ' ', $name)),
+            ];
+            if ($isForeign) $col['hidden'] = true;
+            $columns[] = $col;
+
+            if ($isForeign) {
+                $rel = substr($name, 0, -3);
+                $columns[] = [
+                    'accessor' => $rel,
+                    'header'   => Str::upper(str_replace('_', ' ', $rel)),
                 ];
-
-                if (!empty($base['options'])) {
-                    $column['options'] = $base['options'];
-                }
-
-                if (!in_array($name, self::NON_SEARCHABLE_COLS, true) && !in_array($uiType, self::NON_SEARCHABLE_TYPES, true)) {
-                    $column['searchable'] = true;
-                }
-
-                if ($isForeign || in_array($name, self::HIDDEN_BY_DEFAULT, true)) {
-                    $column['hidden'] = true;
-                }
-
-                $columns[] = $column;
-
-                if ($isForeign) {
-                    $relatedName = substr($name, 3);
-                    $columns[] = [
-                        'accessor' => $relatedName,
-                        'header'   => $this->inferLabel($relatedName, null, false),
-                    ];
-                }
             }
+        }
 
-            $this->appendExtraColumnsToMetadata($table, $columns);
-            return $columns;
-        });
+        return $columns;
     }
 }

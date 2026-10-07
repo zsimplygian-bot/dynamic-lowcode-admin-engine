@@ -1,45 +1,36 @@
 <?php
 namespace App\Http\Controllers;
-
-use App\Traits\HasDynamicQuery;
-use App\Traits\HasTableFieldMetadata;
-use Illuminate\Http\JsonResponse;
+use App\Traits\{HasDynamicQuery, HasTableFieldMetadata};
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
-
+use Illuminate\Support\Facades\Schema;
+use Inertia\{Inertia, Response};
 class DynamicTableController extends Controller
 {
     use HasTableFieldMetadata, HasDynamicQuery;
-
     public function show(string $table): Response
     {
-        if (!$this->hasTableInSchema($table)) abort(404, "La tabla '{$table}' no existe.");
+        if (!Schema::hasTable($table)) abort(404, "La tabla '{$table}' no existe.");
         return Inertia::render('dynamic-table', ['tableName' => $table]);
     }
-
-    public function columns(string $table): JsonResponse
+    public function columns(string $table)
     {
-        return response()->json($this->getTableFieldMetadata($table));
+        return $this->getTableFieldMetadata($table);
     }
-
-    public function data(Request $request, string $table): JsonResponse
+    public function data(Request $request, string $table)
     {
         $perPage = (int) $request->input('per_page', 10);
         $data = $this->buildTableQuery($request, $table, $this->getTableFieldMetadata($table))->paginate($perPage);
-
-        return response()->json([
-            'data' => $data->items(),
-            'total' => $data->total(),
-            'page' => $data->currentPage(),
+        return [
+            'data'     => $data->items(),
+            'total'    => $data->total(),
+            'page'     => $data->currentPage(),
             'per_page' => $data->perPage(),
-        ]);
+        ];
     }
-
-    public function export(Request $request, string $table): JsonResponse
+    public function export(Request $request, string $table)
     {
-        return response()->json([
+        return [
             'data' => $this->buildTableQuery($request, $table, $this->getTableFieldMetadata($table))->get(),
-        ]);
+        ];
     }
-}
+}   

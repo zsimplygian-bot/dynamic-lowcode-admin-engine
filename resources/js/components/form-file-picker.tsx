@@ -7,38 +7,42 @@ import { cn } from "@/lib/utils"
 export interface FormFilePickerProps {
   id: string
   name?: string
+  value?: File | string | null
   defaultValue?: string
   accept?: string
   required?: boolean
   disabled?: boolean
   className?: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange?: (file: File | null) => void
 }
 
-export const FormFilePicker = ({ id, name = id, defaultValue, accept, required, disabled, className, onChange }: FormFilePickerProps) => {
+export const FormFilePicker = ({ id, name = id, value, defaultValue, accept, required, disabled, className, onChange }: FormFilePickerProps) => {
+  const initial = value !== undefined ? value : defaultValue
   const [fileState, setFileState] = useState(() => ({
-    preview: defaultValue ?? null,
-    fileName: defaultValue ? defaultValue.split("/").pop() ?? null : null,
-    isRemoved: false,
+    preview: typeof initial === "string" ? initial : initial instanceof File ? URL.createObjectURL(initial) : null,
+    fileName: typeof initial === "string" ? initial.split("/").pop() ?? null : initial instanceof File ? initial.name : null,
+    isRemoved: initial === null,
   }))
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   const { preview, fileName, isRemoved } = fileState
 
   useEffect(() => {
-    if (!preview?.startsWith("blob:")) {
-      setFileState({
-        preview: defaultValue ?? null,
-        fileName: defaultValue ? defaultValue.split("/").pop() ?? null : null,
-        isRemoved: false,
-      })
+    const current = value !== undefined ? value : defaultValue
+    if (current instanceof File) {
+      const url = URL.createObjectURL(current)
+      setFileState({ preview: url, fileName: current.name, isRemoved: false })
+      return () => URL.revokeObjectURL(url)
     }
-  }, [defaultValue])
+    if (typeof current === "string" && current) {
+      setFileState({ preview: current, fileName: current.split("/").pop() ?? null, isRemoved: false })
+    } else if (current === null) {
+      setFileState({ preview: null, fileName: null, isRemoved: true })
+    }
+  }, [value, defaultValue])
 
   useEffect(() => {
-    return () => {
-      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview)
-    }
+    return () => { if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview) }
   }, [preview])
 
   const handleClear = (e?: React.MouseEvent) => {
@@ -46,21 +50,20 @@ export const FormFilePicker = ({ id, name = id, defaultValue, accept, required, 
     e?.preventDefault()
     setFileState({ preview: null, fileName: null, isRemoved: true })
     if (inputRef.current) inputRef.current.value = ""
+    onChange?.(null)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0] ?? null
     setFileState({
       preview: file ? (file.type.startsWith("image/") ? URL.createObjectURL(file) : null) : null,
       fileName: file ? file.name : null,
       isRemoved: !file,
     })
-    onChange?.(e)
+    onChange?.(file)
   }
 
-  const triggerSelect = () => {
-    if (!disabled) inputRef.current?.click()
-  }
+  const triggerSelect = () => { if (!disabled) inputRef.current?.click() }
 
   const ext = fileName?.split(".").pop()?.toLowerCase() ?? ""
   const thumbUrl = preview && !preview.startsWith("blob:") ? preview.replace(/\.([^.]+)$/, "_thumb.$1") : null
@@ -80,9 +83,7 @@ export const FormFilePicker = ({ id, name = id, defaultValue, accept, required, 
       )}
       <div className="flex-1 flex items-center justify-between h-9 px-3 border rounded-md bg-muted/20 overflow-hidden">
         <span className="truncate text-sm">{fileName ?? "No hay archivo seleccionado"}</span>
-        {fileName && !disabled && (
-          <SmartButton icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />
-        )}
+        {fileName && !disabled && <SmartButton icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />}
       </div>
       <SmartButton icon="upload" tooltip="Seleccionar archivo" disabled={disabled} onClick={triggerSelect} />
     </div>

@@ -1,37 +1,25 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\DynamicModel;
 use App\Traits\HasNotify;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 class CitaController extends Controller
 {
     use HasNotify;
     public function proximas()
     {
-        [$t1, $t2, $t3] = ['mascota', 'cliente', 'motivo'];
-        $data = DB::table('cita as c')
-            ->leftJoin("$t1 as m", "m.id_$t1", "c.id_$t1")
-            ->leftJoin("$t2 as cl", "cl.id_$t2", "m.id_$t2")
-            ->leftJoin("$t3 as mo", "mo.id_$t3", "c.id_$t3")
-            ->select('c.*', 'mo.motivo', 'm.mascota', 'cl.cliente')
-            ->where('c.estado', 'PENDIENTE')
-            ->where('c.fecha', '>=', now()->startOfDay())
-            ->orderBy('c.fecha')
-            ->get()
-            ->map(function ($cita) {
-                $fechaCita = Carbon::parse($cita->fecha);
-                $cita->tiempo_restante = $fechaCita->diffForHumans(['parts' => 2]);
-                $cita->es_hoy = $fechaCita->isToday();
-                return $cita;
-            });
-
-        return response()->json($data);
+        return response()->json(
+            DynamicModel::fromTable('cita as c')
+                ->join('mascota as m', 'm.id', 'c.mascota_id')->join('cliente as cl', 'cl.id', 'm.cliente_id')->join('motivo as mo', 'mo.id', 'c.motivo_id')
+                ->select('c.id', 'c.fecha', 'mo.motivo', 'm.mascota', 'cl.cliente')
+                ->where([['c.estado', 'pendiente'], ['c.fecha', '>=', now()->startOfDay()]])
+                ->orderBy('c.fecha')
+                ->get()
+                ->each(function ($c) {
+                    $c->tiempo_restante = $c->fecha->diffForHumans(['parts' => 2]);
+                    $c->es_hoy = $c->fecha->isToday();
+                }));
     }
-    public function atender(string $id) { return $this->updateEstado($id, 'ATENDIDO', 'Cita atendida correctamente.'); }
-    public function cancelar(string $id) { return $this->updateEstado($id, 'CANCELADO', 'Cita cancelada correctamente.'); }
-    private function updateEstado(string $id, string $estado, string $msg, string $type = 'success')
-    {
-        DB::table('cita')->where('id_cita', $id)->update(['estado' => $estado]);
-        return $this->notify($msg, $type);
-    }
+    public function atender(string $id) { return $this->updateEstado($id, 'atendido', 'Appointment marked as attended.'); }
+    public function cancelar(string $id) { return $this->updateEstado($id, 'cancelado', 'Appointment cancelled successfully.'); }
+    private function updateEstado(string $id, string $estado, string $msg) { DynamicModel::fromTable('cita')->find($id)?->update(['estado' => $estado]); return $this->notify($msg); }
 }

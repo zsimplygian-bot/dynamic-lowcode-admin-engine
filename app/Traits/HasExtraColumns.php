@@ -1,7 +1,8 @@
 <?php
+
 namespace App\Traits;
 
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 
 trait HasExtraColumns
 {
@@ -15,16 +16,14 @@ trait HasExtraColumns
                 'header'     => 'MASCOTAS',
                 'type'       => 'number',
                 'after'      => 'cliente',
-                'sortable'   => true,
                 'searchable' => true,
-                'rawQuery'   => '(SELECT COUNT(*) FROM mascota WHERE mascota.id_cliente = cliente.id_cliente)',
+                'rawQuery'   => '(SELECT COUNT(*) FROM mascota WHERE mascota.cliente_id = cliente.id)',
             ]],
             'mascota' => [[
                 'accessor'   => 'edad',
                 'header'     => 'EDAD',
                 'type'       => 'text',
                 'after'      => 'fecha_nacimiento',
-                'sortable'   => true,
                 'searchable' => true,
                 'rawQuery'   => "CASE 
                     WHEN TIMESTAMPDIFF(YEAR, mascota.fecha_nacimiento, CURRENT_DATE) < 1 
@@ -44,23 +43,20 @@ trait HasExtraColumns
     {
         foreach ($this->getExtraColumnsConfig($table) as $extra) {
             $acc = $extra['accessor'];
-            $lbl = $extra['header'] ?? $acc;
-            $colDef = [
+            $colDef = array_filter([
                 'accessor'   => $acc,
                 'name'       => $acc,
-                'header'     => $lbl,
-                'label'      => $lbl,
+                'header'     => $extra['header'] ?? $acc,
+                'label'      => $extra['header'] ?? $acc,
                 'type'       => $extra['type'] ?? 'text',
-                'searchable' => $extra['searchable'] ?? false,
-                'sortable'   => $extra['sortable'] ?? true,
-                'hidden'     => $extra['hidden'] ?? false,
-                'is_primary' => false,
-                'is_foreign' => false,
+                'searchable' => $extra['searchable'] ?? null,
+                'sortable'   => true,
                 'is_extra'   => true,
-            ];
+            ], fn($v) => $v !== null);
+
             $after = $extra['after'] ?? null;
-            $idx   = $after ? array_search($after, array_column($columns, 'accessor')) : false;
-            if ($idx === false && $after) $idx = array_search($after, array_column($columns, 'name'));
+            $idx = $after ? array_search($after, array_column($columns, 'accessor')) : false;
+
             $idx !== false ? array_splice($columns, $idx + 1, 0, [$colDef]) : $columns[] = $colDef;
         }
     }

@@ -1,72 +1,22 @@
 <?php
-
 namespace App\Traits;
-
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
-
+use Illuminate\Database\Eloquent\Builder;
 trait HasDynamicRelations
 {
-    /**
-     * Configuraciones personalizadas para relaciones específicas
-     */
-    protected array $relationDefaults = [
-        'id_raza' => [
-            'select' => "CONCAT(ref_raza.especie, ' ', ref_raza.raza)",
-            'search' => "CONCAT(ref_raza.especie, ' ', ref_raza.raza)"
-        ],
-    ];
-
-    /**
-     * Aplica los LEFT JOINs y devuelve el mapa de columnas de búsqueda resueltas
-     */
-    protected function applyDynamicJoins(Builder $query, string $table, array $columns): array
+    protected array $defaults = [ 'raza_id' => [ 'select' => "CONCAT(raza.especie, ' ', raza.raza)", ], ];
+    protected function applyDynamicJoins(Builder $q, string $table, array $cols): void
     {
-        $pkName = "id_{$table}";
-        $foreigns = array_filter($columns, static function ($col) use ($pkName) {
-            $accessor = $col['accessor'] ?? '';
-            return $accessor !== $pkName && str_starts_with($accessor, 'id_');
-        });
-
-        $searchMapping = [];
-
-        if (empty($foreigns)) {
-            $query->select("{$table}.*");
-            return $searchMapping;
-        }
-
-        $selects = ["{$table}.*"];
-        $joinedAliases = [];
-
-        foreach ($foreigns as $col) {
-            $fkName       = $col['accessor'];
-            $relatedTable = substr($fkName, 3); // 'id_raza' -> 'raza'
-            $alias        = "ref_{$relatedTable}";
-
-            if (isset($joinedAliases[$alias])) continue;
-            $joinedAliases[$alias] = true;
-
-            $query->leftJoin("{$relatedTable} as {$alias}", "{$table}.{$fkName}", '=', "{$alias}.id_{$relatedTable}");
-
-            if (isset($this->relationDefaults[$fkName])) {
-                $config = $this->relationDefaults[$fkName];
-
-                if (!empty($config['joins'])) {
-                    foreach ($config['joins'] as $extraJoin) {
-                        $query->leftJoin(...$extraJoin);
-                    }
-                }
-
-                $selects[] = DB::raw("{$config['select']} as {$relatedTable}");
-                $searchMapping[$relatedTable] = DB::raw($config['search'] ?? $config['select']);
-            } else {
-                $selects[] = "{$alias}.{$relatedTable} as {$relatedTable}";
-                $searchMapping[$relatedTable] = "{$alias}.{$relatedTable}";
+        foreach ($cols as $col) {
+            $fk = $col['accessor'];
+            if (!str_ends_with($fk, '_id')) continue;
+            $rel = substr($fk, 0, -3);
+            $q->join($rel, "{$rel}.id", "{$table}.{$fk}");
+            $cfg = $this->defaults[$fk] ?? null;
+            if (isset($cfg['joins'])) {
+                foreach ($cfg['joins'] as $extra) $q->join(...$extra);
             }
+            $expr = $cfg['select'] ?? "{$rel}.{$rel}";
+            $q->selectRaw("{$expr} as {$rel}");
         }
-
-        $query->select($selects);
-
-        return $searchMapping;
     }
 }

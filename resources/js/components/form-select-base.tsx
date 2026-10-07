@@ -3,17 +3,14 @@ import { Input } from "@/components/ui/input"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { SmartPopover } from "@/components/smart-popover"
 import { SearchInput, SearchEmpty } from "@/components/search-input"
-
 export interface SelectBaseProps {
   id?: string; name?: string; value?: string | number; defaultValue?: string | number; options?: any[]
   placeholder?: string; disabled?: boolean; className?: string; open?: boolean; onOpenChange?: (open: boolean) => void
   infoAction?: React.ReactNode; headerActions?: React.ReactNode; children: (close: () => void) => React.ReactNode
 }
-
 export const SelectBaseLayout = ({ id, name, value = "", defaultValue = "", options = [], placeholder = "", disabled = false, className = "", open, onOpenChange, infoAction, headerActions, children }: SelectBaseProps) => {
   const currentVal = String(value || defaultValue)
   const selectedLabel = options.find((o: any) => String(o.id) === currentVal)?.label ?? ""
-
   return (
     <div className="w-full">
       {name && <input type="hidden" name={name} value={currentVal} />}
@@ -36,21 +33,17 @@ export const SelectBaseLayout = ({ id, name, value = "", defaultValue = "", opti
     </div>
   )
 }
-
 export interface SelectOptionsListProps {
   options: any[]; currentValue: string; disabled?: boolean; hasHeaderActions?: boolean
   onSelectOption: (id: string, close: () => void) => void; close: () => void
 }
-
 export const SelectOptionsList = ({ options = [], currentValue, disabled, hasHeaderActions, onSelectOption, close }: SelectOptionsListProps) => {
   const [{ filtered, query }, setFilterState] = useState<{ filtered: any[]; query: string }>({ filtered: options, query: "" })
-
   return (
     <div className="flex flex-col gap-1">
       <SearchInput items={options} searchKey="label" disabled={disabled} className={hasHeaderActions ? "pr-16" : ""} onFilter={setFilterState} />
       <div className="max-h-60 overflow-y-auto space-y-0.5">
-        {!filtered.length ? (
-          <SearchEmpty query={query} />
+        {!filtered.length ? ( <SearchEmpty query={query} />
         ) : (
           filtered.map((opt: any) => {
             const optId = String(opt.id)

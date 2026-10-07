@@ -3,11 +3,9 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Traits\HasDynamicFileUpload;
 use App\Traits\HasNotify;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Cache, Storage};
 use Inertia\Inertia;
-use Inertia\Response;
 class AppearanceController extends Controller
 {
     use HasDynamicFileUpload, HasNotify;
@@ -21,18 +19,14 @@ class AppearanceController extends Controller
         }
         return ['app_name' => config('app.name'), 'app_icon' => null];
     }
-    public function edit(): Response
-    {
-        return Inertia::render('settings/appearance', ['appSettings' => $this->getSettings()]);
-    }
-    public function update(Request $request): RedirectResponse
+    public function index() { return Inertia::render('settings/appearance', ['appSettings' => $this->getSettings()]); }
+    public function update(Request $request)
     {
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
             'app_icon' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
         ]);
         $settings = $this->getSettings();
-        // Pasa directamente el array u objeto de settings
         $data = $this->handleFilesUpload($request, 'icons', $validated, $settings);
         Storage::disk('local')->put($this->jsonPath, json_encode(array_merge($settings, $data), JSON_PRETTY_PRINT));
         Cache::forget('inertia_appearance_settings');
