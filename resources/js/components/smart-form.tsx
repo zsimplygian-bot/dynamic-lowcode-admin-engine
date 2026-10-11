@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "@inertiajs/react"
 import { SmartButton } from "@/components/smart-button"
 import { FormGroup, FieldConfig } from "@/components/form-group"
 import { AsyncState } from "@/components/async-state"
 import { ACTION_MODES, ActionMode } from "@/lib/action-modes"
 import { useApi } from "@/hooks/use-api"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 export interface SmartFormProps {
   action?: string
   endpoint?: string
@@ -21,31 +22,36 @@ export interface SmartFormProps {
   onError?: (errors: Record<string, string>) => void
   children?: React.ReactNode | ((props: { processing: boolean; errors: Record<string, string>; data: Record<string, any> }) => React.ReactNode)
 }
-export const SmartForm = ({ action, endpoint, mode = "s", method, tableName, recordId, fields: passedFields, initialValues, isLoading: externalLoading, options, onSuccess, onError, children }: SmartFormProps) => {
+export const SmartForm = ({ action, endpoint, mode = "s", method, tableName = "", recordId, fields: passedFields, initialValues, isLoading: externalLoading, options, onSuccess, onError, children }: SmartFormProps) => {
   const config = ACTION_MODES[mode]
-  const schemaUrl = !passedFields && tableName ? `/schema/${tableName}/fields` : null
+  const [cachedFields, setCachedFields] = useLocalStorage<FieldConfig[]>(`sf_fields_${tableName}`, [])
+  const schemaUrl = !passedFields && !cachedFields.length && tableName ? `/schema/${tableName}/fields` : null
   const recordUrl = !initialValues && recordId && tableName && mode !== "s" ? `/crud/${tableName}/${recordId}` : null
   const { data: fetchedFields, isLoading: loadingSchema } = useApi<FieldConfig[]>(schemaUrl, { select: (r: any) => r?.data ?? r })
   const { data: fetchedValues, isLoading: loadingRecord } = useApi<Record<string, any>>(recordUrl, { select: (r: any) => r?.data ?? r })
-  const fields = passedFields ?? fetchedFields ?? []
+  useEffect(() => {
+    if (fetchedFields?.length && !cachedFields.length) setCachedFields(fetchedFields)
+  }, [fetchedFields, cachedFields.length, setCachedFields])
   const isLoading = externalLoading || Boolean(loadingSchema || loadingRecord)
   const targetUrl = endpoint ?? action ?? `/crud/${tableName}${recordId && mode !== "s" ? `/${recordId}` : ""}`
   const isDelete = method === "delete" || mode === "d"
-  const defaultValues = useMemo(() => {
-    return fields.reduce((acc, f) => {
-      if (f.name && f.defaultValue !== undefined) acc[f.name] = f.defaultValue
-      return acc
-    }, {} as Record<string, any>)
-  }, [fields])
-  const formValues = useMemo(() => ({ ...defaultValues, ...initialValues, ...fetchedValues }), [defaultValues, initialValues, fetchedValues])
+  const fields = useMemo(() => {
+    const rawFields = passedFields ?? (cachedFields.length ? cachedFields : fetchedFields) ?? []
+    if (!initialValues) return rawFields
+    return rawFields.map((f) => {
+      const initVal = initialValues[f.name]
+      return initVal && typeof initVal === "object" && initVal.disabled ? { ...f, disabled: true } : f
+    })
+  }, [passedFields, cachedFields, fetchedFields, initialValues])
+  const formValues = useMemo(() => {
+    const defaults = fields.reduce((acc, f) => (f.name && f.defaultValue !== undefined ? { ...acc, [f.name]: f.defaultValue } : acc), {})
+    const inits = initialValues ? Object.entries(initialValues).reduce((acc, [k, v]) => ({ ...acc, [k]: v && typeof v === "object" && "value" in v ? v.value : v }), {}) : {}
+    return { ...defaults, ...inits, ...fetchedValues }
+  }, [fields, initialValues, fetchedValues])
   const { data, setData, post, delete: destroy, processing, errors } = useForm<Record<string, any>>(formValues)
-  const prevFetchedRef = useRef(fetchedValues)
   useEffect(() => {
-    if (fetchedValues && fetchedValues !== prevFetchedRef.current) {
-      prevFetchedRef.current = fetchedValues
-      setData((prev) => ({ ...prev, ...fetchedValues }))
-    }
-  }, [fetchedValues, setData])
+    if (Object.keys(formValues).length) setData(formValues)
+  }, [formValues])
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (mode === "i") return
@@ -60,10 +66,10 @@ export const SmartForm = ({ action, endpoint, mode = "s", method, tableName, rec
   return (
     <AsyncState isLoading={isLoading}>
       <form onSubmit={handleSubmit} className="flex flex-col h-full min-h-0 space-y-2">
-        {fields.length > 0 && (<div className="flex-1 overflow-y-auto space-y-2 pr-1"><FormGroup fields={fields} values={data} errors={errors} isReadonly={mode === "i" || mode === "d"} onChange={setData}/></div>)}
+        {fields.length > 0 && ( <div className="flex-1 overflow-y-auto space-y-2 pr-1"> <FormGroup fields={fields} values={data} errors={errors} isReadonly={mode === "i" || mode === "d"} onChange={setData} /> </div> )}
         {typeof children === "function" ? children({ processing, errors, data }) : children}
         {mode !== "i" && (
-          <div className="pt-4 flex items-center justify-end shrink-0 w-full gap-2 mt-2">
+          <div className="pt-4 flex items-center justify-end shrink-0 w-full gap-2">
             <SmartButton type="submit" label={config.label} loadingLabel={config.loadingLabel} variant={config.variant} buttonColor={config.buttonColor} icon={config.icon} isLoading={processing} />
           </div>
         )}

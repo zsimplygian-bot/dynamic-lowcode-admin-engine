@@ -1,7 +1,6 @@
 <?php
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DynamicActivityController;
 use App\Http\Controllers\DynamicCrudController;
 use App\Http\Controllers\DynamicFormSchemaController;
 use App\Http\Controllers\DynamicTableController;
@@ -30,7 +29,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
-    Route::get('/tables/{table}/actividades', [DynamicActivityController::class, 'actividades'])->name('tables.actividades');
     Route::prefix('api')->group(function () {
         // Rutas específicas primero
         Route::get('/lookups/{campo}', [LookupController::class, 'index'])->name('lookups');
@@ -42,8 +40,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/cita/{id}/atender', 'atender')->name('atender');
             Route::post('/cita/{id}/cancelar', 'cancelar')->name('cancelar');
         });
-        // Ruta genérica dinámica siempre al final
-        Route::get('/{tableName}/{id}/actividades', [DynamicActivityController::class, 'actividades'])->name('dynamic.actividades');
     });
 });
 require __DIR__.'/settings.php';

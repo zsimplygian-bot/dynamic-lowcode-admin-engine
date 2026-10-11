@@ -33,7 +33,7 @@ class DynamicTableController extends Controller
             'page' => $data->currentPage(),
             'per_page' => $data->perPage(),
         ];
-    }
+    }   
     public function export(Request $request, string $table) { return ['data' => $this->buildTableQuery($request, $table)->get()]; }
     private function getTableColumns(string $table): array { return Cache::rememberForever("table_cols_{$table}", fn() => Schema::getColumnListing($table)); }
     private function buildTableQuery(Request $request, string $table)
@@ -42,8 +42,9 @@ class DynamicTableController extends Controller
         $localCols = array_filter($cols, fn($c) => !str_ends_with($c, '_id'));
         $query = DynamicModel::fromTable($table)
             ->select(array_map(fn($c) => "{$table}.{$c}", $localCols))
-            ->leftJoin('audit', fn($j) => $j->on('audit.row_id', '=', "{$table}.id")->where('audit.table', $table)->where('audit.action', 'c'))
-            ->addSelect('audit.at as created_at');
+            ->leftJoin('audit', fn($j) => $j->on('audit.row_id', '=', "{$table}.id")->where('audit.table', $table)->where('audit.action', 's'))
+            ->addSelect('audit.at as created_at')
+            ->when($request->input('from'), fn($q, $from) => $q->where('audit.at', '>=', $from))->when($request->input('to'), fn($q, $to) => $q->where('audit.at', '<=', $to));
         $this->applyDynamicJoins($query, $table, $cols);
         if ($search = trim($request->input('search', ''))) {
             $query->where(function ($q) use ($table, $cols, $localCols, $search) {
@@ -51,10 +52,8 @@ class DynamicTableController extends Controller
                 $this->applyDynamicSearch($q, $search, $cols);
             });
         }
-        foreach (array_filter($request->except(['page', 'per_page', 'sort_by', 'sort_order', 'search']), fn($v) => $v !== null && $v !== '') as $field => $val) {
-            if (in_array($field, $cols, true)) {
-                $query->where("{$table}.{$field}", str_ends_with($field, '_id') ? '=' : 'like', str_ends_with($field, '_id') ? $val : "%{$val}%");
-            }
+        foreach (array_filter($request->except(['page', 'per_page', 'sort_by', 'sort_order', 'search', 'from', 'to']), fn($v) => $v !== null && $v !== '') as $field => $val) {
+            if (in_array($field, $cols, true)) { $query->where("{$table}.{$field}", str_ends_with($field, '_id') ? '=' : 'like', str_ends_with($field, '_id') ? $val : "%{$val}%"); }
         }
         $sortBy = $request->input('sort_by');
         $sortOrder = $request->input('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';

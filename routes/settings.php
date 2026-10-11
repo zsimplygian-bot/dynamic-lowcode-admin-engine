@@ -26,7 +26,7 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
     // Campos de tabla
     Route::get('/table/{table}', [TableFieldController::class, 'show'])->name('tables.fields.show');
     Route::post('/table/{table}/field', [TableFieldController::class, 'store'])->name('tables.fields.store');
-    Route::put('/table/{table}/field/{field}', [TableFieldController::class, 'update'])->name('tables.fields.update');
+    Route::post('/table/{table}/field/{field}', [TableFieldController::class, 'update'])->name('tables.fields.update');
     Route::delete('/table/{table}/field/{field}', [TableFieldController::class, 'destroy'])->name('tables.fields.destroy');
 
     // Permisos y Roles

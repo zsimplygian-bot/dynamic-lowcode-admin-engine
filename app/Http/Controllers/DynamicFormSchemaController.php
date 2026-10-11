@@ -35,13 +35,16 @@ class DynamicFormSchemaController extends Controller
             if ($mode === 'filter' && $uiType === 'file') continue;
             $type = ($isPrimary && $mode !== 'filter') ? 'hidden' : $uiType;
             $label = $this->inferLabel($name, $base['comment'] ?? null) . ($type === 'checkbox' ? '?' : '');
+            $isNullable = $col['nullable'] ?? $base['is_nullable'] ?? true;
+            $hasDefault = $col['default'] !== null || ($base['default'] ?? null) !== null;
+            $isRequired = !$isNullable && !$hasDefault && !$isPrimary && empty($col['auto_increment']) && $mode !== 'filter';
             $fieldData = [
                 'name'  => $name,
                 'label' => $label,
                 'type'  => $type,
             ];
+            if ($isRequired) $fieldData['required'] = true;
             if (!empty($base['options'])) $fieldData['options'] = $base['options'];
-            if (!($base['is_nullable'] ?? true) && !$isPrimary && $mode !== 'filter') $fieldData['required'] = true;
             if ($type === 'file') {
                 $fieldData['accept'] = Str::contains($name, self::IMAGE_KEYWORDS) ? 'image/*' : '*/*';
             }
@@ -49,5 +52,5 @@ class DynamicFormSchemaController extends Controller
         }
         return $fields;
     }
-    public function fields(Request $request, string $table) { return response()->json($this->getTableSchema($table, $request->input('mode', 'form'))); }
+    public function fields(Request $request, string $table) { return response()->json($this->getTableSchema($table, $request->input('mode', 'form')));  }
 }

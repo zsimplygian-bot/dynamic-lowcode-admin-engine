@@ -11,7 +11,7 @@ class HistoriaController extends Controller
     public function pdf(int $id)
     {
         $data = $this->obtenerDatosHistoria($id);
-        if (empty((array) $data)) abort(404, 'Historia clínica no encontrada.');
+        if (!$data) abort(404, 'Historia clínica no encontrada.');
         $edadFmt = $this->formatYearsAndMonths($data->fecha_nacimiento);
         $cliente = (object) ['cliente' => $data->cliente, 'telefono' => $data->telefono, 'direccion' => $data->direccion];
         $mascota = (object) [
@@ -45,49 +45,49 @@ class HistoriaController extends Controller
         ])->values();
         return response()->json($actividades);
     }
-    private function obtenerDatosHistoria(int $id): object
+    private function obtenerDatosHistoria(int $id): ?object
     {
         return DB::table('historia as h')
-            ->leftJoin('motivo as m', 'm.id', '=', 'h.motivo_id')
-            ->leftJoin('mascota as mas', 'mas.id', '=', 'h.mascota_id')
-            ->leftJoin('cliente as c', 'c.id', '=', 'mas.cliente_id')
-            ->leftJoin('raza as r', 'r.id', '=', 'mas.raza_id')
+            ->join('motivo as m', 'm.id', '=', 'h.motivo_id')
+            ->join('mascota as mas', 'mas.id', '=', 'h.mascota_id')
+            ->join('cliente as c', 'c.id', '=', 'mas.cliente_id')
+            ->join('raza as r', 'r.id', '=', 'mas.raza_id')
             ->where('h.id', $id)
             ->select([
                 'h.id', 'h.historia', 'h.estado', 'm.motivo',
                 'mas.mascota', 'mas.fecha_nacimiento', 'mas.peso', 'mas.sexo',
                 'c.cliente', 'c.telefono', 'c.direccion', 'r.raza', 'r.especie',
-            ])->first() ?? (object) [];
+            ])->first();
     }
     private function obtenerActividadesHistoria(int $id): Collection
     {
-        $seguimientos = DB::table('historia_seguimiento')->where('id_historia', $id)->get()->map(fn($s) => [
-            'id' => $s->id_historia_seguimiento, 'fecha_raw' => $s->fecha, 'tipo' => 'Seguimiento', 'titulo' => null,
+        $seguimientos = DB::table('historia_seguimiento')->where('historia_id', $id)->get()->map(fn($s) => [
+            'id' => $s->id, 'fecha_raw' => $s->fecha, 'tipo' => 'Seguimiento', 'titulo' => null,
             'raw_detalle' => $s->detalle, 'raw_obs' => $s->observaciones, 'precio' => 0.0,
         ]);
         $procedimientos = DB::table('historia_procedimiento as hp')
-            ->leftJoin('procedimiento as p', 'p.id_procedimiento', '=', 'hp.id_procedimiento')
-            ->where('hp.id_historia', $id)
-            ->select('hp.id_historia_procedimiento as id', 'hp.fecha', 'p.procedimiento', 'hp.detalle', DB::raw('COALESCE(hp.precio, p.precio, 0) as precio'))
+            ->leftJoin('procedimiento as p', 'p.id', '=', 'hp.procedimiento_id')
+            ->where('hp.historia_id', $id)
+            ->select('hp.id', 'hp.fecha', 'p.procedimiento', 'hp.detalle', DB::raw('COALESCE(hp.precio, p.precio, 0) as precio'))
             ->get()->map(fn($p) => [
                 'id' => $p->id, 'fecha_raw' => $p->fecha, 'tipo' => 'Procedimiento', 'titulo' => $p->procedimiento,
                 'raw_detalle' => $p->detalle, 'precio' => (float) $p->precio,
             ]);
         $productos = DB::table('historia_producto as hp')
-            ->leftJoin('producto as p', 'p.id_producto', '=', 'hp.id_producto')
-            ->where('hp.id_historia', $id)
-            ->select('hp.id_historia_producto as id', 'hp.fecha', 'p.producto', 'hp.dosis', 'hp.observaciones', DB::raw('COALESCE(hp.precio, p.precio, 0) as precio'))
+            ->leftJoin('producto as p', 'p.id', '=', 'hp.producto_id')
+            ->where('hp.historia_id', $id)
+            ->select('hp.id', 'hp.fecha', 'p.producto', 'hp.dosis', 'hp.observaciones', DB::raw('COALESCE(hp.precio, p.precio, 0) as precio'))
             ->get();
         $dosisGrouped = $productos->isNotEmpty() ? DB::table('historia_producto_dosis as hpd')
-            ->leftJoin('producto as p', 'p.id_producto', '=', 'hpd.id_producto')
-            ->whereIn('hpd.id_historia_producto', $productos->pluck('id'))
-            ->select('hpd.*', 'p.producto')->get()->groupBy('id_historia_producto') : collect();
+            ->leftJoin('producto as p', 'p.id', '=', 'hpd.producto_id')
+            ->whereIn('hpd.historia_producto_id', $productos->pluck('id'))
+            ->select('hpd.*', 'p.producto')->get()->groupBy('historia_producto_id') : collect();
         $productosMapped = $productos->map(fn($m) => [
             'id' => $m->id, 'fecha_raw' => $m->fecha, 'tipo' => 'Producto', 'titulo' => $m->producto, 'raw_dosis' => $m->dosis,
             'raw_obs' => $m->observaciones, 'dosis_list' => $dosisGrouped->get($m->id, collect()), 'precio' => (float) $m->precio,
         ]);
-        $anamnesis = DB::table('historia_anamnesis')->where('id_historia', $id)->get()->map(fn($a) => [
-            'id' => $a->id_historia_anamnesis, 'fecha_raw' => $a->fecha, 'tipo' => 'Anamnesis', 'titulo' => null,
+        $anamnesis = DB::table('historia_anamnesis')->where('historia_id', $id)->get()->map(fn($a) => [
+            'id' => $a->id, 'fecha_raw' => $a->fecha, 'tipo' => 'Anamnesis', 'titulo' => null,
             'temp' => $a->temperatura, 'fc' => $a->frecuencia_cardiaca, 'fr' => $a->frecuencia_respiratoria, 'tlc' => $a->tiempo_llenado_capilar, 'precio' => 0.0,
         ]);
         return collect()->concat($seguimientos)->concat($procedimientos)->concat($productosMapped)->concat($anamnesis);
