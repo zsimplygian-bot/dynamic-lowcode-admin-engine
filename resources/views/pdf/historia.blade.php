@@ -24,14 +24,18 @@
     <table>
         <tr>
             <td width="20%">
+                {{-- 
                 @if($logo)
                     <img src="{{ $logo }}" alt="Logo" style="height: 55px; width: auto;" />
                 @endif
+                --}}
             </td>
             <td width="60%" class="title">HISTORIA CLÍNICA #{{ $historia->id }}</td>
-            <td width="20%" class="text-right" style="font-size: 10px;">
-                <b>Fecha:</b> {{ $historia->created_at?->format('d/m/Y H:i') ?? 'N/A' }}
-            </td>
+            {{-- 
+<td width="20%" class="text-right" style="font-size: 10px;">
+    <b>Fecha:</b> {{ $historia->created_at?->format('d/m/Y H:i') ?? 'N/A' }}
+</td> 
+--}}
         </tr>
     </table>
 </div>

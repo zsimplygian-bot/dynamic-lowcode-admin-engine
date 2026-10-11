@@ -11,11 +11,9 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-
 class ProfileController extends Controller
 {
     use HasDynamicFileUpload, HasNotify;
-
     public function index(Request $request)
     {
         return Inertia::render('settings/profile', [
@@ -23,37 +21,26 @@ class ProfileController extends Controller
             'status'          => $request->session()->get('status'),
         ]);
     }
-
     public function update(ProfileUpdateRequest $request)
     {
         $user = $request->user();
         $validated = $request->validated();
         $data = $this->handleFilesUpload($request, 'avatars', $validated, $user);
-
         $user->fill($data);
-
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
-
         $user->save();
-
         return $this->notify('Profile updated.');
     }
-
     public function destroy(ProfileDeleteRequest $request)
     {
         $user = $request->user();
-
         $this->deleteRecordFiles($user);
-
         Auth::logout();
-
         $user->delete();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
         return redirect('/');
     }
 }

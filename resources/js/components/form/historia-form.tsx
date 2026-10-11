@@ -2,23 +2,27 @@ import { memo, useMemo } from "react"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ActionButtons } from "@/components/action-buttons"
 import { useApi } from "@/hooks/use-api"
+import { ActionMode } from "@/lib/action-modes"
+
 export interface ActividadItem { id: number | string; item: string; titulo?: string; detalle?: string; precio?: number; fecha_dia: string; fecha: string; tabla?: string }
-export interface HistoriaFormProps { mode?: string; recordId?: string | number; children: React.ReactNode; onSuccess?: (id?: any) => void; subtablas?: readonly string[]; sectionTitle?: string }
+export interface HistoriaFormProps { mode?: ActionMode; recordId?: string | number; children: React.ReactNode; onSuccess?: (id?: any) => void; subtablas?: readonly string[]; sectionTitle?: string }
+
 const DEFAULT_SUBTABLAS = ["historia_seguimiento", "historia_producto", "historia_procedimiento", "historia_anamnesis"] as const
+
 export const HistoriaForm = memo(({ mode, recordId, children, onSuccess, subtablas = DEFAULT_SUBTABLAS, sectionTitle = "ACTIVIDADES" }: HistoriaFormProps) => {
-  const isEditable = mode === "update"
+  const isEditable = mode === "u"
   const endpoint = recordId ? `/api/historia/${recordId}/actividades` : null
-  const { data: actividades, isLoading, refetch } = useApi<ActividadItem[]>(
-    endpoint,
-    { enabled: Boolean(recordId), initialData: undefined }
-  )
+  const { data: actividades, isLoading, refetch } = useApi<ActividadItem[]>(endpoint, { enabled: Boolean(recordId) })
+
   const initialPayload = useMemo(() => ({
     id_historia: { value: recordId, hidden: true }
   }), [recordId])
+
   const handleCreated = (data?: any) => {
     refetch()
     onSuccess?.(data)
   }
+
   const grupos = useMemo(() => {
     if (!actividades?.length) return []
     const map = new Map<string, ActividadItem[]>()
@@ -30,6 +34,7 @@ export const HistoriaForm = memo(({ mode, recordId, children, onSuccess, subtabl
     }
     return Array.from(map.entries())
   }, [actividades])
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh]">
       <div className="w-full lg:w-[450px] shrink-0">{children}</div>
@@ -86,3 +91,5 @@ export const HistoriaForm = memo(({ mode, recordId, children, onSuccess, subtabl
     </div>
   )
 })
+
+HistoriaForm.displayName = "HistoriaForm"

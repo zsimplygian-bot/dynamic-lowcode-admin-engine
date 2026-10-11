@@ -24,7 +24,9 @@ class AppearanceController extends Controller
     {
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
-            'app_icon' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'app_icon' => $request->hasFile('app_icon')
+                ? ['file', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048']
+                : ['nullable', 'string'],
         ]);
         $settings = $this->getSettings();
         $data = $this->handleFilesUpload($request, 'icons', $validated, $settings);

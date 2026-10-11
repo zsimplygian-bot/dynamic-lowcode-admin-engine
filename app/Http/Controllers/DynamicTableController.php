@@ -14,22 +14,23 @@ class DynamicTableController extends Controller
         if (!Schema::hasTable($table)) abort(404, "La tabla '{$table}' no existe.");
         return Inertia::render('dynamic-table', ['tableName' => $table]);
     }
-
     public function columns(string $table)
     {
-        return Cache::rememberForever("table_meta_{$table}", fn() => array_map(function ($name) {
-            $key = str_ends_with($name, '_id') ? substr($name, 0, -3) : $name;
-            return ['accessor' => $key, 'header' => Str::upper(str_replace('_', ' ', $key))];
-        }, $this->getTableColumns($table)));
+        return Cache::rememberForever("table_meta_{$table}", fn() => array_merge(
+            array_map(fn($c) => [
+                'accessor' => str_ends_with($c, '_id') ? substr($c, 0, -3) : $c,
+                'header' => Str::upper(str_replace('_', ' ', str_ends_with($c, '_id') ? substr($c, 0, -3) : $c))
+            ], $this->getTableColumns($table)),
+            [['accessor' => 'created_at', 'header' => 'CREATED AT']]
+        ));
     }
     public function data(Request $request, string $table)
     {
-        $perPage = (int) $request->input('per_page', 10);
-        $data = $this->buildTableQuery($request, $table)->paginate($perPage);
+        $data = $this->buildTableQuery($request, $table)->paginate((int) $request->input('per_page', 10));
         return [
-            'data'     => $data->items(),
-            'total'    => $data->total(),
-            'page'     => $data->currentPage(),
+            'data' => $data->items(),
+            'total' => $data->total(),
+            'page' => $data->currentPage(),
             'per_page' => $data->perPage(),
         ];
     }
@@ -39,7 +40,10 @@ class DynamicTableController extends Controller
     {
         $cols = $this->getTableColumns($table);
         $localCols = array_filter($cols, fn($c) => !str_ends_with($c, '_id'));
-        $query = DynamicModel::fromTable($table)->select(array_map(fn($c) => "{$table}.{$c}", $localCols));
+        $query = DynamicModel::fromTable($table)
+            ->select(array_map(fn($c) => "{$table}.{$c}", $localCols))
+            ->leftJoin('audit', fn($j) => $j->on('audit.row_id', '=', "{$table}.id")->where('audit.table', $table)->where('audit.action', 'c'))
+            ->addSelect('audit.at as created_at');
         $this->applyDynamicJoins($query, $table, $cols);
         if ($search = trim($request->input('search', ''))) {
             $query->where(function ($q) use ($table, $cols, $localCols, $search) {
@@ -47,16 +51,14 @@ class DynamicTableController extends Controller
                 $this->applyDynamicSearch($q, $search, $cols);
             });
         }
-        $reserved = ['page', 'per_page', 'sort_by', 'sort_order', 'search'];
-        $filters = array_filter($request->except($reserved), fn($val) => $val !== null && $val !== '');
-        foreach ($filters as $field => $value) {
-            if (!in_array($field, $cols, true)) continue;
-            if (str_ends_with($field, '_id')) { $query->where("{$table}.{$field}", $value);
-            } else {  $query->where("{$table}.{$field}", 'like', "%{$value}%");
+        foreach (array_filter($request->except(['page', 'per_page', 'sort_by', 'sort_order', 'search']), fn($v) => $v !== null && $v !== '') as $field => $val) {
+            if (in_array($field, $cols, true)) {
+                $query->where("{$table}.{$field}", str_ends_with($field, '_id') ? '=' : 'like', str_ends_with($field, '_id') ? $val : "%{$val}%");
             }
         }
         $sortBy = $request->input('sort_by');
         $sortOrder = $request->input('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';
-        return $query->orderBy($sortBy ? $this->getSortColumn($table, $sortBy, $cols) : "{$table}.id", $sortOrder);
+        $orderCol = $sortBy === 'created_at' ? 'audit.at' : ($sortBy ? $this->getSortColumn($table, $sortBy, $cols) : "{$table}.id");
+        return $query->orderBy($orderCol, $sortOrder);
     }
 }

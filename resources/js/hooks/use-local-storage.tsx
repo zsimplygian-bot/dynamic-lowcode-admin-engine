@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === "undefined") return initialValue
@@ -10,7 +9,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       return initialValue
     }
   })
-
   // Sincroniza si la clave cambia dinámicamente (p. ej. cambio de tabla)
   useEffect(() => {
     try {
@@ -24,7 +22,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       setStoredValue(initialValue)
     }
   }, [key])
-
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       setStoredValue((prev) => {
@@ -38,6 +35,5 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       console.error(e)
     }
   }
-
   return [storedValue, setValue] as const
 }

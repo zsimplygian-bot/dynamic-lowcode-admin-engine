@@ -25,7 +25,7 @@ class DynamicCrudController extends Controller
         $validated = app(DynamicValidationService::class)->validate($request, $tableName, $u);
         $finalData = $this->handleFilesUpload($request, $tableName, $validated, $u ? $record : null);
         $record->fill($finalData)->save();
-        AuditService::log($tableName, $record->getKey(), $u ? 'u' : 'c', $u ? $finalData : null);
+        AuditService::log($tableName, $record->getKey(), $u ? 'u' : 's', $u ? $finalData : null);
         return $this->notify("Record " . ($u ? 'updated' : 'created') . " successfully.");
     }
 }

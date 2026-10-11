@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from "react"
+import React, { useRef, useMemo, useEffect } from "react"
 import { SmartImagePreview } from "@/components/smart-image-preview"
 import { SmartButton } from "@/components/smart-button"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { cn } from "@/lib/utils"
-
 export interface FormFilePickerProps {
-  id: string
+  id?: string
   name?: string
   value?: File | string | null
   defaultValue?: string
@@ -15,77 +14,43 @@ export interface FormFilePickerProps {
   className?: string
   onChange?: (file: File | null) => void
 }
-
-export const FormFilePicker = ({ id, name = id, value, defaultValue, accept, required, disabled, className, onChange }: FormFilePickerProps) => {
-  const initial = value !== undefined ? value : defaultValue
-  const [fileState, setFileState] = useState(() => ({
-    preview: typeof initial === "string" ? initial : initial instanceof File ? URL.createObjectURL(initial) : null,
-    fileName: typeof initial === "string" ? initial.split("/").pop() ?? null : initial instanceof File ? initial.name : null,
-    isRemoved: initial === null,
-  }))
-
+export const FormFilePicker = ({ id, name, value, defaultValue, accept = "image/*", required, disabled, className, onChange }: FormFilePickerProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const { preview, fileName, isRemoved } = fileState
-
+  const fieldName = name ?? id ?? "file"
+  const current = value ?? defaultValue
+  const { previewUrl, fileName, isBlob } = useMemo(() => {
+    if (current instanceof File) { return { previewUrl: URL.createObjectURL(current), fileName: current.name, isBlob: true } }
+    if (typeof current === "string" && current.trim()) {  return { previewUrl: current, fileName: current.split("/").pop()?.split("?")[0] ?? "archivo", isBlob: false } }
+    return { previewUrl: null, fileName: null, isBlob: false }
+  }, [current])
   useEffect(() => {
-    const current = value !== undefined ? value : defaultValue
-    if (current instanceof File) {
-      const url = URL.createObjectURL(current)
-      setFileState({ preview: url, fileName: current.name, isRemoved: false })
-      return () => URL.revokeObjectURL(url)
-    }
-    if (typeof current === "string" && current) {
-      setFileState({ preview: current, fileName: current.split("/").pop() ?? null, isRemoved: false })
-    } else if (current === null) {
-      setFileState({ preview: null, fileName: null, isRemoved: true })
-    }
-  }, [value, defaultValue])
-
-  useEffect(() => {
-    return () => { if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview) }
-  }, [preview])
-
-  const handleClear = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    e?.preventDefault()
-    setFileState({ preview: null, fileName: null, isRemoved: true })
+    return () => { if (isBlob && previewUrl) URL.revokeObjectURL(previewUrl) }
+  }, [previewUrl, isBlob])
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (inputRef.current) inputRef.current.value = ""
     onChange?.(null)
   }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null
-    setFileState({
-      preview: file ? (file.type.startsWith("image/") ? URL.createObjectURL(file) : null) : null,
-      fileName: file ? file.name : null,
-      isRemoved: !file,
-    })
-    onChange?.(file)
-  }
-
-  const triggerSelect = () => { if (!disabled) inputRef.current?.click() }
-
   const ext = fileName?.split(".").pop()?.toLowerCase() ?? ""
-  const thumbUrl = preview && !preview.startsWith("blob:") ? preview.replace(/\.([^.]+)$/, "_thumb.$1") : null
-  const isImage = accept?.includes("image") || preview !== null || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)
-
+  const isImage = accept.includes("image") || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)
+  const thumbUrl = previewUrl && !isBlob ? previewUrl.replace(/\.([^.]+)$/, "_thumb.$1") : null
   return (
     <div className={cn("flex items-center gap-2 w-full", className)}>
-      {isRemoved && <input type="hidden" name={`_remove_${name}`} value="1" />}
-      <input ref={inputRef} id={id} name={name} type="file" accept={accept} required={required} disabled={disabled} onChange={handleFileChange} className="hidden" />
-      {preview ? (
-        <SmartImagePreview url={preview} thumbUrl={thumbUrl} size="md" disabled={disabled} />
+      <input ref={inputRef} id={id ?? fieldName} name={fieldName} type="file" accept={accept}
+        required={required && !previewUrl} disabled={disabled} onChange={(e) => onChange?.(e.target.files?.[0] ?? null)} className="hidden" />
+      {previewUrl ? ( <SmartImagePreview url={previewUrl} thumbUrl={thumbUrl} size="md" disabled={disabled} />
       ) : (
-        <div className="relative flex shrink-0 flex-col items-center justify-center size-16 rounded-full border border-dashed border-muted-foreground/60 bg-muted/60 group overflow-hidden">
-          <DynamicIcon name={isImage ? "image" : "file-text"} className="size-8 text-muted-foreground/60" />
-          {fileName && ext && <span className="text-[12px] font-bold uppercase text-muted-foreground leading-none mt-0.5 max-w-[90%] truncate">{ext}</span>}
+        <div className="relative flex shrink-0 flex-col items-center justify-center size-14 rounded-lg border border-dashed border-muted-foreground/40 bg-muted/40 overflow-hidden">
+          <DynamicIcon name={isImage ? "image" : "file-text"} className="size-6 text-muted-foreground/60" />
+          {ext && <span className="text-[10px] font-bold uppercase text-muted-foreground mt-0.5 max-w-[90%] truncate">{ext}</span>}
         </div>
       )}
-      <div className="flex-1 flex items-center justify-between h-9 px-3 border rounded-md bg-muted/20 overflow-hidden">
-        <span className="truncate text-sm">{fileName ?? "No hay archivo seleccionado"}</span>
-        {fileName && !disabled && <SmartButton icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />}
+      <div className="flex-1 flex items-center justify-between h-9 px-3 border rounded-md bg-muted/20 overflow-hidden text-sm">
+        <span className="truncate text-muted-foreground">{fileName ?? "No hay archivo seleccionado"}</span>
+        {fileName && !disabled && <SmartButton type="button" icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />}
       </div>
-      <SmartButton icon="upload" tooltip="Seleccionar archivo" disabled={disabled} onClick={triggerSelect} />
+      <SmartButton type="button" icon="upload" tooltip="Seleccionar archivo" disabled={disabled} onClick={() => inputRef.current?.click()} />
     </div>
   )
 }
+export default FormFilePicker

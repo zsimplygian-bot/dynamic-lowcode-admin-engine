@@ -1,11 +1,5 @@
 import * as React from "react"
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from "@/components/ui/tooltip"
-
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, } from "@/components/ui/tooltip"
 export interface SmartTooltipProps {
   content?: React.ReactNode
   side?: "top" | "right" | "bottom" | "left"
@@ -15,7 +9,6 @@ export interface SmartTooltipProps {
   className?: string
   children: React.ReactNode
 }
-
 export function SmartTooltip({
   content,
   side = "top",
@@ -25,19 +18,14 @@ export function SmartTooltip({
   className,
   children,
 }: SmartTooltipProps) {
-  if (!content || disabled) {
-    return <>{children}</>
-  }
-
+  if (!content || disabled) { return <>{children}</> }
   return (
     <TooltipProvider {...{ delayDuration }}>
       <Tooltip>
         <TooltipTrigger {...{ asChild: true }}>
           {children}
         </TooltipTrigger>
-        <TooltipContent {...{ side, align, className }}>
-          {typeof content === "string" ? <p>{content}</p> : content}
-        </TooltipContent>
+        <TooltipContent {...{ side, align, className }}> {typeof content === "string" ? <p>{content}</p> : content} </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
