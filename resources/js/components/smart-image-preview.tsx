@@ -2,25 +2,29 @@ import { memo } from "react"
 import { cn } from "@/lib/utils"
 import { SmartButton } from "@/components/smart-button"
 import { SmartModal } from "@/components/smart-modal"
+import { useThumb } from "@/hooks/use-thumb"
+
 interface SmartImagePreviewProps {
   url?: string | null
-  thumbUrl?: string | null
   size?: "sm" | "md"
   disabled?: boolean
   onClear?: (e: React.MouseEvent) => void
 }
-export const SmartImagePreview = memo(({ url, thumbUrl, size = "md", disabled, onClear }: SmartImagePreviewProps) => {
-  const displayThumb = thumbUrl || url
-  if (!displayThumb) return null
+
+export const SmartImagePreview = memo(({ url, size = "md", disabled, onClear }: SmartImagePreviewProps) => {
+  const { thumbUrl, hdUrl } = useThumb(url)
+
+  if (!thumbUrl) return null
   const sizeClass = size === "sm" ? "size-10" : "size-16"
+
   return (
     <div className={cn("relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted shadow-xs group", sizeClass)}>
-      <img src={displayThumb} alt="Preview" className="h-full w-full object-cover" />
+      <img src={thumbUrl} alt="Preview" className="h-full w-full object-cover" />
       <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
         <SmartModal trigger={<SmartButton icon='maximize-2' variant="outline" size="xs" tooltip="Inspeccionar HD" />}>
           {({ close }) => (
             <div className="flex min-h-[300px] flex-1 items-center justify-center overflow-hidden p-4" onClick={close}>
-              <img src={url || displayThumb} alt="Vista previa HD" className="max-h-[70vh] w-auto rounded-md object-contain shadow-md" />
+              <img src={hdUrl!} alt="Vista previa HD" className="max-h-[70vh] w-auto rounded-md object-contain shadow-md" />
             </div>
           )}
         </SmartModal>
@@ -29,4 +33,5 @@ export const SmartImagePreview = memo(({ url, thumbUrl, size = "md", disabled, o
     </div>
   )
 })
+
 SmartImagePreview.displayName = "SmartImagePreview"

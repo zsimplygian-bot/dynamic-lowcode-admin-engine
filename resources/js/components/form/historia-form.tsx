@@ -4,7 +4,8 @@ import { ActionButtons } from "@/components/action-buttons"
 import { AsyncState } from "@/components/async-state"
 import { useApi } from "@/hooks/use-api"
 import { ActionMode } from "@/lib/action-modes"
-export interface ActividadItem { 
+
+export interface ActividadItem {
   id: number | string
   item: string
   titulo?: string
@@ -14,26 +15,32 @@ export interface ActividadItem {
   fecha: string
   tabla: string
 }
-export interface HistoriaFormProps { 
+
+export interface HistoriaFormProps {
   mode?: ActionMode
   recordId?: string | number
-  children: ReactNode
+  form: ReactNode
   onSuccess?: (id?: any) => void
   subtablas?: readonly string[]
-  sectionTitle?: string 
+  sectionTitle?: string
 }
+
 const DEFAULT_SUBTABLAS = ["historia_seguimiento", "historia_producto", "historia_procedimiento", "historia_anamnesis"] as const
-export const HistoriaForm = memo(({ mode, recordId, children, onSuccess, subtablas = DEFAULT_SUBTABLAS, sectionTitle = "ACTIVIDADES" }: HistoriaFormProps) => {
+
+export const HistoriaForm = memo(({ mode, recordId, form, onSuccess, subtablas = DEFAULT_SUBTABLAS, sectionTitle = "ACTIVIDADES" }: HistoriaFormProps) => {
   const isEditable = mode === "u"
   const { data: actividades, isLoading, error, refetch } = useApi<ActividadItem[]>(
     recordId ? `/api/historia/${recordId}/actividades` : null,
     { enabled: Boolean(recordId) }
   )
+
   const initialPayload = useMemo(() => ({ historia_id: { value: recordId, disabled: true } }), [recordId])
+
   const handleCreated = (data?: any) => {
     refetch()
     onSuccess?.(data)
   }
+
   const grupos = useMemo(() => {
     if (!actividades?.length) return []
     const map = new Map<string, ActividadItem[]>()
@@ -45,9 +52,10 @@ export const HistoriaForm = memo(({ mode, recordId, children, onSuccess, subtabl
     }
     return Array.from(map.entries())
   }, [actividades])
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh]">
-      <div className="w-full lg:w-[450px] shrink-0">{children}</div>
+      <div className="w-full lg:w-[450px] shrink-0">{form}</div>
       <div className="w-full lg:w-[485px] shrink-0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground tracking-wide uppercase">{sectionTitle}</h3>

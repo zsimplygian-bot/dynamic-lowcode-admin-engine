@@ -13,7 +13,7 @@ export const SearchInput = ({ items = [], searchKey = "name", value: valueProp, 
     setSubmitted(v)
     ;(onSearchSubmit ?? onChange)?.(v)
   }
-  const setVal = (v: string) => {
+  const setVal = (v: string) => { 
     if (valueProp === undefined) setInternal(v)
     if (!filterOnEnter) trigger(v)
   }
@@ -40,9 +40,7 @@ export const SearchInput = ({ items = [], searchKey = "name", value: valueProp, 
       {search && <div className="absolute right-1 top-1/2 -translate-y-1/2"><SmartButton icon='x' variant="ghost" tooltip={t("Clear")} onClick={reset} /></div>}
     </div>
   )
-  if (typeof children === "function") {
-    return children({ filtered, query: activeQuery, input })
-  }
+  if (typeof children === "function") { return children({ filtered, query: activeQuery, input }) }
   return input
 }
 export const SearchEmpty = ({ query }: { query?: string }) => {

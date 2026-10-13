@@ -21,7 +21,10 @@ Route::middleware(['auth', 'verified'])->prefix('settings')->group(function () {
     Route::post('/table/import', [DatabaseIEController::class, 'import'])->name('tables.import');
 
     // Gestión de tablas
-    Route::resource('table', TableController::class)->except(['create', 'edit', 'show'])->names('tables');
+    Route::get('/table', [TableController::class, 'index'])->name('tables.index');
+    Route::post('/table', [TableController::class, 'store'])->name('tables.store');
+    Route::post('/table/{table}', [TableController::class, 'update'])->name('tables.update');
+    Route::delete('/table/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
 
     // Campos de tabla
     Route::get('/table/{table}', [TableFieldController::class, 'show'])->name('tables.fields.show');

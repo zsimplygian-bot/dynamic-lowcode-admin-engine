@@ -20,10 +20,8 @@ class DynamicCrudController extends Controller
         $record = $this->getModel($tableName)->findOrFail($id);
         $data = $record->toArray();
         $record->delete();
-
         app(DynamicHookService::class)->afterDelete($tableName, $data);
         AuditService::log($tableName, $id, 'd');
-
         return $this->notify('Record deleted successfully.');
     }
 
@@ -35,10 +33,9 @@ class DynamicCrudController extends Controller
         $validated = app(DynamicValidationService::class)->validate($request, $tableName, $u);
         $finalData = $this->handleFilesUpload($request, $tableName, $validated, $u ? $record : null);
         $record->fill($finalData)->save();
-
         app(DynamicHookService::class)->afterSave($tableName, $record->toArray(), $u);
         AuditService::log($tableName, $record->getKey(), $u ? 'u' : 's', $u ? $finalData : null);
 
-        return $this->notify("Record " . ($u ? 'updated' : 'created') . " successfully.");
+        return $this->notify("Record " . ($u ? 'updated' : 'created') . " successfully.", 'success', null, ['id' => $record->getKey()]);
     }
 }

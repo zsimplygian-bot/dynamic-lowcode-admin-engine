@@ -39,27 +39,23 @@ export const FormFilePicker = ({ id, name, value, defaultValue, accept = "image/
 
   const ext = fileName?.split(".").pop()?.toLowerCase() ?? ""
   const isImage = accept.includes("image") || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)
-  const thumbUrl = previewUrl && !isBlob ? previewUrl.replace(/\.([^.]+)$/, "_thumb.$1") : null
 
   return (
     <div className={cn("flex items-center gap-2 w-full", className)}>
       <input ref={inputRef} id={id ?? fieldName} name={fieldName} type="file" accept={accept}
         required={required && !previewUrl} disabled={disabled} onChange={(e) => onChange?.(e.target.files?.[0] ?? null)} className="hidden" />
-
       {previewUrl && isImage ? (
-        <SmartImagePreview url={previewUrl} thumbUrl={thumbUrl} size="md" disabled={disabled} />
+        <SmartImagePreview url={previewUrl} size="md" disabled={disabled} />
       ) : (
         <div className="relative flex shrink-0 flex-col items-center justify-center size-14 rounded-lg border border-dashed border-muted-foreground/40 bg-muted/40 overflow-hidden">
           <DynamicIcon name={isImage ? "image" : "file-text"} className="size-6 text-muted-foreground/60" />
           {ext && <span className="text-[10px] font-bold uppercase text-muted-foreground mt-0.5 max-w-[90%] truncate">{ext}</span>}
         </div>
       )}
-
       <div className="flex-1 flex items-center justify-between h-9 px-3 border rounded-md bg-muted/20 overflow-hidden text-sm">
         <span className="truncate text-muted-foreground">{fileName ?? "No hay archivo seleccionado"}</span>
         {fileName && !disabled && <SmartButton type="button" icon="trash-2" variant="ghost" size="sm" tooltip="Eliminar" onClick={handleClear} />}
       </div>
-
       <SmartButton type="button" icon="upload" tooltip="Seleccionar archivo" disabled={disabled} onClick={() => inputRef.current?.click()} />
     </div>
   )

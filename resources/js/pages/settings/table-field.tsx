@@ -4,7 +4,6 @@ import { SmartButton } from '@/components/smart-button';
 import { SmartBadge } from '@/components/smart-badge';
 import { SimpleList } from '@/components/simple-list';
 import { useTranslation } from '@/hooks/use-translation';
-
 const ICONS = {
     'toggle-left': ['tinyint', 'bool'],
     binary: ['int', 'bigint', 'mediumint', 'smallint'],
@@ -15,11 +14,7 @@ const ICONS = {
     'text-quote': ['varchar', 'text', 'mediumtext', 'longtext'],
     'code-2': ['json'],
 };
-
-const formatFields = (list) => list.map((f) => ({
-    ...f, icon: f.is_primary ? 'key' : Object.keys(ICONS).find((icon) => ICONS[icon].includes(f.type)) ?? 'type',
-}));
-
+const formatFields = (list) => list.map((f) => ({ ...f, icon: f.is_primary ? 'key' : Object.keys(ICONS).find((icon) => ICONS[icon].includes(f.type)) ?? 'type', }));
 export default function TableFieldsManager({ tableName, tableFields }: { tableName: string; tableFields: any[] }) {
     const t = useTranslation();
     const fields = [
@@ -36,17 +31,14 @@ export default function TableFieldsManager({ tableName, tableFields }: { tableNa
             { id: 'timestamp', label: `⏱️ ${t('Timestamp (timestamp)')}` },
             { id: 'date', label: `📅 ${t('Date (date)')}` },
             { id: 'decimal', label: `🪙 ${t('Decimal (decimal)')}` },
-            { id: 'json', label: `📦 ${t('JSON (json)')}` },
-        ]},
+            { id: 'json', label: `📦 ${t('JSON (json)')}` }, ]},
         { name: 'length', label: t('LENGTH / ENUM OPTIONS'), placeholder: t('e.g. 255 or "active, inactive"') },
         { name: 'default_value', label: t('DEFAULT VALUE'), placeholder: t('e.g. activo, 0, null') },
         { name: 'comment', label: t('COMMENT / DESCRIPTION'), placeholder: t('Description or purpose of this field'), type: 'textarea' },
         { name: 'order', label: t('LOCATION / PREVIOUS FIELD (AFTER)'), placeholder: t('e.g. id_navigation (or write "FIRST" for the beginning)') },
         { name: 'is_nullable', label: t('ALLOW NULL VALUES?'), type: 'checkbox', defaultValue: 1 },
         { name: 'auto_increment', label: t('AUTO INCREMENT?'), type: 'checkbox' },
-        { name: 'is_unsigned', label: t('UNSIGNED (NO NEGATIVES)?'), type: 'checkbox' },
-    ];
-
+        { name: 'is_unsigned', label: t('UNSIGNED (NO NEGATIVES)?'), type: 'checkbox' }, ];
     return (
         <>  <Head title={`${t('Fields of')} ${tableName}`} />
             <div className="space-y-2">
@@ -66,5 +58,4 @@ export default function TableFieldsManager({ tableName, tableFields }: { tableNa
         </>
     );
 }
-
 TableFieldsManager.layout = { breadcrumbs: [{ title: 'Table Settings', href: '/settings/table' }, { title: 'Table Fields', href: '#' }] };

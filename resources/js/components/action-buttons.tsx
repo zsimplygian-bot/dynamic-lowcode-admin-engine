@@ -45,12 +45,21 @@ export const ActionButtons = memo(({ row_id, tableName = "", endpoint, updateEnd
         <SmartModal open={true} onOpenChange={(o) => { if (!o) setAction(null) }} title={modalTitle} description={modalDescription} size={isHistoria ? "5xl" : "md"} className={isHistoria ? "lg:max-w-[1000px]" : undefined}>
           {({ close }) => {
             const formContent = (
-              <SmartForm mode={action} recordId={row_id} tableName={tableName} fields={fields} initialValues={initialValues}
-                endpoint={getEndpoint(action, row_id, resolvedEndpoint, updateEndpoint, deleteEndpoint)} onSuccess={(id: any) => { onSuccess?.(id); close() }}
+              <SmartForm
+                mode={action}
+                recordId={row_id}
+                tableName={tableName}
+                fields={fields}
+                initialValues={initialValues}
+                endpoint={getEndpoint(action, row_id, resolvedEndpoint, updateEndpoint, deleteEndpoint)}
+                onSuccess={(id: any) => { onSuccess?.(id); close() }}
               />
             )
-            return isHistoria ? ( <HistoriaForm mode={action} recordId={row_id} tableName={tableName} onSuccess={onSuccess}> {formContent} </HistoriaForm>
-            ) : formContent
+            return isHistoria ? (
+              <HistoriaForm mode={action} recordId={row_id} tableName={tableName} onSuccess={onSuccess} form={formContent} />
+            ) : (
+              formContent
+            )
           }}
         </SmartModal>
       )}
