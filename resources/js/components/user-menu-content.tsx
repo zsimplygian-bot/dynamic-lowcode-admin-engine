@@ -4,7 +4,6 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSep
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
-import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 import { useTranslation } from '@/hooks/use-translation';
 type Props = {
@@ -28,7 +27,7 @@ export function UserMenuContent({ user }: Props) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <Link className="block w-full cursor-pointer" href={edit()} prefetch onClick={cleanup} > <Settings /> {t('Settings')} </Link>
+                    <Link className="block w-full cursor-pointer" href="/settings" prefetch onClick={cleanup} > <Settings /> {t('Settings')} </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -1,56 +1,39 @@
 <?php
 namespace App\Http\Controllers;
-use App\Traits\InfersColumnDefinition;
+use App\Services\ColumnMetadata;
+use App\Traits\HasColumnLabel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 class DynamicFormSchemaController extends Controller
 {
-    use InfersColumnDefinition;
-    private const IMAGE_KEYWORDS = ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto'];
-    private const FILE_KEYWORDS  = ['documento', 'comprobante', 'pdf', 'file', 'anexo', 'archivo'];
-    private const EMAIL_KEYWORDS = ['email', 'correo'];
-    private const PHONE_KEYWORDS = ['telefono', 'celular', 'phone', 'tel'];
-    private const PASS_KEYWORDS  = ['password', 'contrasena', 'contraseña', 'clave_acceso', 'clave'];
-    private function resolveFormInputType(string $name, string $baseType, bool $isForeign): string
-    {
-        if ($isForeign) return 'select';
-        if (Str::contains($name, array_merge(self::IMAGE_KEYWORDS, self::FILE_KEYWORDS))) return 'file';
-        if ($baseType === 'text' || $baseType === 'textarea') {
-            if (Str::contains($name, self::EMAIL_KEYWORDS)) return 'email';
-            if (Str::contains($name, self::PHONE_KEYWORDS)) return 'tel';
-            if (Str::contains($name, self::PASS_KEYWORDS)) return 'password';
-        }
-        return $baseType;
-    }
+    use HasColumnLabel;
     public function getTableSchema(string $table, string $mode = 'form'): array
     {
         $fields = [];
-        $columns = Schema::getColumns($table);
-        foreach ($columns as $col) {
-            $base = $this->buildBaseColumnDefinition($col);
-            $name = $base['name'];
-            $isPrimary = $base['is_primary'] ?? false;
-            $uiType = $this->resolveFormInputType($name, $base['base_type'], !empty($base['is_foreign']));
+        foreach (Schema::getColumns($table) as $col) {
+            $name = $col['name'];
+            $isPrimary = $name === 'id';
+            $uiType = ColumnMetadata::inputType($name, $col['type']);
             if ($mode === 'filter' && $uiType === 'file') continue;
             $type = ($isPrimary && $mode !== 'filter') ? 'hidden' : $uiType;
-            $label = $this->inferLabel($name, $base['comment'] ?? null) . ($type === 'checkbox' ? '?' : '');
-            $isNullable = $col['nullable'] ?? $base['is_nullable'] ?? true;
-            $hasDefault = $col['default'] !== null || ($base['default'] ?? null) !== null;
-            $isRequired = !$isNullable && !$hasDefault && !$isPrimary && empty($col['auto_increment']) && $mode !== 'filter';
-            $fieldData = [
-                'name'  => $name,
-                'label' => $label,
-                'type'  => $type,
-            ];
-            if ($isRequired) $fieldData['required'] = true;
-            if (!empty($base['options'])) $fieldData['options'] = $base['options'];
-            if ($type === 'file') {
-                $fieldData['accept'] = Str::contains($name, self::IMAGE_KEYWORDS) ? 'image/*' : '*/*';
-            }
-            $fields[] = $fieldData;
+            $label = $this->inferLabel($name, $col['comment'] ?? null) . ($type === 'checkbox' ? '?' : '');
+            $isRequired = !$col['nullable'] && $col['default'] === null && !$isPrimary && empty($col['auto_increment']) && $mode !== 'filter';
+            $field = [ 'name'  => $name, 'label' => $label, 'type'  => $type, ];
+            if ($isRequired) $field['required'] = true;
+            if ($mode !== 'filter' && $col['default'] !== null) $field['defaultValue'] = $this->parseDefaultValue($col['default'], $type);
+            if ($options = ColumnMetadata::parseEnum($col['type'])) $field['options'] = $options;
+            if ($type === 'file') $field['accept'] = Str::contains($name, ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto']) ? 'image/*' : '*/*';
+            $fields[] = $field;
         }
         return $fields;
     }
-    public function fields(Request $request, string $table) { return response()->json($this->getTableSchema($table, $request->input('mode', 'form')));  }
+    public function fields(Request $request, string $table) { return response()->json($this->getTableSchema($table, $request->input('mode', 'form'))); }
+    private function parseDefaultValue(mixed $default, string $type): mixed
+    {
+        $val = trim((string) $default, "'\"");
+        if ($type === 'checkbox' || $type === 'boolean') return in_array(strtolower($val), ['1', 'true', '1::boolean']);
+        if ($type === 'number') return is_numeric($val) ? $val + 0 : $val;
+        return $val;
+    }
 }

@@ -14,9 +14,7 @@ class DynamicCrudController extends Controller
     public function destroy(string $table, string $id)
     {
         $record = $this->getModel($table)->findOrFail($id);
-        $data = $record->toArray();
-        $record->delete();
-        app(DynamicHookService::class)->afterDelete($table, $data);
+        app(DynamicHookService::class)->delete($table, $record);
         AuditService::log($table, $id, 'd');
         return $this->notify('Record deleted successfully.');
     }

@@ -42,12 +42,11 @@ export const SmartForm = ({ action, endpoint, mode = "s", method, tableName, rec
   const form = useForm<Record<string, any>>(formValues)
   const { data, setData, processing, errors } = form
   useEffect(() => { if (Object.keys(formValues).length) setData(formValues) }, [formValues])
+  const hasFiles = useMemo(() => fields.some((f) => f.type === "file"), [fields])
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (mode === "i") return
-    form[httpMethod](targetUrl, {
-      preserveScroll: true,
-      ...options,
+    form[httpMethod](targetUrl, { preserveScroll: true, forceFormData: hasFiles, ...options,
       onSuccess: (p: any) => { options?.onSuccess?.(p); onSuccess?.(p) },
       onError: (errs: any) => { options?.onError?.(errs); onError?.(errs) }
     })
