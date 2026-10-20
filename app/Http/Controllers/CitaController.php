@@ -14,39 +14,13 @@ class CitaController extends Controller
                 ->join('cliente as cl', 'cl.id', 'm.cliente_id')
                 ->join('motivo as mo', 'mo.id', 'c.motivo_id')
                 ->join('estado_cita as ec', 'ec.id', 'c.estado_cita_id')
-                ->select(
-                    'c.id',
-                    'c.fecha',
-                    'mo.motivo',
-                    'm.mascota',
-                    'cl.cliente',
-                    'ec.estado_cita as estado' // O ec.nombre / ec.estado
-                )
-                ->where([
-                    ['ec.estado_cita', 'pendiente'], // Cambia 'ec.estado_cita' si tu columna es 'ec.nombre' o 'ec.estado'
-                    ['c.fecha', '>=', now()->startOfDay()]
-                ])
+                ->where('ec.estado_cita', 'pendiente')->where('c.fecha', '>=', now()->startOfDay())
                 ->orderBy('c.fecha')
-                ->get()
-                ->each(function ($c) {
-                    $fecha = Carbon::parse($c->fecha);
-                    $c->tiempo_restante = $fecha->diffForHumans(['parts' => 2]);
-                    $c->es_hoy = $fecha->isToday();
-                })
-        );
+                ->get(['c.id', 'c.fecha', 'mo.motivo', 'm.mascota', 'cl.cliente', 'ec.estado_cita as estado'])
+                ->each(fn($c) => [$c->tiempo_restante = Carbon::parse($c->fecha)->diffForHumans(['parts' => 2]), $c->es_hoy = Carbon::parse($c->fecha)->isToday() ]) );
     }
-    public function atender(string $id) { return $this->updateEstado($id, 'atendido', 'Appointment marked as attended.'); }
-    public function cancelar(string $id) { return $this->updateEstado($id, 'cancelado', 'Appointment cancelled successfully.'); }
-    private function updateEstado(string $id, string $estadoNombre, string $msg)
+    public function cambiarEstado(string $id, int $estadoId)
     {
-        $estadoCitaId = DynamicModel::fromTable('estado_cita')
-            ->where('estado_cita', $estadoNombre) // O 'nombre' / 'estado'
-            ->value('id');
-        if ($estadoCitaId) {
-            DynamicModel::fromTable('cita')
-                ->find($id)
-                ?->update(['estado_cita_id' => $estadoCitaId]);
-        }
-        return $this->notify($msg);
+        DynamicModel::fromTable('cita')->where('id', $id)->update(['estado_cita_id' => $estadoId]); return $this->notify('Estado actualizado correctamente.');
     }
 }

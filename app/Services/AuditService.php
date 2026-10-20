@@ -1,8 +1,6 @@
 <?php
 namespace App\Services;
-
 use Illuminate\Support\Facades\{Auth, DB};
-
 class AuditService
 {
     public static function log(int|string $table, int|string $rowId, string $action, ?array $payload = null): void
