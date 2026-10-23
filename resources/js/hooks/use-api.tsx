@@ -1,76 +1,60 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { isCancel, AxiosRequestConfig, AxiosResponse } from "axios"
+import { isCancel } from "axios"
 import { api } from "@/lib/api"
 
-interface UseApiOptions<T> {
+export interface UseApiOptions<T = any> {
+  params?: Record<string, any>
   enabled?: boolean
   initialData?: T
-  config?: AxiosRequestConfig
-  select?: (data: any) => T
+  select?: (raw: any) => T
 }
 
-export function useApi<T = any>(
-  url?: string | null | false,
-  { enabled = true, initialData, config, select }: UseApiOptions<T> = {}
-) {
+export function useApi<T = any>(url?: string | null | false, options: UseApiOptions<T> = {}) {
+  const { params, enabled = true, initialData, select } = options
   const [data, setData] = useState<T | undefined>(initialData)
-  const [status, setStatus] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(Boolean(enabled && url))
+  const [raw, setRaw] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(Boolean(enabled && url))
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<number | null>(null)
 
-  // 1. Soporta cualquier tipo de dato (arrays, objetos anidados, booleanos, strings)
-  const paramsKey = JSON.stringify(config?.params)
-
-  const abortCtrlRef = useRef<AbortController | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const selectRef = useRef(select)
   selectRef.current = select
-  const configRef = useRef(config)
-  configRef.current = config
+  const paramsKey = JSON.stringify(params)
 
-  // 2. Función de ejecución directa (cancela la anterior si sigue en vuelo)
-  const execute = useCallback(async () => {
-    if (!enabled || !url) {
-      setIsLoading(false)
-      return
-    }
+  const refetch = useCallback(async (extraParams?: Record<string, any>) => {
+    if (!enabled || !url) return setIsLoading(false)
 
-    abortCtrlRef.current?.abort() // Cancela cualquier petición previa pendiente
+    abortRef.current?.abort()
     const ctrl = new AbortController()
-    abortCtrlRef.current = ctrl
+    abortRef.current = ctrl
 
     setIsLoading(true)
     setError(null)
 
     try {
-      const res: AxiosResponse = await api.get(url, { ...configRef.current, signal: ctrl.signal })
-      const parsed = selectRef.current ? selectRef.current(res.data) : res.data
-      if (!ctrl.signal.aborted) {
-        setData(parsed)
-        setStatus(res.status)
-      }
+      const res = await api.get(url, { params: { ...params, ...extraParams }, signal: ctrl.signal })
+      const resData = res.data
+      // Desempaqueta resData.data automáticamente si no pasas select personalizado
+      const parsed = selectRef.current ? selectRef.current(resData) : (resData?.data ?? resData)
+      setData(parsed)
+      setRaw(resData)
+      setStatus(res.status)
       return parsed
     } catch (err: any) {
-      if (!isCancel(err) && !ctrl.signal.aborted) {
+      if (!isCancel(err)) {
         setStatus(err.response?.status ?? null)
         setError(err.response?.data?.message ?? err.message ?? "Error al cargar")
       }
     } finally {
       if (!ctrl.signal.aborted) setIsLoading(false)
     }
-  }, [enabled, url, paramsKey])
+  }, [url, enabled, paramsKey])
 
-  // 3. Solo se dispara cuando cambian realmente la URL, los params o enabled
   useEffect(() => {
-    execute()
-    return () => abortCtrlRef.current?.abort()
-  }, [execute])
+    refetch()
+    return () => abortRef.current?.abort()
+  }, [refetch])
 
-  return {
-    data,
-    status,
-    isLoading,
-    error,
-    setData,
-    refetch: execute, // Directo: sin estados intermediarios ni números de conteo
-  }
+  return { data, raw, isLoading, error, status, setData, refetch }
 }

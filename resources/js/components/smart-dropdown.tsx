@@ -6,129 +6,64 @@ import { Badge } from "@/components/ui/badge"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { BaseTriggerProps, sizeClasses, colorClasses } from "@/lib/trigger-utils"
 
-type BaseItem = {
-  label?: string
-  icon?: string
-  color?: string
-  disabled?: boolean
-  variant?: "default" | "destructive"
-  action?: () => void
+export type SDItem = "-" | { separator?: boolean; type?: "item" | "checkbox" | "custom"; label?: string; icon?: string; color?: string; disabled?: boolean; variant?: "default" | "destructive"; 
+  checked?: boolean; alignContent?: "left" | "center"; content?: React.ReactNode; action?: () => void; onChange?: (v: boolean) => void }
+
+export interface SmartDropdownProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, Omit<BaseTriggerProps, 'icon'> {
+  icon?: string; iconPosition?: "left" | "right"; buttonLabel?: React.ReactNode; label?: string; items?: SDItem[]; align?: "start" | "center" | "end"; closeOnSelect?: boolean; 
+  itemsMaxHeight?: number | string; disableHover?: boolean;
 }
 
-export type SDItem =
-  | "-"
-  | { separator: true }
-  | (BaseItem & { type?: "item"; custom?: React.ReactNode })
-  | (BaseItem & { type: "checkbox"; checked: boolean; onChange: (v: boolean) => void })
-
-export interface SmartDropdownProps extends Omit<BaseTriggerProps, 'icon'> {
-  icon?: string
-  buttonLabel?: React.ReactNode
-  label?: string
-  labelExtra?: React.ReactNode
-  items: SDItem[]
-  align?: "start" | "center" | "end"
-  closeOnSelect?: boolean
-  itemsMaxHeight?: number | string
-  disableHover?: boolean
-}
-
-const stopPropagation = (e: React.MouseEvent) => e.stopPropagation()
-
-const DropdownItemRow = memo(({ item, iconSize, disableHover, prevent }: { item: SDItem; iconSize?: number | string; disableHover: boolean; prevent: (e: Event) => void }) => {
-  if (item === "-" || ("separator" in item && item.separator)) return <DropdownMenuSeparator />
-
-  if (typeof item === "object" && "custom" in item && item.custom !== undefined) {
-    return <div onClick={stopPropagation} className="w-full">{item.custom}</div>
-  }
-
+export const SmartDropdown = memo(forwardRef<HTMLButtonElement, SmartDropdownProps>(({ icon, iconPosition = "left", buttonLabel, buttonClassName, className, variant = "default", buttonColor, badge, badgeClassName, iconSize, size = "md", label, items = [], align = "end", closeOnSelect = false, itemsMaxHeight, disableHover = false, disabled, ...props }, ref) => {
+  const prevent = useCallback((e: Event) => { if (!closeOnSelect) e.preventDefault() }, [closeOnSelect])
+  const finalIconSize = iconSize ?? sizeClasses[size].iconSize
   const hoverClass = disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
 
-  if (item.type === "checkbox") {
-    const { checked, disabled, onChange: onCheckedChange, icon, label: text } = item
-    return (
-      <DropdownMenuCheckboxItem checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
-        {icon && <DynamicIcon name={icon} style={{ width: iconSize, height: iconSize }} className="mr-2 opacity-80" />}
-        <span>{text}</span>
-      </DropdownMenuCheckboxItem>
-    )
-  }
-
-  const { disabled, variant, action: onClick, icon, color, label } = item
   return (
-    <DropdownMenuItem disabled={disabled} variant={variant} onClick={onClick} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
-      {icon && <DynamicIcon name={icon} style={{ width: iconSize, height: iconSize }} className="opacity-80" />}
-      <span className={color}>{label}</span>
-    </DropdownMenuItem>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button ref={ref} variant={variant} disabled={disabled} className={cn("relative", !buttonLabel ? sizeClasses[size].iconOnly : sizeClasses[size].btn, buttonColor && variant === "default" && colorClasses[buttonColor], buttonClassName, className)} {...props}>
+          {iconPosition === "left" && icon && <DynamicIcon name={icon} style={{ width: finalIconSize, height: finalIconSize }} />}
+          {buttonLabel && <span>{buttonLabel}</span>}
+          {iconPosition === "right" && icon && <DynamicIcon name={icon} style={{ width: finalIconSize, height: finalIconSize }} />}
+          {badge !== undefined && badge !== null && <Badge className={cn("absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] leading-none bg-secondary text-secondary-foreground font-medium pointer-events-none", badgeClassName)}>{badge}</Badge>}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align}>
+        {label && (
+          <>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <div className={cn(itemsMaxHeight && "overflow-y-auto")} style={itemsMaxHeight ? { maxHeight: itemsMaxHeight } : undefined}>
+          {items.map((it, idx) => {
+            if (it === "-" || (typeof it === "object" && it.separator)) return <DropdownMenuSeparator key={idx} />
+            if (it.type === "custom") return <div key={idx} onKeyDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>{it.content}</div>
+            
+            const isCenter = it.alignContent === "center"
+            if (it.type === "checkbox") {
+              return (
+                <DropdownMenuCheckboxItem key={idx} checked={!!it.checked} disabled={it.disabled} onCheckedChange={it.onChange} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
+                  <div className={cn("flex items-center w-full", isCenter ? "justify-center gap-1.5" : "gap-2")}>
+                    {it.icon && <DynamicIcon name={it.icon} style={{ width: finalIconSize, height: finalIconSize }} className="opacity-80" />}
+                    <span>{it.label}</span>
+                  </div>
+                </DropdownMenuCheckboxItem>
+              )
+            }
+            return (
+              <DropdownMenuItem key={idx} disabled={it.disabled} variant={it.variant} onClick={it.action} onSelect={prevent} className={cn("cursor-pointer", hoverClass)}>
+                <div className={cn("flex items-center w-full", isCenter ? "justify-center gap-1.5" : "gap-2")}>
+                  {it.icon && <DynamicIcon name={it.icon} style={{ width: finalIconSize, height: finalIconSize }} className="opacity-80" />}
+                  <span className={it.color}>{it.label}</span>
+                </div>
+              </DropdownMenuItem>
+            )
+          })}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
-})
-DropdownItemRow.displayName = "DropdownItemRow"
-
-export const SmartDropdown = memo(
-  forwardRef<HTMLButtonElement, SmartDropdownProps>(function SmartDropdown({
-    icon,
-    buttonLabel,
-    buttonClassName: btnClassName,
-    variant = "default",
-    buttonColor,
-    badge,
-    badgeClassName,
-    iconSize,
-    size = "md",
-    label,
-    labelExtra,
-    items,
-    align = "end",
-    closeOnSelect = false,
-    itemsMaxHeight,
-    disableHover = false,
-  }, ref) {
-    const prevent = useCallback((e: Event) => {
-      if (!closeOnSelect) e.preventDefault()
-    }, [closeOnSelect])
-
-    const config = sizeClasses[size]
-    const finalIconSize = iconSize ?? config.iconSize
-
-    const buttonClassName = cn(
-      "relative inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors cursor-pointer shrink-0",
-      !buttonLabel ? config.iconOnly : config.btn,
-      buttonColor && variant === "default" && colorClasses[buttonColor],
-      btnClassName
-    )
-
-    const badgeClass = cn(
-      "absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] leading-none bg-secondary text-secondary-foreground font-medium",
-      badgeClassName
-    )
-
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button ref={ref} variant={variant} className={buttonClassName}>
-            {icon && <DynamicIcon name={icon} style={{ width: finalIconSize, height: finalIconSize }} />}
-            {buttonLabel}
-            {badge !== undefined && badge !== null && <Badge className={badgeClass}>{badge}</Badge>}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align={align}>
-          {(label || labelExtra) && (
-            <>
-              <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                {label && <span>{label}</span>}
-                {labelExtra && <div onClick={stopPropagation} className="font-normal">{labelExtra}</div>}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <div className={cn(itemsMaxHeight && "overflow-y-auto")} style={itemsMaxHeight ? { maxHeight: itemsMaxHeight } : undefined}>
-            {items.map((it, idx) => (
-              <DropdownItemRow key={idx} item={it} iconSize={finalIconSize} disableHover={disableHover} prevent={prevent} />
-            ))}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
-  })
-)
+}))
 SmartDropdown.displayName = "SmartDropdown"

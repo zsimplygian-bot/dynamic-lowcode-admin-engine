@@ -8,44 +8,43 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from '@/components/ui/sidebar'
 import { useCurrentUrl } from '@/hooks/use-current-url'
-import { useTranslation } from '@/hooks/use-translation'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useApi } from '@/hooks/use-api'
-type ExtendedNavItem = { title: string; href?: string; icon?: string; items?: ExtendedNavItem[] }
-const NavItemContent = ({ item, t }: { item: ExtendedNavItem; t: (key: string) => string }) => (
-  <><DynamicIcon name={item.icon ?? 'table'} className="shrink-0 size-4" /><span className="truncate">{t(item.title)}</span></> )
-const NavLink = memo(({ item, isCurrentUrl, ButtonComponent, t }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; ButtonComponent: any; t: (key: string) => string }) => {
+export interface ExtendedNavItem { title: string; href?: string; icon?: string; items?: ExtendedNavItem[] }
+export interface NavMainProps { items?: ExtendedNavItem[] }
+const NavItemContent = ({ item }: { item: ExtendedNavItem }) => ( <><DynamicIcon name={item.icon ?? 'table'} className="shrink-0 size-4" /><span className="truncate">{t(item.title)}</span></> )
+const NavLink = memo(({ item, isCurrentUrl, ButtonComponent }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; ButtonComponent: any }) => {
   const isActive = Boolean(item.href && isCurrentUrl(item.href))
   return (
     <ButtonComponent asChild={Boolean(item.href)} isActive={isActive} tooltip={{ children: t(item.title) }} className="w-full pr-2 [&_svg]:!size-4">
-      {item.href ? (<Link href={item.href} prefetch className="flex items-center gap-2 w-full min-w-0"><NavItemContent item={item} t={t} /></Link>) : (<div className="flex items-center gap-2 w-full min-w-0"><NavItemContent item={item} t={t} /></div>)}
+      {item.href ? (<Link href={item.href} prefetch className="flex items-center gap-2 w-full min-w-0"><NavItemContent item={item} /></Link>) 
+      : (<div className="flex items-center gap-2 w-full min-w-0"><NavItemContent item={item} /></div>)}
     </ButtonComponent>
   )
 })
-const MenuItem = memo(({ item, isCurrentUrl, t, search }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; t: (key: string) => string; search: string }) => {
+const MenuItem = memo(({ item, isCurrentUrl, search }: { item: ExtendedNavItem; isCurrentUrl: (href: string) => boolean; search: string }) => {
   const { state } = useSidebar()
   const matchingSubs = item.items?.filter((sub) => sub.title.toLowerCase().includes(search)) ?? []
   if (search && !item.title.toLowerCase().includes(search) && !matchingSubs.length) return null
   const isChildActive = Boolean(item.items?.some((sub) => sub.href && isCurrentUrl(sub.href)))
   const [isOpen, setIsOpen] = useLocalStorage(`nav_${item.title}`, isChildActive)
-  if (!item.items?.length) { return <SidebarMenuItem><NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} t={t} /></SidebarMenuItem> }
+  if (!item.items?.length) return <SidebarMenuItem><NavLink item={item} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuButton} /></SidebarMenuItem>
   const subItems = search ? matchingSubs : item.items
   const isCollapsed = state === 'collapsed'
   const MenuTrigger = (
     <SidebarMenuButton tooltip={{ children: t(item.title) }} isActive={isChildActive} className="pr-2 [&_svg]:!size-4">
-      <NavItemContent item={item} t={t} /> {!isCollapsed && <ChevronRight className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />}
+      <NavItemContent item={item} /> {!isCollapsed && <ChevronRight className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />}
     </SidebarMenuButton>
   )
   const SubList = subItems.map((sub) => (
     isCollapsed ? (
-      <DropdownMenuItem key={sub.title} asChild className="cursor-pointer"><Link href={sub.href ?? '#'} prefetch className="flex items-center gap-2 w-full"><NavItemContent item={sub} t={t} /></Link></DropdownMenuItem>
-    ) : (<SidebarMenuSubItem key={sub.title} className="pr-0"><NavLink item={sub} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuSubButton} t={t} /></SidebarMenuSubItem>)
+      <DropdownMenuItem key={sub.title} asChild className="cursor-pointer"><Link href={sub.href ?? '#'} prefetch className="flex items-center gap-2 w-full"><NavItemContent item={sub}/></Link></DropdownMenuItem>
+    ) : (<SidebarMenuSubItem key={sub.title} className="pr-0"><NavLink item={sub} isCurrentUrl={isCurrentUrl} ButtonComponent={SidebarMenuSubButton} /></SidebarMenuSubItem>)
   ))
   return (
     <SidebarMenuItem>
       {isCollapsed ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>{MenuTrigger}</DropdownMenuTrigger> <DropdownMenuContent side="right" align="start" className="min-w-48">{SubList}</DropdownMenuContent></DropdownMenu>
+        <DropdownMenu><DropdownMenuTrigger asChild>{MenuTrigger}</DropdownMenuTrigger><DropdownMenuContent side="right" align="start" className="min-w-48">{SubList}</DropdownMenuContent></DropdownMenu>
       ) : (
         <Collapsible asChild open={search ? true : isOpen} onOpenChange={setIsOpen} className="group/collapsible">
           <div>
@@ -59,9 +58,8 @@ const MenuItem = memo(({ item, isCurrentUrl, t, search }: { item: ExtendedNavIte
     </SidebarMenuItem>
   )
 })
-export function NavMain({ items: initialItems = [] }: { items?: ExtendedNavItem[] }) {
+export function NavMain({ items: initialItems = [] }: NavMainProps) {
   const { isCurrentUrl } = useCurrentUrl()
-  const t = useTranslation()
   const [search, setSearch] = useState('')
   const [items, setItems] = useLocalStorage<ExtendedNavItem[]>('app_nav_items', initialItems)
   const { data: navData } = useApi<ExtendedNavItem[]>('/api/navigation', { enabled: !items.length })
@@ -73,9 +71,7 @@ export function NavMain({ items: initialItems = [] }: { items?: ExtendedNavItem[
         <SmartButton href="/settings/table" variant="ghost" icon="pencil" size="xs" tooltip={t('Manage tables')} />
       </SidebarGroupLabel>
       <SearchInput value={search} onChange={setSearch} />
-      <SidebarMenu className="mt-1">
-        {items.map((item) => <MenuItem key={item.title} item={item} isCurrentUrl={isCurrentUrl} t={t} search={search.trim().toLowerCase()} />)}
-      </SidebarMenu>
+      <SidebarMenu className="mt-1"> {items.map((item) => <MenuItem key={item.title} item={item} isCurrentUrl={isCurrentUrl} search={search.trim().toLowerCase()} />)} </SidebarMenu>
     </SidebarGroup>
   )
 }

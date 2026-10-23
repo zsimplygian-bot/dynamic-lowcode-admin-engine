@@ -31,7 +31,7 @@ export const SmartPopover = memo(({
       <PopoverContent align={align} side={side} className={`${sizeClass} p-0 z-50 ${className ?? ""}`}>
         {(title || description) && (
           <div className="p-2 border-b text-center">
-            {title && <h4 className="font-medium text-xs leading-none">{title}</h4>}
+            {title && <h4 className="font-medium text-sm ">{title}</h4>}
             {description && <p className="text-[11px] text-muted-foreground mt-1">{description}</p>}
           </div>
         )}

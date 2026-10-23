@@ -3,9 +3,8 @@ import { useState } from 'react'
 import Heading from '@/components/heading'
 import { SmartButton } from '@/components/smart-button'
 import { SmartCard } from '@/components/smart-card'
-import { useTranslation } from '@/hooks/use-translation'
 export default function Cache() {
-  const t = useTranslation()
+  
   const [clearing, setClearing] = useState(false)
   const handleClearGlobalCache = () => {
     setClearing(true)

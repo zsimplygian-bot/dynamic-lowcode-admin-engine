@@ -8,6 +8,12 @@ class DynamicCrudController extends Controller
 {
     use HasDynamicFileUpload, HasNotify;
     protected function getModel(string $table): DynamicModel { return DynamicModel::fromTable($table); }
+    public function destroyBulk(Request $request, string $table)
+    {
+        $ids = $request->input('ids', []);
+        $this->getModel($table)->whereIn('id', $ids)->delete();
+        return $this->notify('Rows succesfully deleted.');
+    }
     public function show(string $table, string $id) { return response()->json(['data' => $this->getModel($table)->findOrFail($id)]); }
     public function store(Request $request, string $table) { return $this->persist($request, $table); }
     public function update(Request $request, string $table, string $id) { return $this->persist($request, $table, $id); }

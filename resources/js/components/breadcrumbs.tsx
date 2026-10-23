@@ -1,14 +1,13 @@
 import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, } from '@/components/ui/breadcrumb';
-import { useTranslation } from '@/hooks/use-translation';
+import { t } from "@/hooks/use-translation";
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 export function Breadcrumbs({
     breadcrumbs,
 }: {
     breadcrumbs: BreadcrumbItemType[];
 }) {
-    const t = useTranslation();
     return (
         <>  {breadcrumbs.length > 0 && (
                 <Breadcrumb>

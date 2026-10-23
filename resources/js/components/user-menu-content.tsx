@@ -5,14 +5,13 @@ import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
 import type { User } from '@/types';
-import { useTranslation } from '@/hooks/use-translation';
 type Props = {
     user: User;
 };
 
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
-    const t = useTranslation();
+    ;
 
     const handleLogout = () => {
         cleanup();

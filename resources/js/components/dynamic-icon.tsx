@@ -8,4 +8,4 @@ export function DynamicIcon({ name, ...props }: { name: string } & LucideProps) 
     const Icon = cache.get(iconName)!;
     return ( <Suspense fallback={<div className="size-4 animate-pulse rounded bg-muted" />}> <Icon {...props} /> </Suspense>
     );
-}
+}   

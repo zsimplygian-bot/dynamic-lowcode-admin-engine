@@ -6,6 +6,7 @@ import { AsyncState } from "@/components/async-state"
 import { ACTION_MODES, ActionMode } from "@/lib/action-modes"
 import { useApi } from "@/hooks/use-api"
 import { useLocalStorage } from "@/hooks/use-local-storage"
+const EMPTY_ARR: FieldConfig[] = []
 export interface SmartFormProps {
   action?: string
   endpoint?: string
@@ -22,33 +23,40 @@ export interface SmartFormProps {
   onError?: (errors: Record<string, string>) => void
   children?: React.ReactNode | ((props: { processing: boolean; errors: Record<string, string>; data: Record<string, any> }) => React.ReactNode)
 }
-export const SmartForm = ({ action, endpoint, mode = "s", method, tableName, recordId, fields: passedFields, initialValues, isLoading: externalLoading, options, onSuccess, onError, children }: SmartFormProps) => {
+export const SmartForm = ({ action, endpoint, mode = "s", method, tableName, recordId, fields: passedFields, initialValues, isLoading: externalLoading, options,
+  onSuccess, onError, children, }: SmartFormProps) => {
   const config = ACTION_MODES[mode]
-  const [cachedFields, setCachedFields] = useLocalStorage<FieldConfig[]>(tableName ? `sf_fields_${tableName}` : "", [])
-  const { data: fetchedFields, isLoading: loadingSchema } = useApi<FieldConfig[]>(!passedFields && !cachedFields.length && tableName ? `/schema/${tableName}/fields` : null, { select: (r: any) => r?.data ?? r })
-  const { data: fetchedValues, isLoading: loadingRecord } = useApi<Record<string, any>>(!initialValues && recordId && tableName && mode !== "s" ? `/crud/${tableName}/${recordId}` : null, { select: (r: any) => r?.data ?? r })
-  useEffect(() => { if (fetchedFields?.length && !cachedFields.length) setCachedFields(fetchedFields) }, [fetchedFields, cachedFields.length, setCachedFields])
+  const [cachedFields, setCachedFields] = useLocalStorage<FieldConfig[]>(tableName ? `sf_fields_${tableName}` : "", EMPTY_ARR)
+  const { data: fetchedFields, isLoading: loadingSchema } = useApi<FieldConfig[]>(!passedFields && !cachedFields.length && tableName ? `/schema/${tableName}/fields` : null)
+  const { data: fetchedValues, isLoading: loadingRecord } = useApi<Record<string, any>>(!initialValues && recordId && tableName && mode !== "s" ? `/crud/${tableName}/${recordId}` : null)
+  useEffect(() => {
+    const list = Array.isArray(fetchedFields) ? fetchedFields : (fetchedFields as any)?.data
+    if (list?.length && !cachedFields.length) setCachedFields(list)
+  }, [fetchedFields, cachedFields.length, setCachedFields])
   const targetUrl = endpoint ?? action ?? `/crud/${tableName}${recordId && mode !== "s" ? `/${recordId}` : ""}`
   const httpMethod = method ?? (mode === "d" ? "delete" : mode === "u" ? "put" : "post")
   const fields = useMemo(() => {
-    const raw = passedFields ?? (cachedFields.length ? cachedFields : fetchedFields) ?? []
+    const raw = passedFields ?? (cachedFields.length ? cachedFields : (Array.isArray(fetchedFields) ? fetchedFields : (fetchedFields as any)?.data)) ?? EMPTY_ARR
     return initialValues ? raw.map((f) => (initialValues[f.name]?.disabled ? { ...f, disabled: true } : f)) : raw
   }, [passedFields, cachedFields, fetchedFields, initialValues])
   const formValues = useMemo(() => {
     const defaults = fields.reduce((acc, f) => (f.name && f.defaultValue !== undefined ? { ...acc, [f.name]: f.defaultValue } : acc), {})
     const inits = initialValues ? Object.entries(initialValues).reduce((acc, [k, v]) => ({ ...acc, [k]: v && typeof v === "object" && "value" in v ? v.value : v }), {}) : {}
-    return { ...defaults, ...inits, ...fetchedValues }
+    const record = (fetchedValues && typeof fetchedValues === "object" && "data" in fetchedValues ? (fetchedValues as any).data : fetchedValues) || {}
+    return { ...defaults, ...inits, ...record }
   }, [fields, initialValues, fetchedValues])
   const form = useForm<Record<string, any>>(formValues)
   const { data, setData, processing, errors } = form
-  useEffect(() => { if (Object.keys(formValues).length) setData(formValues) }, [formValues])
+  useEffect(() => {
+    if (Object.keys(formValues).length) setData(formValues)
+  }, [formValues])
   const hasFiles = useMemo(() => fields.some((f) => f.type === "file"), [fields])
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (mode === "i") return
     form[httpMethod](targetUrl, { preserveScroll: true, forceFormData: hasFiles, ...options,
       onSuccess: (p: any) => { options?.onSuccess?.(p); onSuccess?.(p) },
-      onError: (errs: any) => { options?.onError?.(errs); onError?.(errs) }
+      onError: (errs: any) => { options?.onError?.(errs); onError?.(errs) },
     })
   }
   return (

@@ -6,6 +6,7 @@ import { SmartTooltip } from "@/components/smart-tooltip"
 import { SmartModal } from "@/components/smart-modal"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { BaseTriggerProps, sizeClasses, colorClasses } from "@/lib/trigger-utils"
+
 export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, Omit<BaseTriggerProps, 'icon'> {
   icon?: string
   iconPosition?: "left" | "right"
@@ -19,9 +20,9 @@ export interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   prefetch?: boolean
   onSuccess?: (...args: any[]) => void
 }
+
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
-  icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md",
-  buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
+  icon, iconSize, iconPosition = "left", label, loadingLabel, tooltip, tooltipSide = "top", children, className, buttonClassName, variant = "default", disabled, size = "md", buttonColor, isLoading, type = "button", onClick, confirmation, href, prefetch, onSuccess, ...props
 }, ref) => {
   const [openConfirm, setOpenConfirm] = useState(false)
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
@@ -35,21 +36,17 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
   const activeIcon = busy ? "loader-2" : icon
   const iconEl = activeIcon && <DynamicIcon name={activeIcon} style={{ width: finalIconSize, height: finalIconSize }} className={busy ? "animate-spin" : undefined} />
   const textEl = busy ? (loadingLabel ?? text) : text
-  const childrenContent = ( <> {iconPosition === "left" && iconEl} {textEl && <span>{textEl}</span>} {iconPosition === "right" && iconEl} </>
-  )
+  const childrenContent = (<>{iconPosition === "left" && iconEl}{textEl && <span>{textEl}</span>}{iconPosition === "right" && iconEl}</>)
   const buttonProps = {
     ref, type: href ? undefined : type, variant, disabled: isDisabled, "aria-label": ariaLabel, className: finalClassName,
-    onClick: confirmation ? (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault(); e.stopPropagation(); setOpenConfirm(true)
-    } : onClick,
+    onClick: confirmation ? (e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); e.stopPropagation(); setOpenConfirm(true) } : onClick,
     ...props,
   }
   const buttonEl = href ? (
     <Button {...buttonProps} asChild>
-      <Link href={isDisabled ? "#" : href} prefetch={prefetch} onClick={isDisabled ? (e) => e.preventDefault() : undefined} tabIndex={isDisabled ? -1 : undefined}> {childrenContent} </Link>
+      <Link href={isDisabled ? "#" : href} prefetch={prefetch} onClick={isDisabled ? (e) => e.preventDefault() : undefined} tabIndex={isDisabled ? -1 : undefined}>{childrenContent}</Link>
     </Button>
-  ) : ( <Button {...buttonProps}> {childrenContent} </Button>
-  )
+  ) : (<Button {...buttonProps}>{childrenContent}</Button>)
   const rendered = tooltip ? <SmartTooltip content={tooltip} side={tooltipSide}>{buttonEl}</SmartTooltip> : buttonEl
   if (!confirmation) return rendered
   const confirmConfig = typeof confirmation === "object" ? confirmation : {}

@@ -1,9 +1,8 @@
 import { SmartDropdown, type SDItem } from "@/components/smart-dropdown";
 import { useAppearance } from "@/hooks/use-appearance";
-import { useTranslation } from "@/hooks/use-translation";
 export default function AppearanceToggleDropdown() {
   const { appearance, updateAppearance } = useAppearance();
-  const t = useTranslation();
+  ;
   const currentIcon = appearance === "dark" ? "moon" : appearance === "light" ? "sun" : "monitor";
   const items: SDItem[] = [
     { label: t("Light"), icon: "sun", action: () => updateAppearance("light") },

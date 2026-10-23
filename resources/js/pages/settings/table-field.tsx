@@ -3,7 +3,6 @@ import Heading from '@/components/heading'
 import { SmartButton } from '@/components/smart-button'
 import { SmartBadge } from '@/components/smart-badge'
 import { SimpleList } from '@/components/simple-list'
-import { useTranslation } from '@/hooks/use-translation'
 const ICONS: Record<string, string> = {
   tinyint: 'toggle-left', bool: 'toggle-left',
   int: 'binary', bigint: 'binary', mediumint: 'binary', smallint: 'binary',
@@ -14,7 +13,7 @@ const ICONS: Record<string, string> = {
   json: 'code-2',
 }
 export default function TableFieldsManager({ tableName, tableFields }: { tableName: string; tableFields: any[] }) {
-  const t = useTranslation()
+  
   const fields = [
     { name: 'name', label: t('NAME'), placeholder: 'email, cliente_id, price', required: true },
     { name: 'type', label: t('TYPE'), type: 'select', required: true, defaultValue: 'varchar', options: [

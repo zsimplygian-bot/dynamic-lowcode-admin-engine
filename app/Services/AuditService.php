@@ -9,7 +9,7 @@ class AuditService
             'table'   => is_numeric($table) ? (int) $table : TableMetadata::id($table),
             'row_id'  => $rowId,
             'action'  => $action,
-            'user_id' => Auth::id(),
+            'users_id' => Auth::id(),
             'payload' => $payload ? json_encode(array_map(fn ($val) => $val ?? '', array_values($payload))) : null,
             'at'      => now(),
         ]);

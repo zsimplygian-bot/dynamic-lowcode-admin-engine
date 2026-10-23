@@ -3,7 +3,6 @@ import Heading from '@/components/heading';
 import { Separator } from '@/components/ui/separator';
 import { SmartButton } from '@/components/smart-button';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/types';
 const sidebarNavItems: NavItem[] = [
@@ -17,7 +16,7 @@ const sidebarNavItems: NavItem[] = [
 ];
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
-    const t = useTranslation();
+    ;
     return (
         <div className="px-4 py-6">
             <Heading title={t('Settings')} description={t('Manage your profile and account settings')} />

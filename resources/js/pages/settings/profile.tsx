@@ -2,11 +2,10 @@ import { Head, usePage, Link } from '@inertiajs/react'
 import DeleteUser from '@/components/delete-user'
 import Heading from '@/components/heading'
 import { SmartForm } from '@/components/smart-form'
-import { useTranslation } from '@/hooks/use-translation'
 import type { Auth } from '@/types'
 type PageProps = { auth: Auth; mustVerifyEmail: boolean; status?: string }
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
-  const t = useTranslation()
+  
   const { auth } = usePage<PageProps>().props
   const fields = [{ id: 'avatar', name: 'avatar', label: t('Profile photo'), type: 'file', accept: 'image/*' },
                   { id: 'name', name: 'name', label: t('Name'), type: 'text', placeholder: t('Full name') },

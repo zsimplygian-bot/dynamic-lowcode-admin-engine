@@ -3,10 +3,9 @@ import AppearanceTabs from '@/components/appearance-tabs'
 import Heading from '@/components/heading'
 import CssThemeDropdown from "@/components/css-theme-dropdown"
 import { SmartForm } from '@/components/smart-form'
-import { useTranslation } from '@/hooks/use-translation'
 type PageProps = { appSettings?: { app_name?: string; app_icon?: string | null } }
 export default function Appearance() {
-  const t = useTranslation()
+  
   const { appSettings } = usePage<PageProps>().props
   const fields = [{ id: 'app_icon', name: 'app_icon', label: t('App Icon'), type: 'file', accept: 'image/*' },
                   { id: 'app_name', name: 'app_name', label: t('App Title'), placeholder: t('My Application'), required: true }, ]

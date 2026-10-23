@@ -1,39 +1,32 @@
 import { useState, useEffect } from "react"
+
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === "undefined") return initialValue
-    try {
-      const item = window.localStorage.getItem(key)
-      return item !== null ? JSON.parse(item) : initialValue
-    } catch {
-      return initialValue
-    }
-  })
-  // Sincroniza si la clave cambia dinámicamente (p. ej. cambio de tabla)
+  const [storedValue, setStoredValue] = useState<T>(initialValue)
+
+  // Carga inicial sincronizada solo en cliente tras montarse
   useEffect(() => {
+    if (typeof window === "undefined") return
     try {
       const item = window.localStorage.getItem(key)
-      if (item !== null) {
-        setStoredValue(JSON.parse(item))
-      } else {
-        setStoredValue(initialValue)
-      }
-    } catch {
-      setStoredValue(initialValue)
+      if (item !== null) setStoredValue(JSON.parse(item))
+    } catch (e) {
+      console.error("Error leyendo localStorage:", e)
     }
   }, [key])
+
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       setStoredValue((prev) => {
-        const nextValue = typeof value === "function" ? (value as (val: T) => T)(prev) : value
+        const next = typeof value === "function" ? (value as (val: T) => T)(prev) : value
         if (typeof window !== "undefined") {
-          window.localStorage.setItem(key, JSON.stringify(nextValue))
+          window.localStorage.setItem(key, JSON.stringify(next))
         }
-        return nextValue
+        return next
       })
     } catch (e) {
-      console.error(e)
+      console.error("useLocalStorage error:", e)
     }
   }
+
   return [storedValue, setValue] as const
 }
