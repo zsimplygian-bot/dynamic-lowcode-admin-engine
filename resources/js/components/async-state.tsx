@@ -12,7 +12,7 @@ interface AsyncStateProps {
 }
 
 export const AsyncState = ({
-  isLoading, error, children, minHeight = "min-h-[150px]", variant = "default", loadingLabel, onRetry
+  isLoading, error, children, minHeight = "min-h-[150px]", variant = "default", loadingLabel = "Loading...", onRetry
 }: AsyncStateProps) => {
   if (isLoading) {
     if (variant === "inline") {
