@@ -50,8 +50,8 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
   const rendered = tooltip ? <SmartTooltip content={tooltip} side={tooltipSide}>{buttonEl}</SmartTooltip> : buttonEl
   if (!confirmation) return rendered
   const confirmConfig = typeof confirmation === "object" ? confirmation : {}
-  const modalTitle = confirmConfig.title ?? "Confirmar acción"
-  const modalDescription = confirmConfig.description ?? "¿Estás seguro de ejecutar esta acción?"
+  const modalTitle = confirmConfig.title ?? "Confirm action?"
+  const modalDescription = confirmConfig.description ?? "¿Are you sure to execute this action?"
   return (
     <>{rendered}
       <SmartModal open={openConfirm} onOpenChange={setOpenConfirm} title={modalTitle} description={modalDescription} size="sm">
@@ -59,7 +59,7 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
           <div className="flex justify-center gap-2 pt-2">
             <Button variant="outline" disabled={isConfirmLoading} onClick={close}>
               <DynamicIcon name="undo-2" className="size-4" />
-              <span>{confirmConfig.cancelText ?? "Cancelar"}</span>
+              <span>{confirmConfig.cancelText ?? "Cancel"}</span>
             </Button>
             <Button variant={variant} disabled={isConfirmLoading} className={cn(buttonColor && variant === "default" && colorClasses[buttonColor])}
               onClick={async (e) => {
@@ -74,7 +74,7 @@ export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(({
               }}
             >
               <DynamicIcon name={isConfirmLoading ? "loader-2" : (icon ?? "check")} className={cn("size-4", isConfirmLoading && "animate-spin")} />
-              <span>{isConfirmLoading ? "Cargando..." : (confirmConfig.confirmText ?? "Confirmar")}</span>
+              <span>{isConfirmLoading ? "Loading..." : (confirmConfig.confirmText ?? "Confirm")}</span>
             </Button>
           </div>
         )}

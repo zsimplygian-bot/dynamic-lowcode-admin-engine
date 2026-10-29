@@ -5,30 +5,42 @@ use App\Traits\HasColumnLabel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
 class DynamicFormSchemaController extends Controller
 {
     use HasColumnLabel;
+
     public function getTableSchema(string $table, string $mode = 'form'): array
     {
         $fields = [];
         foreach (Schema::getColumns($table) as $col) {
             $name = $col['name'];
+            $comment = $col['comment'] ?? null;
             $isPrimary = $name === 'id';
+            $isReadonly = $comment && str_contains(strtolower($comment), 'readonly');
             $uiType = ColumnMetadata::inputType($name, $col['type']);
+
             if ($mode === 'filter' && $uiType === 'file') continue;
             $type = ($isPrimary && $mode !== 'filter') ? 'hidden' : $uiType;
-            $label = $this->inferLabel($name, $col['comment'] ?? null) . ($type === 'checkbox' ? '?' : '');
+            if ($mode === 'filter' && $type === 'datetime-local') $type = 'date';
+
+            $label = $this->inferLabel($name, $comment) . ($type === 'checkbox' ? '?' : '');
             $isRequired = !$col['nullable'] && $col['default'] === null && !$isPrimary && empty($col['auto_increment']) && $mode !== 'filter';
-            $field = [ 'name'  => $name, 'label' => $label, 'type'  => $type, ];
+
+            $field = ['name' => $name, 'label' => $label, 'type' => $type];
             if ($isRequired) $field['required'] = true;
+            if ($isReadonly) $field['readonly'] = true; // <-- Flag para el frontend
             if ($mode !== 'filter' && $col['default'] !== null) $field['defaultValue'] = $this->parseDefaultValue($col['default'], $type);
             if ($options = ColumnMetadata::parseEnum($col['type'])) $field['options'] = $options;
             if ($type === 'file') $field['accept'] = Str::contains($name, ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto']) ? 'image/*' : '*/*';
+
             $fields[] = $field;
         }
         return $fields;
     }
+
     public function fields(Request $request, string $table) { return response()->json($this->getTableSchema($table, $request->input('mode', 'form'))); }
+
     private function parseDefaultValue(mixed $default, string $type): mixed
     {
         $val = trim((string) $default, "'\"");

@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react"
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  // 1. Lee directo en el primer render: sin doble render ni estados "mounted"
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === "undefined") return initialValue
+  const [storedValue, setStoredValue] = useState<T>(initialValue)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Carga tras hidratar (evita el choque SSR vs Cliente)
+  useEffect(() => {
     try {
       const item = window.localStorage.getItem(key)
-      return item !== null ? JSON.parse(item) : initialValue
-    } catch {
-      return initialValue
+      if (item !== null) setStoredValue(JSON.parse(item))
+    } catch (e) {
+      console.error(`[useLocalStorage] Error en "${key}":`, e)
     }
-  })
+    setIsHydrated(true)
+  }, [key])
 
-  // 2. Guarda el valor de forma directa
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       setStoredValue((prev) => {
@@ -23,11 +25,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         return next
       })
     } catch (e) {
-      console.error("useLocalStorage error:", e)
+      console.error(`[useLocalStorage] Error guardando "${key}":`, e)
     }
   }
 
-  // 3. Si tu botón de borrar caché hace removeItem/setItem desde fuera, se actualiza solo
+  // Sincronización entre pestañas
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === key) {
@@ -42,5 +44,5 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     return () => window.removeEventListener("storage", onStorage)
   }, [key, initialValue])
 
-  return [storedValue, setValue] as const
+  return [storedValue, setValue, isHydrated] as const
 }

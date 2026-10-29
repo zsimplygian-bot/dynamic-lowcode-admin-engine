@@ -21,7 +21,7 @@ export const SelectBaseLayout = ({ id, name, value = "", defaultValue = "", opti
           <Input id={id} name={undefined} disabled={disabled} value={selectedLabel} placeholder={placeholder} readOnly className={`pl-2.5 ${infoAction ? "pr-12" : "pr-7"} cursor-pointer text-left w-full text-ellipsis ${className}`} />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
             {infoAction && <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>{infoAction}</div>}
-            <DynamicIcon name="chevrons-up-down" className="size-4 text-muted-foreground shrink-0" />
+            <DynamicIcon name="chevrons-up-down" className="size-5 text-muted-foreground shrink-0" />
           </div>
         </div>
       }>
@@ -52,7 +52,7 @@ export const SelectOptionsList = ({ options = [], currentValue, disabled, hasHea
           const isSelected = currentValue === optId
           return (
             <button key={opt.id} type="button" onClick={() => onSelectOption(optId, close)} className={`w-full flex items-center rounded-sm justify-between px-2 py-1.5 text-sm hover:bg-accent ${isSelected ? "bg-accent/60" : ""}`}>
-              <span>{opt.label}</span> {isSelected && <DynamicIcon name="check" className="size-4 shrink-0" />}
+              <span>{opt.label}</span> {isSelected && <DynamicIcon name="check" className="size-5 shrink-0" />}
             </button>
           )
         })}

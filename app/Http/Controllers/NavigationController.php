@@ -20,6 +20,7 @@ class NavigationController extends Controller
                 [   'title' => 'Items',
                     'icon'  => 'folder-tree',
                     'items' => array_map($item, ['procedimiento', 'producto', 'categoria_procedimiento', 'categoria_producto', 'raza', 'especie', 'motivo']), ],
+                ['title' => 'Audit', 'href' => '/table/audit', 'icon' => 'layout-grid'],
             ];
         });
     }

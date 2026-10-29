@@ -1,17 +1,32 @@
 <?php
+
 namespace App\Services;
-use Illuminate\Support\Facades\{Auth, DB};
+
+use App\Models\DynamicModel;
+
 class AuditService
 {
-    public static function log(int|string $table, int|string $rowId, string $action, ?array $payload = null): void
+    public static function log(string $table, int|string $id, string $action, ?array $oldData = null): void
     {
-        DB::table('audit')->insert([
-            'table'   => is_numeric($table) ? (int) $table : TableMetadata::id($table),
-            'row_id'  => $rowId,
-            'action'  => $action,
-            'users_id' => Auth::id(),
-            'payload' => $payload ? json_encode(array_map(fn ($val) => $val ?? '', array_values($payload))) : null,
-            'at'      => now(),
+        $tableId = TableMetadata::id($table);
+        $model = DynamicModel::fromTable('audit');
+
+        // ÚNICAMENTE si es edición ('u') guardamos el estado anterior en el registro previo
+        if ($action === 'u' && $oldData !== null) {
+            $model->where('table', $tableId)
+                ->where('row', $id)
+                ->latest('id')
+                ->first()
+                ?->update(['payload' => json_encode($oldData, JSON_UNESCAPED_UNICODE)]);
+        }
+
+        // El nuevo registro ('s', 'u' o 'd') siempre se crea con payload null
+        $model->create([
+            'table'    => $tableId,
+            'row'      => $id,
+            'action'   => $action,
+            'users_id' => auth()->id(),
+            'at'       => now(),
         ]);
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\{
-    AuditController, CitaController, DashboardController, DynamicCrudController, 
+    CitaController, DashboardController, DynamicCrudController, 
     DynamicFormSchemaController, DynamicTableController, HistoriaController, 
     LocaleController, LookupController, NavigationController
 };
@@ -12,11 +12,6 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/locale', LocaleController::class)->name('locale');
-
-    // Rutas específicas de auditoría (deben ir ANTES de las rutas comodín {table})
-    Route::get('/audit', [AuditController::class, 'show'])->name('audit');
-    Route::get('/schema/audit/columns', [AuditController::class, 'columns']);
-    Route::get('/table/audit/data', [AuditController::class, 'data']);
 
     // Rutas dinámicas genéricas
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
@@ -30,8 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{table}/record/{id}', 'findRecord')->name('record');
     });
 
-    Route::prefix('crud/{tableName}')->name('crud.')->group(function () {
+    Route::prefix('crud/{table}')->name('crud.')->group(function () {
     Route::post('/bulk-delete', [DynamicCrudController::class, 'destroyBulk'])->name('bulkDelete');
+    Route::post('/{id}/restore', [DynamicCrudController::class, 'restore'])->name('restore');
     Route::apiResource('/', DynamicCrudController::class)->parameters(['' => 'id']);
 });
 

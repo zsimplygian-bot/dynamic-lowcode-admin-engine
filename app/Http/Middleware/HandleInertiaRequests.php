@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use App\Http\Controllers\Settings\AppearanceController;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-
+use App\Services\TableMetadata;
 class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
@@ -30,6 +30,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => $request->cookie('sidebar_state', 'true') === 'true',
             'id' => session('id'),
+            'tables_meta' => fn () => collect(TableMetadata::all())->keyBy('name')->all(),
         ];
     }
 }

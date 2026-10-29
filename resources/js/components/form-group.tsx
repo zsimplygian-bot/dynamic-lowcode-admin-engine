@@ -11,6 +11,7 @@ import { FormFilePicker } from "@/components/form-file-picker"
 import { ColorInput } from "@/components/ui/color-input"
 import InputError from "@/components/input-error"
 import { cn } from "@/lib/utils"
+
 export interface FieldConfig {
   id?: string
   name?: string
@@ -20,6 +21,7 @@ export interface FieldConfig {
   defaultValue?: any
   disabled?: boolean
   hidden?: boolean
+  readonly?: boolean // <-- Tipado para soporte nativo
   required?: boolean
   rows?: number
   options?: any[]
@@ -31,6 +33,7 @@ export interface FieldConfig {
   maxLength?: number
   render?: (props: { value: any; onChange: (v: any) => void; disabled: boolean; field: FieldConfig }) => React.ReactNode
 }
+
 export interface FormGroupProps {
   fields?: FieldConfig[]
   values?: Record<string, any>
@@ -41,15 +44,21 @@ export interface FormGroupProps {
   className?: string
   onChange?: (name: string, value: any) => void
 }
+
 const renderControl = (f: FieldConfig, val: any, disabled: boolean, onChange?: (name: string, value: any) => void) => {
-  const name = f.name ?? f.id ?? ""
+  const name = f.name || f.id || ""
   const set = (v: any) => onChange?.(name, v)
   const base = { id: name, name, disabled, required: f.required, placeholder: f.placeholder, className: "text-sm" }
+
   if (f.render) return f.render({ value: val, onChange: set, disabled, field: f })
+
   switch (f.type) {
     case "checkbox": return <Checkbox {...base} checked={Boolean(val)} onCheckedChange={(c) => set(c ? 1 : 0)} />
     case "textarea": return <Textarea {...base} value={val ?? ""} rows={f.rows ?? 3} onChange={(e) => set(e.target.value)} />
-    case "select": { const Comp = f.options?.length ? FormSelectSimple : FormSelectAsync; return <Comp {...base} value={val} options={f.options} onChange={set} onSelect={set} /> }
+    case "select": {
+      const Comp = f.options?.length ? FormSelectSimple : FormSelectAsync
+      return <Comp {...base} value={val} options={f.options} onChange={set} onSelect={set} />
+    }
     case "date": return <DatePicker {...base} value={val} onChange={set} />
     case "time": return <Clock {...base} value={val} onChange={set} />
     case "datetime-local": {
@@ -66,15 +75,19 @@ const renderControl = (f: FieldConfig, val: any, disabled: boolean, onChange?: (
     default: return <Input {...base} type={f.type || "text"} value={val ?? ""} min={f.min} max={f.max} onChange={(e) => set(e.target.value)} />
   }
 }
+
 export const FormGroup = memo(({ fields = [], values = {}, errors = {}, disabled = false, isReadonly = false, layout = "vertical", onChange }: FormGroupProps) => {
   const isHorizontal = layout === "horizontal"
   const isDisabled = disabled || isReadonly
+
   return (
     <div className="space-y-2.5">
       {fields.map((f) => {
-        const name = f.name ?? f.id ?? ""
-        const val = name in values ? values[name] : (f.defaultValue ?? "")
-        if (f.type === "hidden" || f.hidden) return <input key={name} type="hidden" id={name} name={name} value={val ?? ""} />
+        const name = f.name || f.id || ""
+        const val = values[name] ?? f.defaultValue ?? ""
+
+        if (f.type === "hidden" || f.hidden) return <input key={name} type="hidden" id={name} name={name} value={val} />
+
         return (
           <div key={name} className={isHorizontal ? "grid grid-cols-12 items-center gap-2" : "grid gap-1"}>
             {f.label && (
@@ -94,4 +107,5 @@ export const FormGroup = memo(({ fields = [], values = {}, errors = {}, disabled
     </div>
   )
 })
+
 export default FormGroup
