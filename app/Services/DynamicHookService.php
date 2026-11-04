@@ -1,51 +1,32 @@
 <?php
-
 namespace App\Services;
-
 use App\Models\DynamicModel;
-
 class DynamicHookService
 {
-    public function afterSave(string $table, array $data, bool $isUpdate): void
+    public function afterSave(string $table, DynamicModel $record, ?array $oldData = null): void
     {
-        if (!$isUpdate && $table === 'mascota') {
-            DynamicModel::fromTable('cliente')->where('id', $data['cliente_id'])->increment('mascotas');
+        AuditService::log($table, $record->id, $oldData ? 'u' : 's', $oldData);
+        if (!$oldData && $table === 'mascota') {
+            $this->syncMascotaCliente($record->cliente_id, increment: true);
         }
     }
-
-    /**
-     * Efectos secundarios al eliminar (Soft-delete)
-     * ¡NO llamamos a $record->delete()! La fila se conserva viva en la tabla.
-     */
-    public function delete(string $table, DynamicModel $record): void
+    public function beforeDelete(string $table, DynamicModel $record): bool
     {
+        if ($table === 'audit') return AuditService::canDelete($record);
+        AuditService::log($table, $record->id, 'd', $record->getAttributes());
         if ($table === 'mascota') {
-            DynamicModel::fromTable('cliente')->where('id', $record->cliente_id)->decrement('mascotas');
+            $this->syncMascotaCliente($record->cliente_id, increment: false);
         }
-    }
-
-    /**
-     * Revertir efectos secundarios al Deshacer (Restore)
-     */
-    public function restore(string $table, DynamicModel $record): void
-    {
-        if ($table === 'mascota') {
-            DynamicModel::fromTable('cliente')->where('id', $record->cliente_id)->increment('mascotas');
-        }
-    }
-
-    /**
-     * Eliminación física real (Hard-delete solo cuando se purga la auditoría)
-     */
-    public function purge(string $table, DynamicModel $record): void
-    {
         if ($table === 'historia') {
-            $childTables = ['historia_seguimiento', 'historia_procedimiento', 'historia_producto', 'historia_anamnesis'];
-            foreach ($childTables as $childTable) {
-                DynamicModel::fromTable($childTable)->where('historia_id', $record->id)->delete();
+            foreach (['historia_seguimiento', 'historia_procedimiento', 'historia_producto', 'historia_anamnesis'] as $child) {
+                DynamicModel::fromTable($child)->where('historia_id', $record->id)->delete();
             }
         }
-
-        $record->delete();
+        return true;
+    }
+    private function syncMascotaCliente(mixed $clienteId, bool $increment): void
+    {
+        $query = DynamicModel::fromTable('cliente')->where('id', $clienteId);
+        $increment ? $query->increment('mascotas') : $query->decrement('mascotas');
     }
 }

@@ -12,15 +12,16 @@ class RoleController extends Controller
     public function index(): Response
     {
         $roles = Role::withCount('users')->get()->map(fn ($r) => [
-            'id'          => $r->name,
+            'id'          => $r->id,
             'name'        => $r->name,
             'users_count' => $r->users_count,
         ]);
         $users = User::with('roles')->get()->map(fn ($u) => [
             'id'        => $u->id,
+            'users_id'  => $u->id,
             'name'      => $u->name,
             'email'     => $u->email,
-            'id_rol'   => $u->roles->first()?->id ?? '',
+            'roles_id'  => $u->roles->first()?->id ?? '',
             'role_name' => $u->roles->first()?->name ?? 'Sin Rol',
         ]);
         return Inertia::render('settings/role', compact('roles', 'users'));
@@ -29,14 +30,14 @@ class RoleController extends Controller
     public function update(Request $request, string $id): RedirectResponse { return $this->persist($request, $id); }
     public function destroy(string $id): RedirectResponse
     {
-        $role = Role::where('name', $id)->firstOrFail();
+        $role = is_numeric($id) ? Role::findOrFail((int) $id) : Role::where('name', $id)->firstOrFail();
         if ($role->name === 'admin') return $this->notify(['error' => 'The admin role cannot be deleted.']);
         $role->delete();
         return $this->notify('Role deleted successfully.');
     }
     private function persist(Request $request, ?string $id = null): RedirectResponse
     {
-        $role = $id ? Role::where('name', $id)->firstOrFail() : new Role();
+        $role = $id ? (is_numeric($id) ? Role::findOrFail((int) $id) : Role::where('name', $id)->firstOrFail()) : new Role();
         if ($role->name === 'admin') return $this->notify(['error' => 'The admin role cannot be edited.']);
         $v = $request->validate(['name' => ['required', 'string', 'max:50', 'unique:roles,name' . ($role->exists ? ",{$role->id}" : '')]]);
         $role->fill(['name' => strtolower(trim($v['name']))])->save();

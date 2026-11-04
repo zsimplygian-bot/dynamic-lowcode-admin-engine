@@ -17,9 +17,11 @@ export const ACTION_MODES = MODES
 export type Mode = keyof typeof MODES
 export type ActionMode = Mode
 
-// Hook que gestiona el modo y la configuración automáticamente
-export function useMode(initial: Mode | null = null) {
-  const [mode, setMode] = useState<Mode | null>(initial)
+export function useMode(defaultMode?: Mode) {
+  const [mode, setMode] = useState<Mode | null>(null)
   const reset = useCallback(() => setMode(null), [])
-  return { mode, setMode, config: mode ? MODES[mode] : null, reset }
+  const open = useCallback((m: Mode = defaultMode!) => setMode(m), [defaultMode])
+  const activeMode = mode ?? defaultMode
+  const config = activeMode ? MODES[activeMode] : null
+  return { mode, setMode, isOpen: !!mode, open, reset, config: config! }
 }

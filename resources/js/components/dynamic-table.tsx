@@ -15,14 +15,14 @@ const EMPTY_ARR: any[] = []
 const DEFAULT_STORAGE: TableStorage = { query: { pageIndex: 0, pageSize: 10, appliedSearchValues: {}, dateRange: {} }, ui: { columnVisibility: {} } }
 
 export interface DynamicTableContentProps {
-  tableName: string; crudEndpoint?: string; maxHeight?: string; readOnly?: boolean; requireFilter?: boolean;
+  tableName: string; crudEndpoint?: string; maxHeight?: string; readOnly?: boolean; requireFilter?: boolean; fetchViaApi?: boolean;
   onSelectionChange?: (ids: (string | number)[]) => void; renderCell?: (acc: string, row: any) => React.ReactNode; renderActions?: (row: any, id: string | number) => React.ReactNode;
   transformFilterFields?: (fields: FieldConfig[]) => FieldConfig[];
 }
 
 export function DynamicTableContent({
   tableName, crudEndpoint, maxHeight = "75vh", readOnly = false,
-  requireFilter = false, onSelectionChange, renderCell, renderActions, transformFilterFields
+  requireFilter = false, fetchViaApi = false, onSelectionChange, renderCell, renderActions, transformFilterFields
 }: DynamicTableContentProps) {
   const baseId = useId()
   const router = useRouter()
@@ -53,7 +53,6 @@ export function DynamicTableContent({
   const hideColumn = (col: string) => patchStorage("ui", { columnVisibility: { ...ui.columnVisibility, [col]: false } })
   const handleShowAllColumns = () => patchStorage("ui", { columnVisibility: Object.fromEntries(columns.map((c) => [c.accessor, true])) })
 
-  // Control de filtro y estado de espera
   const hasFilter = Boolean(Object.values(appliedSearchValues).some(Boolean) || dateRange?.from || dateRange?.to || search)
   const canFetch = !requireFilter || hasFilter
   const isWaitingFilter = requireFilter && !canFetch
@@ -65,21 +64,15 @@ export function DynamicTableContent({
     `/table/${tableName}/data`, { enabled: isStorageHydrated && columns.length > 0 && canFetch, params: queryParams, initialData: EMPTY_ARR }
   )
 
-  // 🔔 Escuchar la señal 'table-reload' para refrescar datos sin recargar la página entera
   useEffect(() => {
     const handleReload = (e?: Event) => {
       const customEvent = e as CustomEvent<{ table?: string }>
-      // Si el evento especifica tabla, solo recarga si coincide; si no, recarga siempre
-      if (!customEvent?.detail?.table || customEvent.detail.table === tableName) {
-        fetchData()
-      }
+      if (!customEvent?.detail?.table || customEvent.detail.table === tableName) fetchData()
     }
-
     window.addEventListener("table-reload", handleReload)
     return () => window.removeEventListener("table-reload", handleReload)
   }, [fetchData, tableName])
 
-  // Si requireFilter está activo y no hay filtros, vaciamos inmediatamente los datos para mostrar el mensaje
   const data = isWaitingFilter ? EMPTY_ARR : apiData
   const totalRows = isWaitingFilter ? 0 : (raw?.total ?? 0)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
@@ -120,7 +113,7 @@ export function DynamicTableContent({
         onHideColumn={hideColumn} loading={loading} error={error} onRetry={fetchData} readOnly={readOnly} selectedIds={selectedIds} onToggle={toggleSelect}
         emptyMessage={isWaitingFilter ? "Apply filter to fetch." : undefined}
         renderCell={renderCell ?? ((acc, row) => <CellFormatter accessor={acc} row={row} rowId={row.id} tableName={tableName} />)}
-        renderActions={renderActions ?? ((row, id) => <ActionButtons row_id={id} tableName={tableName} endpoint={crudEndpoint} onSuccess={fetchData} />)}
+        renderActions={renderActions ?? ((row, id) => <ActionButtons row_id={id} tableName={tableName} endpoint={crudEndpoint} initialValues={fetchViaApi ? undefined : row} onSuccess={fetchData} />)}
       />
       <TablePagination
         pageIndex={pageIndex} pageSize={pageSize} totalRows={totalRows} totalPages={totalPages} baseId={baseId} selectedCount={selectedIds.length}

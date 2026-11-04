@@ -90,7 +90,7 @@ const replaceWithLargeEmojis = (text: string) => {
 
 // 2. Formateador principal
 export const formatCellValue = (accessor: string, value: any, tableName?: string, rowId?: any) => {
-  if (value == null || value === '') return <span className="italic text-muted-foreground/50">null</span>
+  if (value == null || value === '') return <span className="italic text-muted-foreground/50">-</span>
   if (accessor === 'table') return <TableBadge value={value} />
   if (accessor === 'id' || accessor === `row`) return <span className="font-semibold opacity-60">{value}</span>
   if (accessor === 'action') return <ActionBadge value={value} />

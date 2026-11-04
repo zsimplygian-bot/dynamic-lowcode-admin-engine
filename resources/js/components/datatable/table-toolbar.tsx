@@ -34,13 +34,9 @@ function SearchFormContent({ tableName, appliedValues = {}, onApply, onClear, tr
 
   const [fields, setFields] = useLocalStorage<FieldConfig[]>(`dt_fields_${tableName}`, [])
   const needsFields = !fields.length && Boolean(tableName)
-  const { data: fetchedFields, isLoading, error, refetch } = useApi<FieldConfig[]>(
-    needsFields ? `/schema/${tableName}/fields?mode=filter` : null,
-    { enabled: needsFields }
-  )
+  const { data: fetchedFields, isLoading, error, refetch } = useApi<FieldConfig[]>(needsFields ? `/schema/${tableName}/fields?mode=filter` : null, { enabled: needsFields })
   useEffect(() => { if (fetchedFields?.length) setFields(fetchedFields) }, [fetchedFields, setFields])
 
-  // Aplica la transformación personalizada si la página la provee; si no, usa los campos tal cual
   const formFields = useMemo(() => (transformFields ? transformFields(fields) : fields), [fields, transformFields])
   const hasValues = Object.values(vals).some((v) => v != null && v !== "")
 
@@ -49,16 +45,9 @@ function SearchFormContent({ tableName, appliedValues = {}, onApply, onClear, tr
       <AsyncState isLoading={needsFields && isLoading} error={error} onRetry={refetch}>
         <div className="w-full pl-2 max-h-[380px] overflow-y-auto pr-1">
           {!formFields.length ? (
-            <span className="text-xs text-muted-foreground px-2 py-4 block text-center">
-              No hay campos disponibles para filtrar
-            </span>
+            <span className="text-xs text-muted-foreground px-2 py-4 block text-center">No hay campos disponibles para filtrar</span>
           ) : (
-            <FormGroup
-              fields={formFields}
-              values={vals}
-              layout="horizontal"
-              onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))}
-            />
+            <FormGroup fields={formFields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
           )}
         </div>
         <div className="flex items-center gap-2 pt-1 border-t mt-1">
@@ -77,7 +66,7 @@ export interface TableToolbarProps {
   columns: any[]; columnVisibility: Record<string, boolean>; onToggleColumn: (accessor: string) => void;
   onResetColumnsVisibility?: () => void; onClearSelection?: () => void; onShowAllColumns?: () => void;
   queryParams: Record<string, any>; selectedCount?: number; onDeleteSelected?: () => void; loading?: boolean; onRefresh?: () => void;
-  transformFilterFields?: (fields: FieldConfig[]) => FieldConfig[]; // <-- Inyección genérica
+  transformFilterFields?: (fields: FieldConfig[]) => FieldConfig[];
 }
 
 export function TableToolbar({
@@ -92,22 +81,19 @@ export function TableToolbar({
 
   return (
     <div className="flex items-center gap-2 flex-wrap w-full flex-none">
-      {!readOnly && <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={onRefresh} />}
+      <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={onRefresh} disabled={readOnly || !isRole("admin")} />
       <div><SearchInput key={search} defaultValue={search} onSearchSubmit={onSearch} filterOnEnter /></div>
-      <SmartDropdown icon="filter" variant="outline" badge={activeCount || undefined} align="start" label="Advanced filter:" disableHover
-        items={[{ type: "custom", content: <SearchFormContent tableName={tableName} appliedValues={appliedSearchValues} onApply={onApplyFilter} onClear={onClearFilter} transformFields={transformFilterFields} /> }]} />
+      <SmartDropdown icon="filter" variant="outline" badge={activeCount || undefined} align="start" label="Advanced filter:" disableHover items={[{ type: "custom", content: <SearchFormContent tableName={tableName} appliedValues={appliedSearchValues} onApply={onApplyFilter} onClear={onClearFilter} transformFields={transformFilterFields} /> }]} />
       <DatePicker variant="button" mode="range" value={dateRange} onChange={onDateRangeChange} />
-      <SmartDropdown label={t("Export")} variant="outline" icon="download"
-        items={[{ label: t("Excel"), color: "text-green-500", icon: "file-spreadsheet", action: () => exportTableToExcel(tableName, exportCols, queryParams) }]} />
+      <SmartDropdown label={t("Export")} variant="outline" icon="download" items={[{ label: t("Excel"), color: "text-green-500", icon: "file-spreadsheet", action: () => exportTableToExcel(tableName, exportCols, queryParams) }]} />
       <SmartDropdown label={t("Visible columns:")} variant="outline" icon="eye" items={[
         { type: "custom", content: <SearchInput items={columns} searchKey="header" onFiltered={setFilteredColumns} /> },
         "-", ...filteredColumns.map((c) => ({ type: "checkbox" as const, label: c.header, checked: columnVisibility[c.accessor] ?? !c.hidden, onChange: () => onToggleColumn(c.accessor) })),
         "-", { label: "Reset columns", icon: "rotate-ccw", alignContent: "center", action: onResetColumnsVisibility }
       ]} />
-      <SmartDropdown label={t("Table Settings")} variant="outline" icon="settings"
-        items={[{ label: t("Clear Selection"), icon: "check-square", disabled: selectedCount === 0, action: onClearSelection }, { label: t("Show All Columns"), icon: "eye-off", action: onShowAllColumns }]} />
+      <SmartDropdown label={t("Table Settings")} variant="outline" icon="settings" items={[{ label: t("Clear Selection"), icon: "check-square", disabled: selectedCount === 0, action: onClearSelection }, { label: t("Show All Columns"), icon: "eye-off", action: onShowAllColumns }]} />
       <ResetButton onReset={onReset} variant="outline" canReset={isFiltered} />
-      {!readOnly && selectedCount > 0 && <SmartButton variant="destructive" size="sm" icon="trash-2" tooltip="Delete rows" label={`${selectedCount}`} onClick={onDeleteSelected} confirmation />}
+      {!readOnly && isRole("admin") && selectedCount > 0 && <SmartButton variant="destructive" size="sm" icon="trash-2" tooltip="Delete rows" label={`${selectedCount}`} onClick={onDeleteSelected} confirmation />}
     </div>
   )
 }

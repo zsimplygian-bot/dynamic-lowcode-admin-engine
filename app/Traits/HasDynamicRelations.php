@@ -6,6 +6,7 @@ trait HasDynamicRelations
 {
     protected array $defaults = [
         'raza_id' => ['select' => "CONCAT(especie.especie, ' ', raza.raza)", 'joins' => [['especie', 'especie.id', '=', 'raza.especie_id']]],
+        'mascota_id' => ['select' => "CONCAT(mascota.mascota, ' - ', cliente.cliente)", 'joins' => [['cliente', 'cliente.id', '=', 'mascota.cliente_id']]],
         'users_id' => ['select' => 'users.name'],
     ];
     protected function applyDynamicJoins(Builder $q, string $table, array $cols): void

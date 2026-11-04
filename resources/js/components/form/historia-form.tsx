@@ -5,41 +5,16 @@ import { AsyncState } from "@/components/async-state"
 import { useApi } from "@/hooks/use-api"
 import { ActionMode } from "@/lib/action-modes"
 
-export interface ActividadItem {
-  id: number | string
-  item: string
-  titulo?: string
-  detalle?: string
-  precio?: number
-  fecha_dia: string
-  fecha: string
-  tabla: string
-}
-
-export interface HistoriaFormProps {
-  mode?: ActionMode
-  recordId?: string | number
-  form: ReactNode
-  onSuccess?: (id?: any) => void
-  subtablas?: readonly string[]
-  sectionTitle?: string
-}
+export interface ActividadItem { id: number | string; item: string; titulo?: string; detalle?: string; precio?: number; fecha_dia: string; fecha: string; tabla: string }
+export interface HistoriaFormProps { mode?: ActionMode; recordId?: string | number; form: ReactNode; onSuccess?: (id?: any) => void; subtablas?: readonly string[]; sectionTitle?: string }
 
 const DEFAULT_SUBTABLAS = ["historia_seguimiento", "historia_producto", "historia_procedimiento", "historia_anamnesis"] as const
 
 export const HistoriaForm = memo(({ mode, recordId, form, onSuccess, subtablas = DEFAULT_SUBTABLAS, sectionTitle = "ACTIVIDADES" }: HistoriaFormProps) => {
   const isEditable = mode === "u"
-  const { data: actividades, isLoading, error, refetch } = useApi<ActividadItem[]>(
-    recordId ? `/api/historia/${recordId}/actividades` : null,
-    { enabled: Boolean(recordId) }
-  )
-
+  const { data: actividades, isLoading, error, refetch } = useApi<ActividadItem[]>(recordId ? `/api/historia/${recordId}/actividades` : null, { enabled: Boolean(recordId) })
   const initialPayload = useMemo(() => ({ historia_id: { value: recordId, disabled: true } }), [recordId])
-
-  const handleCreated = (data?: any) => {
-    refetch()
-    onSuccess?.(data)
-  }
+  const handleCreated = (data?: any) => { refetch(); onSuccess?.(data) }
 
   const grupos = useMemo(() => {
     if (!actividades?.length) return []
@@ -54,20 +29,18 @@ export const HistoriaForm = memo(({ mode, recordId, form, onSuccess, subtablas =
   }, [actividades])
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 w-full text-left items-start overflow-y-auto overflow-x-hidden max-h-[75vh]">
-      <div className="w-full lg:w-[450px] shrink-0">{form}</div>
-      <div className="w-full lg:w-[485px] shrink-0 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
+    <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 w-full h-full min-h-0 flex-1 overflow-y-auto lg:overflow-hidden text-left pt-1">
+      <div className="w-full shrink-0 flex flex-col min-h-0 lg:overflow-y-auto pr-1">{form}</div>
+      <div className="w-full min-w-0 flex flex-col gap-2 border-t lg:border-t-0 lg:border-l lg:pl-6 pt-4 lg:pt-0 border-border min-h-0 lg:overflow-hidden">
+        <div className="flex items-center justify-between shrink-0">
           <h3 className="font-bold text-sm text-foreground tracking-wide uppercase">{sectionTitle}</h3>
           {isEditable && recordId && (
-            <div className="flex items-center gap-1.5">
-              {subtablas.map((sub) => (
-                <NewRecordButton key={sub} tableName={sub} size="xs" initialValues={initialPayload} onSuccess={handleCreated} />
-              ))}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {subtablas.map((sub) => <NewRecordButton key={sub} tableName={sub} size="xs" initialValues={initialPayload} onSuccess={handleCreated} />)}
             </div>
           )}
         </div>
-        <div className="w-full flex flex-col gap-3 overflow-y-auto max-h-[62vh] pr-1">
+        <div className="w-full flex-1 flex flex-col gap-3 overflow-y-auto min-h-0 pr-1 pb-2">
           {!recordId ? (
             <div className="p-4 text-center text-muted-foreground text-xs border rounded-lg">Guarda el registro para agregar actividades</div>
           ) : (
@@ -89,9 +62,7 @@ export const HistoriaForm = memo(({ mode, recordId, form, onSuccess, subtablas =
                         <div key={act.id} className="p-3 rounded-2xl bg-muted/40 border flex flex-col gap-1.5 w-full text-xs">
                           <div className="flex items-center justify-between w-full">
                             <span className="font-bold text-sm text-foreground tracking-tight">{act.item}</span>
-                            {isEditable && (
-                              <ActionButtons row_id={act.id} tableName={act.tabla} endpoint={`/crud/${act.tabla}`} size="xs" onSuccess={refetch} />
-                            )}
+                            {isEditable && <ActionButtons row_id={act.id} tableName={act.tabla} endpoint={`/crud/${act.tabla}`} size="xs" onSuccess={refetch} />}
                           </div>
                           {fields.length > 0 && (
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground uppercase text-[11px]">

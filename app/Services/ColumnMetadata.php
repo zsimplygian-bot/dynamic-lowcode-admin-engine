@@ -1,6 +1,9 @@
 <?php
+
 namespace App\Services;
+
 use Illuminate\Support\Str;
+
 class ColumnMetadata
 {
     private const TYPE_MAPPING = [
@@ -12,16 +15,19 @@ class ColumnMetadata
         'time'           => ['time'],
         'json'           => ['json', 'jsonb'],
     ];
+
     private const FILE_KEYWORDS  = ['imagen', 'icon', 'logo', 'avatar', 'photo', 'foto', 'documento', 'comprobante', 'pdf', 'file', 'archivo'];
     private const EMAIL_KEYWORDS = ['email', 'correo'];
     private const PHONE_KEYWORDS = ['telefono', 'celular', 'phone', 'tel'];
     private const PASS_KEYWORDS  = ['password', 'contrasena', 'contraseña', 'clave'];
+
     public static function parseEnum(string $type): array
     {
         if (!str_starts_with($type, 'enum(')) return [];
         preg_match_all("/'([^']+)'/", $type, $m);
         return array_map(fn ($v) => ['id' => $v, 'label' => Str::title(str_replace('_', ' ', $v))], $m[1] ?? []);
     }
+
     public static function inputType(string $name, string $rawType): string
     {
         if (str_ends_with($name, '_id') || str_starts_with($rawType, 'enum(')) return 'select';

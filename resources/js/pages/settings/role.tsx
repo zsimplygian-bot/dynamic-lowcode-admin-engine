@@ -6,7 +6,7 @@ import { Tabs } from '@/components/ui/tabs'
 export default function RolesManager({ roles = [], users = [] }: { roles?: any[]; users?: any[] }) {
   
   const roleFields = [{ name: 'name', label: t('ROLE NAME'), placeholder: t('e.g. editor'), required: true }]
-  const userFields = [ { name: 'id', label: t('USER'), type: 'select', required: true }, { name: 'id_rol', label: t('ROLE'), type: 'select', required: true } ]
+  const userFields = [ { name: 'users_id', label: t('USER'), type: 'select', required: true }, { name: 'roles_id', label: t('ROLE'), type: 'select', required: true } ]
   return (
     <><Head title={t('Roles & Permissions')} />
       <div className="space-y-2">

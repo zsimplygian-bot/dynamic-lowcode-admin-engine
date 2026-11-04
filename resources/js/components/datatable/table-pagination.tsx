@@ -27,7 +27,7 @@ export function TablePagination({ pageIndex, pageSize, totalRows, totalPages, on
         <div className="flex items-center gap-2">
           <span>{t("Rows:")}</span>
           <SmartDropdown buttonLabel={String(pageSize)} variant="outline" items={[
-            { type: "custom", content: <Input id={`${baseId}-pagesize`} name={`${baseId}-pagesize`} type="number" min={1} placeholder={t("Custom...")} className="w-26 text-sm" 
+            { type: "custom", content: <Input id={`${baseId}-pagesize`} name={`${baseId}-pagesize`} type="number" min={1} placeholder={t("Custom...")} className="w-30 text-sm" 
             onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter" && +e.currentTarget.value > 0) { onPageSizeChange(+e.currentTarget.value); e.currentTarget.value = "" } }} /> },
             "-", ...[10, 15, 20, 50, 100, 250, 500].map((n) => ({ label: String(n), action: () => onPageSizeChange(n) })) ]} />
         </div>

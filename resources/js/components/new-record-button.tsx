@@ -5,69 +5,26 @@ import { SmartForm } from "@/components/smart-form"
 import { HistoriaForm } from "@/components/form/historia-form"
 import { MODES } from "@/lib/action-modes"
 
-const createCfg = MODES.s
-const editCfg = MODES.u
-
-export const NewRecordButton = ({ tableName = "registro", endpoint, fields, initialValues, onSuccess, ...props }: any) => {
+export const NewRecordButton = ({ tableName = "registro", endpoint, fields, initialValues, onSuccess, disabled = false, ...props }: any) => {
   const [createdId, setCreatedId] = useState<string | number | null>(null)
-  const isHistoria = tableName === "historia"
+  const isHistoria = tableName.toLowerCase() === "historia"
+  const isDisabled = disabled || !isRole("admin")
 
   return (
     <>
-      <SmartModal
-        color={createCfg.buttonColor} // Borde superior azul
-        title={`${createCfg.modalPrefix} ${tableName.toUpperCase()}`}
-        description={createCfg.description}
-        trigger={<SmartButton tooltip={`Nuevo ${tableName}`} icon={createCfg.icon} buttonColor={createCfg.buttonColor} variant={createCfg.variant} {...props} />}
-      >
+      <SmartModal color={MODES.s.buttonColor} title={`${MODES.s.modalPrefix} ${tableName.toUpperCase()}`} description={MODES.s.description} trigger={<SmartButton tooltip={`Nuevo ${tableName}`} icon={MODES.s.icon} buttonColor={MODES.s.buttonColor} variant={MODES.s.variant} disabled={isDisabled} {...props} />}>
         {({ close }) => (
-          <SmartForm
-            tableName={tableName}
-            endpoint={endpoint}
-            fields={fields}
-            initialValues={initialValues}
-            onSuccess={(page: any) => {
-              const id = page?.props?.id
-              onSuccess?.(id)
-              close()
-              if (isHistoria && id) setCreatedId(id)
-            }}
-          />
+          <SmartForm tableName={tableName} endpoint={endpoint} fields={fields} initialValues={initialValues} onSuccess={(page: any) => { const id = page?.props?.flash?.id; onSuccess?.(id); close(); if (isHistoria && id) setCreatedId(id) }} />
         )}
       </SmartModal>
-
       {createdId && (
-        <SmartModal
-          open
-          onOpenChange={(open) => !open && setCreatedId(null)}
-          color={editCfg.buttonColor} // Borde superior verde
-          title={`${editCfg.modalPrefix} ${tableName.toUpperCase()} ${createdId}`}
-          description={editCfg.description}
-          size="5xl"
-          className="lg:max-w-[1000px]"
-        >
+        <SmartModal open onOpenChange={(open) => !open && setCreatedId(null)} color={MODES.u.buttonColor} title={`${MODES.u.modalPrefix} ${tableName.toUpperCase()} ${createdId}`} description={MODES.u.description} size="4xl">
           {({ close }) => (
-            <HistoriaForm
-              mode="u"
-              recordId={createdId}
-              tableName={tableName}
-              onSuccess={onSuccess}
-              form={
-                <SmartForm
-                  mode="u"
-                  recordId={createdId}
-                  tableName={tableName}
-                  fields={fields}
-                  endpoint={`/crud/${tableName}/${createdId}`}
-                  onSuccess={() => { onSuccess?.(createdId); close() }}
-                />
-              }
-            />
+            <HistoriaForm mode="u" recordId={createdId} tableName={tableName} onSuccess={onSuccess} form={<SmartForm mode="u" recordId={createdId} tableName={tableName} fields={fields} endpoint={`/crud/${tableName}/${createdId}`} onSuccess={() => { onSuccess?.(createdId); close() }} />} />
           )}
         </SmartModal>
       )}
     </>
   )
 }
-
 export default NewRecordButton

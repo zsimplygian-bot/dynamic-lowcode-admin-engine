@@ -1,22 +1,28 @@
 <?php
 namespace App\Http\Controllers\Settings;
+
 use App\Http\Controllers\Controller;
 use App\Traits\{HasNotify, HasProtectedTables};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 class DatabaseIEController extends Controller
 {
     use HasNotify, HasProtectedTables;
+
     private function log(Request $request, string $action): void
     {
         DB::table('database_history')->insert(['action' => $action, 'user_id' => auth()->id(), 'ip_address' => $request->ip(), 'at' => now()]);
     }
+
     private function getTables(): array { return array_map(fn ($t) => array_values((array) $t)[0], DB::select('SHOW TABLES')); }
+
     public function export(Request $request)
     {
         $this->log($request, 'e');
         $filename = 'backup-' . date('Y-m-d_H-i-s') . '.sql';
         return response()->streamDownload(function () {
+            echo "SET FOREIGN_KEY_CHECKS = 0;\n\n";
             foreach ($this->getTables() as $table) {
                 $create = DB::select("SHOW CREATE TABLE `{$table}`")[0]->{'Create Table'};
                 echo "DROP TABLE IF EXISTS `{$table}`;\n{$create};\n\n";
@@ -26,14 +32,16 @@ class DatabaseIEController extends Controller
                 }
                 echo "\n";
             }
+            echo "SET FOREIGN_KEY_CHECKS = 1;\n";
         }, $filename, ['Content-Type' => 'application/sql']);
     }
+
     public function import(Request $request)
     {
         $request->validate(['backup' => 'required|file', 'keep_protected' => 'nullable']);
         try {
             $pdo = DB::connection()->getPdo();
-            $pdo->exec("SET SESSION sql_mode = '';");
+            $pdo->exec("SET SESSION sql_mode = ''; SET FOREIGN_KEY_CHECKS = 0;");
             $keep = $request->boolean('keep_protected');
             foreach ($this->getTables() as $table) {
                 if ($keep && method_exists($this, 'isProtected') && $this->isProtected($table)) continue;
@@ -43,9 +51,11 @@ class DatabaseIEController extends Controller
             foreach (array_filter(array_map('trim', explode(";\n", $sql))) as $query) {
                 $pdo->exec($query);
             }
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
             $this->log($request, 'i');
             return $this->notify('Base de datos restaurada con éxito.');
         } catch (\Throwable $e) {
+            DB::connection()->getPdo()->exec("SET FOREIGN_KEY_CHECKS = 1;");
             return $this->notify('Ocurrió un error al importar el respaldo: ' . $e->getMessage(), 'error');
         }
     }
