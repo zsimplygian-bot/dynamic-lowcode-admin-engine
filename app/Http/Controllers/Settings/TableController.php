@@ -1,17 +1,21 @@
 <?php
 namespace App\Http\Controllers\Settings;
+
 use App\Http\Controllers\Controller;
 use App\Services\TableMetadata;
 use App\Traits\{HasNotify, HasProtectedTables};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{DB, Schema};
 use Inertia\Inertia;
+
 class TableController extends Controller
 {
     use HasNotify, HasProtectedTables;
+
     public function index() { return Inertia::render('settings/table', ['tables' => TableMetadata::all(includeStats: true)]); }
     public function store(Request $request) { return $this->persist($request); }
     public function update(Request $request, string $tableName) { return $this->persist($request, $tableName); }
+
     private function persist(Request $request, ?string $current = null)
     {
         $data = $request->validate([
@@ -32,8 +36,29 @@ class TableController extends Controller
             Schema::create($name, function ($table) use ($name, $comment) {
                 if ($comment) $table->comment($comment);
                 $table->id();
-                $table->string($name, 50); });
-        } return $this->notify("Table '{$name}' " . ($current ? 'updated' : 'created') . ' successfully.');
+                $table->string($name, 50);
+            });
+        }
+        return $this->notify("Table '{$name}' " . ($current ? 'updated' : 'created') . ' successfully.');
     }
+
     public function destroy(string $tableName) { Schema::drop($tableName); return $this->notify("Table '{$tableName}' deleted successfully."); }
+
+    public function purge()
+    {
+        try {
+            Schema::disableForeignKeyConstraints();
+            foreach (Schema::getTableListing() as $rawName) {
+                $cleanName = strtolower(trim(last(explode('.', str_replace(['`', '"', "'"], '', $rawName)))));
+                if (!$this->isProtected($cleanName)) {
+                    Schema::dropIfExists($cleanName);
+                }
+            }
+            Schema::enableForeignKeyConstraints();
+            return $this->notify('Custom tables purged successfully.');
+        } catch (\Throwable $e) {
+            Schema::enableForeignKeyConstraints();
+            return $this->notify('Failed to purge database: ' . $e->getMessage(), 'error');
+        }
+    }
 }

@@ -4,8 +4,10 @@ import { SmartModal } from "@/components/smart-modal"
 import { SmartForm } from "@/components/smart-form"
 import { HistoriaForm } from "@/components/form/historia-form"
 import { MODES } from "@/lib/action-modes"
+import { useCan } from "@/hooks/use-can"
 
 export const NewRecordButton = ({ tableName = "registro", endpoint, fields, initialValues, onSuccess, disabled = false, ...props }: any) => {
+  const { isRole } = useCan()
   const [createdId, setCreatedId] = useState<string | number | null>(null)
   const isHistoria = tableName.toLowerCase() === "historia"
   const isDisabled = disabled || !isRole("admin")

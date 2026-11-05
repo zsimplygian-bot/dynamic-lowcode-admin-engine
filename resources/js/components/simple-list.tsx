@@ -14,17 +14,20 @@ export function SimpleList({ title = 'registro', items = [], subtitle = 'subtitl
         <NewRecordButton endpoint={endpoint} fields={fields} />
       </div>
       <div className="border rounded-xl bg-card overflow-hidden divide-y overflow-y-auto" style={{ maxHeight }}>
-        {filtered.map((item) => (
-          <div key={item.id ?? item.name} className="flex items-center justify-between p-2 hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`p-2 border rounded-lg flex items-center justify-center ${item?.[colorKey] || 'bg-muted text-muted-foreground'}`}><DynamicIcon name={item?.icon ?? icon} /></div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{item?.name}</p>{item?.[subtitle] && <p className="text-xs text-muted-foreground truncate">{item[subtitle]}</p>}
+        {filtered.map((item) => {
+          const itemKey = item.name ?? item.id;
+          return (
+            <div key={itemKey} className="flex items-center justify-between p-2 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`p-2 border rounded-lg flex items-center justify-center ${item?.[colorKey] || 'bg-muted text-muted-foreground'}`}><DynamicIcon name={item?.icon ?? icon} /></div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{item?.name}</p>{item?.[subtitle] && <p className="text-xs text-muted-foreground truncate">{item[subtitle]}</p>}
+                </div>
               </div>
+              <div className="flex items-center gap-2"> {renderExtra?.(item)} <ActionButtons row_id={itemKey} endpoint={endpoint} title={title} fields={fields} initialValues={item} /> </div>
             </div>
-            <div className="flex items-center gap-2"> {renderExtra?.(item)} <ActionButtons row_id={item.id ?? item.name} endpoint={endpoint} title={title} fields={fields} initialValues={item} /> </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

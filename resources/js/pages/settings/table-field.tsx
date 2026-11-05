@@ -13,7 +13,6 @@ const ICONS: Record<string, string> = {
   json: 'code-2',
 }
 export default function TableFieldsManager({ tableName, tableFields }: { tableName: string; tableFields: any[] }) {
-  
   const fields = [
     { name: 'name', label: t('NAME'), placeholder: 'email, cliente_id, price', required: true },
     { name: 'type', label: t('TYPE'), type: 'select', required: true, defaultValue: 'varchar', options: [
@@ -41,7 +40,7 @@ export default function TableFieldsManager({ tableName, tableFields }: { tableNa
     <><Head title={`${t('Fields of')} ${tableName}`} />
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <SmartButton href="/settings/table" icon="arrow-left" variant="outline" size="sm" tooltip="Volver" />
+          <SmartButton href="/settings/table" icon="arrow-left" variant="outline" tooltip="Volver" />
           <Heading title={`${t('Structure of:')} ${tableName}`} description={t('Manage fields and data types.')} />
         </div>
         <SimpleList items={items} subtitle="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(f) => (

@@ -21,10 +21,21 @@ class DynamicTableController extends Controller
     public function columns(string $table)
     {
         return Cache::rememberForever("table_ui_cols_{$table}", function () use ($table) {
-            $cols = array_map(fn ($c) => [
-                'accessor' => str_ends_with($c['name'], '_id') ? substr($c['name'], 0, -3) : $c['name'],
-                'header'   => $this->inferLabel($c['name'], $c['comment'] ?? null) . (ColumnMetadata::inputType($c['name'], $c['type']) === 'checkbox' ? '?' : ''),
-            ], $this->getColumns($table));
+            $cols = [];
+            foreach ($this->getColumns($table) as $c) {
+                $name = $c['name'];
+                $comment = $c['comment'] ?? null;
+                $isFk = str_ends_with($name, '_id');
+
+                if ($isFk) {
+                    $rel = substr($name, 0, -3);
+                    $cols[] = ['accessor' => $name, 'header' => $this->inferLabel($rel, $comment) . ' ID', 'hidden' => true];
+                    $cols[] = ['accessor' => $rel, 'header' => $this->inferLabel($rel, $comment)];
+                } else {
+                    $isCheckbox = ColumnMetadata::inputType($name, $c['type']) === 'checkbox';
+                    $cols[] = ['accessor' => $name, 'header' => $this->inferLabel($name, $comment) . ($isCheckbox ? '?' : '')];
+                }
+            }
 
             if ($table !== 'audit') $cols[] = ['accessor' => 'created_at', 'header' => 'CREATED AT'];
             return $cols;
@@ -54,7 +65,7 @@ class DynamicTableController extends Controller
         $isAudit = $table === 'audit';
         $atCol = $isAudit ? "{$table}.at" : 'audit.at';
 
-        $query = DynamicModel::fromTable($table)->select(array_map(fn ($c) => "{$table}.{$c}", $localCols));
+        $query = DynamicModel::fromTable($table)->select(array_map(fn ($c) => "{$table}.{$c}", $cols));
 
         if (!$isAudit) {
             $tableId = TableMetadata::id($table);

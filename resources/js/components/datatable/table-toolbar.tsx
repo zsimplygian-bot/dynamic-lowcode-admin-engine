@@ -9,7 +9,7 @@ import { SearchInput } from "@/components/search-input"
 import { FormGroup, FieldConfig } from "@/components/form-group"
 import { useApi } from "@/hooks/use-api"
 import { useLocalStorage } from "@/hooks/use-local-storage"
-
+import { useCan } from "@/hooks/use-can"
 const t = (s: string) => s
 
 async function exportTableToExcel(tableName: string, columns: any[], params?: Record<string, any>) {
@@ -74,14 +74,16 @@ export function TableToolbar({
   dateRange, onDateRangeChange, onReset, isFiltered, columns, columnVisibility, onToggleColumn, onResetColumnsVisibility,
   onClearSelection, onShowAllColumns, queryParams, selectedCount = 0, onDeleteSelected, onRefresh, transformFilterFields
 }: TableToolbarProps) {
+  const { isRole } = useCan()
   const [filteredColumns, setFilteredColumns] = useState(columns)
   useEffect(() => setFilteredColumns(columns), [columns])
   const activeCount = Object.values(appliedSearchValues).filter(Boolean).length
   const exportCols = columns.filter((c) => columnVisibility[c.accessor] ?? !c.hidden)
+  const isAdmin = isRole("admin")
 
   return (
     <div className="flex items-center gap-2 flex-wrap w-full flex-none">
-      <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={onRefresh} disabled={readOnly || !isRole("admin")} />
+      <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={onRefresh} disabled={readOnly || !isAdmin} />
       <div><SearchInput key={search} defaultValue={search} onSearchSubmit={onSearch} filterOnEnter /></div>
       <SmartDropdown icon="filter" variant="outline" badge={activeCount || undefined} align="start" label="Advanced filter:" disableHover items={[{ type: "custom", content: <SearchFormContent tableName={tableName} appliedValues={appliedSearchValues} onApply={onApplyFilter} onClear={onClearFilter} transformFields={transformFilterFields} /> }]} />
       <DatePicker variant="button" mode="range" value={dateRange} onChange={onDateRangeChange} />
@@ -91,9 +93,10 @@ export function TableToolbar({
         "-", ...filteredColumns.map((c) => ({ type: "checkbox" as const, label: c.header, checked: columnVisibility[c.accessor] ?? !c.hidden, onChange: () => onToggleColumn(c.accessor) })),
         "-", { label: "Reset columns", icon: "rotate-ccw", alignContent: "center", action: onResetColumnsVisibility }
       ]} />
-      <SmartDropdown label={t("Table Settings")} variant="outline" icon="settings" items={[{ label: t("Clear Selection"), icon: "check-square", disabled: selectedCount === 0, action: onClearSelection }, { label: t("Show All Columns"), icon: "eye-off", action: onShowAllColumns }]} />
+      <SmartDropdown label={t("Table Settings")} variant="outline" icon="sliders-horizontal" items={[{ label: t("Clear Selection"), icon: "check-square", disabled: selectedCount === 0, action: onClearSelection }, { label: t("Show All Columns"), icon: "eye-off", action: onShowAllColumns }]} />
+      {isRole("admin") && <SmartButton variant="outline" icon="settings" href={`/settings/table/${tableName}`} tooltip="Table Settings" />}
       <ResetButton onReset={onReset} variant="outline" canReset={isFiltered} />
-      {!readOnly && isRole("admin") && selectedCount > 0 && <SmartButton variant="destructive" size="sm" icon="trash-2" tooltip="Delete rows" label={`${selectedCount}`} onClick={onDeleteSelected} confirmation />}
+      {!readOnly && isAdmin && selectedCount > 0 && <SmartButton variant="destructive" size="sm" icon="trash-2" tooltip="Delete rows" label={`${selectedCount}`} onClick={onDeleteSelected} confirmation />}
     </div>
   )
 }

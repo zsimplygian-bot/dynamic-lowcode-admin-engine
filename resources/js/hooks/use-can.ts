@@ -1,12 +1,14 @@
-// use-can.ts
-import { ReactNode } from "react"
-import { usePage } from "@inertiajs/react"
+import { usePage } from '@inertiajs/react';
 
-export function useCan(): boolean {
-  const { auth } = usePage<any>().props
-  return Boolean(auth?.user?.roles?.includes("admin"))
-}
+export function useCan() {
+    const { props } = usePage<any>();
+    const user = props.auth?.user;
+    const permissions: string[] = user?.permissions ?? [];
+    const roles: string[] = user?.roles ?? [];
 
-export function Can({ children }: { children: ReactNode }) {
-  return useCan() ? {children} : null
+    const can = (permission: string) => permissions.includes(permission);
+    const hasRole = (role: string) => roles.includes(role);
+    const isRole = (role: string) => hasRole(role);
+
+    return { can, hasRole, isRole, user, permissions, roles };
 }
