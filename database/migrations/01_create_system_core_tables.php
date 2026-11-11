@@ -8,18 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // 1. Usuarios
         if (!Schema::hasTable('users')) {
             Schema::create('users', function (Blueprint $table) {
                 $table->id();
                 $table->string('name');
                 $table->string('email')->unique();
+                $table->string('avatar')->nullable();
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
+                $table->text('two_factor_secret')->nullable();
+                $table->text('two_factor_recovery_codes')->nullable();
+                $table->timestamp('two_factor_confirmed_at')->nullable();
                 $table->rememberToken();
                 $table->timestamps();
             });
         }
 
+        // 2. Tokens de recuperación de contraseña
         if (!Schema::hasTable('password_reset_tokens')) {
             Schema::create('password_reset_tokens', function (Blueprint $table) {
                 $table->string('email')->primary();
@@ -28,6 +34,7 @@ return new class extends Migration
             });
         }
 
+        // 3. Sesiones
         if (!Schema::hasTable('sessions')) {
             Schema::create('sessions', function (Blueprint $table) {
                 $table->string('id')->primary();
@@ -39,6 +46,7 @@ return new class extends Migration
             });
         }
 
+        // 4. Caché
         if (!Schema::hasTable('cache')) {
             Schema::create('cache', function (Blueprint $table) {
                 $table->string('key')->primary();
@@ -55,6 +63,7 @@ return new class extends Migration
             });
         }
 
+        // 5. Jobs & Queues
         if (!Schema::hasTable('jobs')) {
             Schema::create('jobs', function (Blueprint $table) {
                 $table->id();
@@ -94,6 +103,7 @@ return new class extends Migration
             });
         }
 
+        // 6. Tokens Personales (Sanctum)
         if (!Schema::hasTable('personal_access_tokens')) {
             Schema::create('personal_access_tokens', function (Blueprint $table) {
                 $table->id();
@@ -107,21 +117,91 @@ return new class extends Migration
             });
         }
 
+        // 7. Roles y Permisos (Spatie)
+        if (!Schema::hasTable('permissions')) {
+            Schema::create('permissions', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('guard_name')->default('web');
+                $table->timestamps();
+                $table->unique(['name', 'guard_name']);
+            });
+        }
+
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('guard_name')->default('web');
+                $table->timestamps();
+                $table->unique(['name', 'guard_name']);
+            });
+        }
+
+        if (!Schema::hasTable('model_has_permissions')) {
+            Schema::create('model_has_permissions', function (Blueprint $table) {
+                $table->foreignId('permission_id')->constrained('permissions')->cascadeOnDelete();
+                $table->string('model_type');
+                $table->unsignedBigInteger('model_id');
+                $table->index(['model_id', 'model_type']);
+                $table->primary(['permission_id', 'model_id', 'model_type']);
+            });
+        }
+
+        if (!Schema::hasTable('model_has_roles')) {
+            Schema::create('model_has_roles', function (Blueprint $table) {
+                $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
+                $table->string('model_type');
+                $table->unsignedBigInteger('model_id');
+                $table->index(['model_id', 'model_type']);
+                $table->primary(['role_id', 'model_id', 'model_type']);
+            });
+        }
+
+        if (!Schema::hasTable('role_has_permissions')) {
+            Schema::create('role_has_permissions', function (Blueprint $table) {
+                $table->foreignId('permission_id')->constrained('permissions')->cascadeOnDelete();
+                $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
+                $table->primary(['permission_id', 'role_id']);
+            });
+        }
+
+        // 8. Auditoría (con id bigint auto, users_id sin foreign key)
         if (!Schema::hasTable('audit')) {
             Schema::create('audit', function (Blueprint $table) {
+                $table->id(); // bigint autoincremental
                 $table->string('table', 60);
-                $table->unsignedBigInteger('row_id')->index();
+                $table->unsignedBigInteger('row')->index();
                 $table->char('action', 1);
-                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+                $table->unsignedBigInteger('users_id')->nullable()->index(); // users_id sin foreign constraint
                 $table->json('payload')->nullable();
                 $table->timestamp('at')->useCurrent();
+            });
+        }
+
+        // 9. Historial de Base de Datos
+        if (!Schema::hasTable('database_history')) {
+            Schema::create('database_history', function (Blueprint $table) {
+                $table->id();
+                $table->enum('action', ['import', 'export']);
+                $table->string('filename', 255)->nullable();
+                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+                $table->string('ip_address', 45)->nullable();
+                $table->timestamp('created_at')->useCurrent();
             });
         }
     }
 
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('database_history');
         Schema::dropIfExists('audit');
+        Schema::dropIfExists('role_has_permissions');
+        Schema::dropIfExists('model_has_roles');
+        Schema::dropIfExists('model_has_permissions');
+        Schema::dropIfExists('roles');
+        Schema::dropIfExists('permissions');
         Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('job_batches');
@@ -131,5 +211,6 @@ return new class extends Migration
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('users');
+        Schema::enableForeignKeyConstraints();
     }
 };

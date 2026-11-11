@@ -1,5 +1,6 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Business;
+use App\Http\Controllers\Controller;
 use App\Models\DynamicModel;
 use App\Traits\HasNotify;
 use Carbon\Carbon;

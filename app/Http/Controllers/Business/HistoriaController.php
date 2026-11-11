@@ -1,7 +1,6 @@
 <?php
-
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\Business;
+use App\Http\Controllers\Controller;
 use App\Traits\FormatsDateDifference;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;

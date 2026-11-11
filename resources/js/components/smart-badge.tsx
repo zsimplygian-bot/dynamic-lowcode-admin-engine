@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { DynamicIcon } from '@/components/dynamic-icon';
 
-export type BadgeColor = 'amber' | 'blue' | 'green' | 'rose' | 'purple' | 'emerald' | 'cyan' | 'slate';
+export type BadgeColor = 'amber' | 'blue' | 'green' | 'rose' | 'purple' | 'emerald' | 'cyan' | 'slate' | 'red';
 
 const COLOR_CLASSES: Record<BadgeColor, string> = {
     amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
@@ -14,6 +14,7 @@ const COLOR_CLASSES: Record<BadgeColor, string> = {
     emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     cyan: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
     slate: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    red: 'bg-red-500 text-white',
 };
 
 interface SmartBadgeProps {

@@ -25,7 +25,7 @@ Tipos de datos: Compatibles con MySQL/MariaDB (VARCHAR, TEXT, INT, DECIMAL, BOOL
 
 Comentario de tabla (Metadata UI): El comentario general de la tabla debe definir un icono de Lucide Icons y una clase de color de Tailwind CSS con el siguiente formato exacto: COMMENT='icon:\'nombre-icono\', color:\'bg-color-500\'' (ej: COMMENT='icon:\'dog\', color:\'bg-blue-500\'').
 
-Comentarios de columnas: Incluir comentarios breves en las columnas para documentar su propósito si aplica.`
+Comentarios de columnas: Incluir comentarios breves en las columnas para documentar su propósito si aplica, no poner comas ni comillas.`
 
 export default function System() {
   const [clearing, setClearing] = useState(false)

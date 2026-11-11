@@ -13,7 +13,7 @@ const DEFAULT_SUBTABLAS = ["historia_seguimiento", "historia_producto", "histori
 export const HistoriaForm = memo(({ mode, recordId, form, onSuccess, subtablas = DEFAULT_SUBTABLAS, sectionTitle = "ACTIVIDADES" }: HistoriaFormProps) => {
   const isEditable = mode === "u"
   const { data: actividades, isLoading, error, refetch } = useApi<ActividadItem[]>(recordId ? `/api/historia/${recordId}/actividades` : null, { enabled: Boolean(recordId) })
-  const initialPayload = useMemo(() => ({ historia_id: { value: recordId, disabled: true } }), [recordId])
+  const initialPayload = useMemo(() => ({ historia_id: recordId }), [recordId])
   const handleCreated = (data?: any) => { refetch(); onSuccess?.(data) }
 
   const grupos = useMemo(() => {

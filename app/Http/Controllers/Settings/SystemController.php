@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -11,7 +12,10 @@ class SystemController extends Controller
 {
     use HasNotify;
 
-    public function show() { return Inertia::render('settings/system'); }
+    public function show() 
+    { 
+        return Inertia::render('settings/system'); 
+    }
 
     public function destroy(Request $request)
     {
@@ -27,14 +31,18 @@ class SystemController extends Controller
 
         try {
             $sql = trim($data['query']);
-            $isSelect = preg_match('/^\s*(select|show|explain|describe)\b/i', $sql);
-            if ($isSelect) {
+
+            // 1. Si es consulta de lectura (SELECT, SHOW, EXPLAIN, DESCRIBE)
+            if (preg_match('/^\s*(select|show|explain|describe)\b/i', $sql)) {
                 $results = DB::select($sql);
                 $count = count($results);
                 return $this->notify("Query executed successfully. {$count} rows returned.");
             }
-            $affected = DB::affectingStatement($sql);
-            return $this->notify("Query executed successfully. {$affected} rows affected.");
+
+            // 2. Si es CREATE TABLE, ALTER, DROP, INSERT, etc., usamos unprepared para soportar DDL puro
+            DB::unprepared($sql);
+
+            return $this->notify('SQL statement executed successfully in active database.');
         } catch (\Throwable $e) {
             return $this->notify('SQL Execution Error: ' . $e->getMessage(), 'error');
         }
