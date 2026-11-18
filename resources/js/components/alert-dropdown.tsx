@@ -3,7 +3,7 @@ import { SmartDropdown } from "@/components/smart-dropdown"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ActionButtons } from "@/components/action-buttons"
-import { AsyncState } from "@/components/async-state"
+import { Async } from "@/components/async-state"
 import { useApi } from "@/hooks/use-api"
 import { toast } from "sonner"
 export interface AlertItemProps {
@@ -47,9 +47,9 @@ export function AlertDropdown<T>({ label, icon = "bell", tableName, endpoint, em
             <div className="flex items-center justify-between px-2 py-1.5 border-b">
               <span className="text-xs font-semibold text-muted-foreground">{label}</span> <NewRecordButton tableName={tableName} onSuccess={refetch} size="xs" />
             </div>
-            <AsyncState isLoading={isLoading} error={error} onRetry={refetch} minHeight="min-h-[60px]">
+            <Async isLoading={isLoading} error={error} onRetry={refetch} minHeight="min-h-[60px]">
               {items.length ? items.map((item) => renderItem(item, refetch)) : <div className="px-2 py-4 text-xs text-center text-muted-foreground">{emptyText}</div>}
-            </AsyncState>
+            </Async>
           </div>
         )
       }

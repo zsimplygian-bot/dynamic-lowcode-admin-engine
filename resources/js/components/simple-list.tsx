@@ -4,14 +4,13 @@ import { ActionButtons } from '@/components/action-buttons';
 import { SmartBadge } from '@/components/smart-badge';
 import { SearchInput } from '@/components/search-input';
 import { DynamicIcon } from '@/components/dynamic-icon';
-
-export function SimpleList({ title = 'registro', items = [], subtitle = 'subtitle', colorKey = 'color', endpoint = '', fields = [], icon = 'table', renderExtra, maxHeight = '400px' }: any) {
+export function SimpleList({ title = '', items = [], subtitle = 'subtitle', colorKey = 'color', endpoint = '', fields = [], icon = 'table', renderExtra, maxHeight = '400px' }: any) {
   const [filtered, setFiltered] = useState(items);
   return (
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2 w-full">
-        <SearchInput items={items} onFiltered={setFiltered} /><SmartBadge icon="database" label={`${filtered.length}/${items.length}`} variant="secondary" />
-        <NewRecordButton endpoint={endpoint} fields={fields} />
+        <SearchInput items={items} onFiltered={setFiltered}/><SmartBadge icon="database" label={`${filtered.length}/${items.length}`} variant="secondary" />
+        <NewRecordButton endpoint={endpoint} fields={fields} title={title} />
       </div>
       <div className="border rounded-xl bg-card overflow-hidden divide-y overflow-y-auto" style={{ maxHeight }}>
         {filtered.map((item) => {

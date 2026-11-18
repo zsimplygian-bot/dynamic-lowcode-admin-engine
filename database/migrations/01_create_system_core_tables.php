@@ -187,7 +187,7 @@ return new class extends Migration
                 $table->string('filename', 255)->nullable();
                 $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
                 $table->string('ip_address', 45)->nullable();
-                $table->timestamp('created_at')->useCurrent();
+                $table->timestamp('at')->useCurrent();
             });
         }
     }

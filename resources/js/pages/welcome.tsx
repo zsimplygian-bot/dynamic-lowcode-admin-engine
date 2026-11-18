@@ -1,41 +1,31 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { dashboard, login } from '@/routes';
-import { register } from '@/routes';
-
+import { useMemo } from 'react'
+import { Head, usePage, router } from '@inertiajs/react'
+import { dashboard, login, register } from '@/routes'
+import { FormSelect } from '@/components/form-select'
+import { SmartButton } from '@/components/smart-button'
 export default function Welcome() {
-    const { auth } = usePage().props;
-
-    return (
-        <>
-            <Head title="Welcome" />
-            <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
-                <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
-                    <nav className="flex items-center justify-end gap-4">
-                        {auth.user ? (
-                            <Link
-                                href={dashboard()}
-                                className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                            >
-                                Dashboard
-                            </Link>
-                        ) : (
-                            <>
-                                <Link
-                                    href={login()}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
-                                >
-                                    Log in
-                                </Link>
-                                <Link
-                                    href={register()}
-                                    className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                                >
-                                    Register
-                                </Link>
-                            </>
-                        )}
-                    </nav>
-                </header>
+  const { auth, database } = usePage<any>().props
+  const hasDb = Boolean(database?.current)
+  const handleSwitch = (db: string) => {
+    localStorage.clear(); sessionStorage.clear()
+    router.post('/database/switch', { database: db })
+  }
+  const options = useMemo(() => database?.available?.map((db: string) => ({ id: db, label: db })) || [], [database])
+  return (
+    <><Head title="Welcome" />
+      <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
+        <header className="mb-6 w-full max-w-[400px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
+          <nav className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-end lg:gap-4">
+            <div className="w-full lg:w-48">
+              <FormSelect name="database" value={database?.current ?? ''} options={options} placeholder="Select project..." onChange={handleSwitch} />
+            </div>
+            <div className="flex w-full items-center gap-2 lg:w-auto">
+            {auth.user ? ( <SmartButton href={dashboard()} label="Dashboard" className="w-full lg:w-auto" />
+            ) : (<><SmartButton href={login()} label="Log in" icon="log-in" disabled={!hasDb} variant="ghost" className="flex-1 lg:flex-none" />
+                   <SmartButton href={register()} label="Register" icon="user-plus" disabled={!hasDb} className="flex-1 lg:flex-none" /> </> )}
+            </div>
+          </nav>
+        </header>
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
                         <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">

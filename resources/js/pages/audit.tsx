@@ -1,53 +1,49 @@
+import { useMemo } from "react"
 import { Head, usePage } from "@inertiajs/react"
 import { DynamicTableContent } from "@/components/dynamic-table"
 import type { FieldConfig } from "@/components/form-group"
 
+const AUDIT_ACTIONS = [
+  { id: "s", label: "🔵 STORE" },
+  { id: "u", label: "🟢 UPDATE" },
+  { id: "d", label: "🔴 DELETE" },
+]
+
 export default function AuditPage() {
   const { tables_meta = {} } = usePage<any>().props
 
-  // Personalización aislada exclusivamente para auditoría
-  const auditFilterTransform = (fields: FieldConfig[]) =>
-    fields.map((f) => {
-      const name = f.name ?? f.id
-      if (name === "action") {
-        return {
-          ...f,
-          type: "select",
-          placeholder: "Todas las acciones",
-          options: [
-            { id: "s", label: "🟢 STORE (Creación)" },
-            { id: "u", label: "🔵 UPDATE (Modificación)" },
-            { id: "d", label: "🔴 DELETE (Eliminación)" },
-          ],
+  // Enriquecedor exclusivo para los filtros de auditoría
+  const transformFilterFields = useMemo(() => {
+    return (fields: FieldConfig[]) =>
+      fields.map((f) => {
+        const name = f.name ?? f.id
+
+        if (name === "action") {
+          return { ...f, type: "select", options: AUDIT_ACTIONS }
         }
-      }
-      if (name === "table") {
-        return {
-          ...f,
-          type: "select",
-          placeholder: "Todas las tablas",
-          options: Object.values(tables_meta)
+
+        if (name === "table") {
+          const options = Object.values(tables_meta)
             .map((t: any) => ({
               id: String(t.id ?? t.name),
               label: t.label ?? t.name,
             }))
-            .sort((a, b) => a.label.localeCompare(b.label)),
+            .sort((a, b) => a.label.localeCompare(b.label))
+
+          return { ...f, type: "select", options }
         }
-      }
-      return f
-    })
+
+        return f
+      })
+  }, [tables_meta])
 
   return (
-    <>
-      <Head title="Auditoría" />
-      <DynamicTableContent
-        tableName="audit"
-        readOnly // En auditoría no se crean registros manualmente
-        requireFilter // Exige filtro antes de consultar
-        transformFilterFields={auditFilterTransform} // Pasa los campos enriquecidos
+    <><Head title="Auditoría" />
+      <DynamicTableContent tableName="audit" readOnly={true}
+        requireFilter={true}
+        transformFilterFields={transformFilterFields}
       />
     </>
   )
 }
-
-AuditPage.layout = { header: "Auditoría", breadcrumbs: [{ title: "Auditoría" }] }
+AuditPage.layout = () => ({ header: "Auditoría del Sistema", breadcrumbs: [{ title: "Auditoría" }], })

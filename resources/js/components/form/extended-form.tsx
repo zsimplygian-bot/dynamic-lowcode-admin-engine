@@ -1,7 +1,7 @@
 import { memo, useMemo, ReactNode } from "react"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ActionButtons } from "@/components/action-buttons"
-import { AsyncState } from "@/components/async-state"
+import { Async } from "@/components/async-state"
 import { RecordCard } from "@/components/record-card"
 import { useApi } from "@/hooks/use-api"
 
@@ -27,7 +27,7 @@ export const ExtendedForm = memo(({ mode = "update", recordId, tableName = "", f
           {isEditable && recordId && <NewRecordButton tableName={tableName} size="xs" initialValues={initialPayload} onSuccess={refetch} />}
         </div>
         <div className="flex flex-col gap-2 w-full overflow-y-auto max-h-[62vh] pr-1">
-          <AsyncState isLoading={isLoading} error={error} onRetry={refetch} minHeight="min-h-[100px]">
+          <Async isLoading={isLoading} error={error} onRetry={refetch} minHeight="min-h-[100px]">
             {listaRegistros.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-xs border rounded-lg w-full">Sin registros</div>
             ) : (
@@ -37,7 +37,7 @@ export const ExtendedForm = memo(({ mode = "update", recordId, tableName = "", f
                 />
               ))
             )}
-          </AsyncState>
+          </Async>
         </div>
       </div>
     </div>

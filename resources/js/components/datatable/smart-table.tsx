@@ -1,7 +1,7 @@
 import { Table, TableHead, TableRow, TableBody, TableCell } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { SmartDropdown } from "@/components/smart-dropdown"
-import { AsyncState } from "@/components/async-state"
+import { Async } from "@/components/async-state"
 import { cn } from "@/lib/utils"
 export interface SmartTableProps { data: any[]; columns: any[]; sort?: { column?: string; order?: "asc" | "desc" };
   onSort: (k: string, order: "asc" | "desc") => void; onHideColumn: (k: string) => void; loading?: boolean; error?: any; onRetry?: () => void; readOnly?: boolean;
@@ -18,11 +18,8 @@ export function SmartTable({ data, columns, sort, onSort, onHideColumn, loading,
   const hasSelection = !readOnly
   const hasActions = !readOnly && Boolean(renderActions)
   const totalCols = columns.length + (hasSelection ? 1 : 0) + (hasActions ? 1 : 0)
-
   if ((!columns.length || !data.length) && (loading || error)) {
-    return (
-      <div className="relative flex-1 min-h-0 border bg-card rounded-md overflow-hidden flex items-center justify-center"> <AsyncState isLoading={!!loading} error={error} onRetry={onRetry} /></div>
-    )
+    return (<div className="relative flex-1 min-h-0 border bg-card rounded-md overflow-hidden flex items-center justify-center"><Async isLoading={!!loading} error={error} onRetry={onRetry}/></div>)
   }
   return (
     <div className={cn("relative flex-1 min-h-0 border bg-card rounded-md overflow-hidden flex flex-col transition-opacity", loading && "opacity-80")}>
@@ -36,19 +33,14 @@ export function SmartTable({ data, columns, sort, onSort, onHideColumn, loading,
                 const icon = !isSorted ? "chevrons-up-down" : sort?.order === "desc" ? "chevron-down" : "chevron-up"
                 return (
                   <TableHead key={col.accessor} className={cn("px-1 bg-background transition-opacity", !isSorted && "opacity-70 hover:opacity-100")}>
-                    <SmartDropdown
-                      buttonLabel={col.header} icon={icon} iconPosition="right" size="sm" variant="ghost" closeOnSelect
-                      items={[
-                        { label: "Asc", icon: "arrow-up", action: () => onSort(col.accessor, "asc") },
-                        { label: "Desc", icon: "arrow-down", action: () => onSort(col.accessor, "desc") },
-                        "-",
-                        { label: "Ocultar", icon: "eye-off", action: () => onHideColumn(col.accessor) },
-                      ]}
-                    />
+                    <SmartDropdown buttonLabel={col.header} icon={icon} iconPosition="right" size="sm" variant="ghost" closeOnSelect
+                      items={[{ label: "Asc", icon: "arrow-up", action: () => onSort(col.accessor, "asc") },
+                              { label: "Desc", icon: "arrow-down", action: () => onSort(col.accessor, "desc") },
+                              "-",
+                              { label: "Ocultar", icon: "eye-off", action: () => onHideColumn(col.accessor) }, ]} />
                   </TableHead>
                 )
-              })}
-              {hasActions ? <TableHead className="sticky bg-background w-[1%]" /> : null}
+              })} 
             </TableRow>
           </thead>
           <TableBody>

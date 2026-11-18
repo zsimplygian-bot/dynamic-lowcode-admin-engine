@@ -5,20 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DynamicIcon } from "@/components/dynamic-icon"
 import { BaseTriggerProps, sizeClasses, colorClasses } from "@/lib/trigger-utils"
-
 export type SDItem = "-" | { separator?: boolean; type?: "item" | "checkbox" | "custom"; label?: string; icon?: string; color?: string; disabled?: boolean; variant?: "default" | "destructive"; 
   checked?: boolean; alignContent?: "left" | "center"; content?: React.ReactNode; action?: () => void; onChange?: (v: boolean) => void }
-
 export interface SmartDropdownProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, Omit<BaseTriggerProps, 'icon'> {
   icon?: string; iconPosition?: "left" | "right"; buttonLabel?: React.ReactNode; label?: string; items?: SDItem[]; align?: "start" | "center" | "end"; closeOnSelect?: boolean; 
   itemsMaxHeight?: number | string; disableHover?: boolean;
 }
-
 export const SmartDropdown = memo(forwardRef<HTMLButtonElement, SmartDropdownProps>(({ icon, iconPosition = "left", buttonLabel, buttonClassName, className, variant = "default", buttonColor, badge, badgeClassName, iconSize, size = "md", label, items = [], align = "end", closeOnSelect = false, itemsMaxHeight, disableHover = false, disabled, ...props }, ref) => {
   const prevent = useCallback((e: Event) => { if (!closeOnSelect) e.preventDefault() }, [closeOnSelect])
   const finalIconSize = iconSize ?? sizeClasses[size].iconSize
   const hoverClass = disableHover ? "focus:bg-transparent focus:text-inherit" : "focus:bg-accent focus:text-accent-foreground"
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

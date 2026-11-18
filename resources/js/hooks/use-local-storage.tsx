@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react"
-
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue)
   const [isHydrated, setIsHydrated] = useState(false)
-
   // Carga tras hidratar (evita el choque SSR vs Cliente)
   useEffect(() => {
     try {
@@ -14,7 +12,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
     setIsHydrated(true)
   }, [key])
-
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       setStoredValue((prev) => {
@@ -28,7 +25,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       console.error(`[useLocalStorage] Error guardando "${key}":`, e)
     }
   }
-
   // Sincronización entre pestañas
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -43,6 +39,5 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     window.addEventListener("storage", onStorage)
     return () => window.removeEventListener("storage", onStorage)
   }, [key, initialValue])
-
   return [storedValue, setValue, isHydrated] as const
 }

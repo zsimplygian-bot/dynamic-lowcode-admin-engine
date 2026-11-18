@@ -11,12 +11,12 @@ const sidebarNavItems: NavItem[] = [
     { title: 'Roles & Access', href: '/settings/role', icon: 'lock' },
     { title: 'Permissions', href: '/settings/permission', icon: 'key-round' },
     { title: 'Appearance', href: '/settings/appearance', icon: 'palette' },
-    { title: 'Database', href: '/settings/table', icon: 'table-properties' },
+    { title: 'Tables', href: '/settings/table', icon: 'table-properties' },
+    { title: 'Database', href: '/settings/database', icon: 'database' },
     { title: 'System & cache', href: '/settings/system', icon: 'database-zap' },
 ];
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
-    ;
     return (
         <div className="px-4 py-6">
             <Heading title={t('Settings')} description={t('Manage your profile and account settings')} />

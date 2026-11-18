@@ -40,10 +40,10 @@ export default function TableFieldsManager({ tableName, tableFields }: { tableNa
     <><Head title={`${t('Fields of')} ${tableName}`} />
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <SmartButton href="/settings/table" icon="arrow-left" variant="outline" tooltip="Volver" />
+          <SmartButton href="/settings/table" icon="arrow-left" variant="outline" tooltip="Back" />
           <Heading title={`${t('Structure of:')} ${tableName}`} description={t('Manage fields and data types.')} />
         </div>
-        <SimpleList items={items} subtitle="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(f) => (
+        <SimpleList items={items} title='field' subtitle="comment" endpoint={`/settings/table/${tableName}/field`} fields={fields} renderExtra={(f) => (
           <><SmartBadge label={f.raw_type ?? f.type} color="cyan" />
             {f.is_primary && <SmartBadge label="PK" color="amber" />}
             {f.auto_increment && <SmartBadge label="AI" color="blue" />}

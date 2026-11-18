@@ -6,7 +6,7 @@ import { SmartModal } from '@/components/smart-modal'
 import { SmartTooltip } from '@/components/smart-tooltip'
 import { FormGroup } from '@/components/form-group'
 import { DatePicker, type DateRange } from '@/components/date-picker'
-import { AsyncState } from '@/components/async-state'
+import { Async } from '@/components/async-state'
 
 const TABLES_OPTIONS = [
   { id: 'cliente', label: 'Cliente' },
@@ -102,7 +102,7 @@ function WidgetCard({ widget, initialCount = 0, onUpdate, onRemove }: any) {
       </div>
 
       <div className="flex items-center justify-center min-h-[220px] w-full overflow-hidden">
-        <AsyncState isLoading={loading} error={error} minHeight="min-h-[220px]" onRetry={refetch}>
+        <Async isLoading={loading} error={error} minHeight="min-h-[220px]" onRetry={refetch}>
           {widget.type === 'counter' ? (
             <div className="flex flex-col items-center">
               <span className="text-6xl font-extrabold">{count}</span>
@@ -128,7 +128,7 @@ function WidgetCard({ widget, initialCount = 0, onUpdate, onRemove }: any) {
               </div>
             </div>
           )}
-        </AsyncState>
+        </Async>
       </div>
     </div>
   )

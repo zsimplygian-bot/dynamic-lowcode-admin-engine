@@ -1,12 +1,16 @@
 <?php
-use App\Http\Controllers\Business\{CitaController, HistoriaController};
+use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\Business\Veterinaria\{CitaController, HistoriaController};
+use App\Http\Controllers\Settings\DatabaseController;
 use App\Http\Controllers\{ DashboardController, DynamicCrudController, DynamicFormSchemaController, DynamicTableController, LocaleController, LookupController, NavigationController };
 use Illuminate\Support\Facades\Route;
-Route::inertia('/', 'welcome')->name('home');
-Route::middleware(['auth', 'verified'])->group(function () {
+use App\Http\Middleware\SwitchDatabase; // <--- Importar arriba
+Route::get('/', WelcomeController::class)->name('home');
+Route::post('/database/switch', [DatabaseController::class, 'switch'])->name('database.switch');
+// Línea 11 limpia (sin la función Closure que te da error):
+Route::middleware(['auth', 'verified', SwitchDatabase::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/locale', LocaleController::class)->name('locale');
-    // Rutas dinámicas genéricas
     Route::get('/schema/{table}/fields', [DynamicFormSchemaController::class, 'fields']);
     Route::get('/schema/{table}/columns', [DynamicTableController::class, 'columns']);
     Route::get('/historia/{id}/pdf', [HistoriaController::class, 'pdf'])->name('historia.pdf');

@@ -3,7 +3,7 @@ namespace App\Traits;
 trait HasProtectedTables
 {
     protected array $protectedTables = [
-        'audit',
+        //'audit',
         'cache', 
         'cache_locks', 
         'database_history', 

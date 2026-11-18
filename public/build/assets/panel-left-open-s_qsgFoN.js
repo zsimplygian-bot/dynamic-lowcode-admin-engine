@@ -1,0 +1,1 @@
+import{i as e,t}from"./createLucideIcon-DfOHSAjh.js";var n=e({__iconNode:()=>r,default:()=>i}),r=[[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`,key:`afitv7`}],[`path`,{d:`M9 3v18`,key:`fh3hqa`}],[`path`,{d:`m14 9 3 3-3 3`,key:`8010ee`}]],i=t(`PanelLeftOpen`,r);export{n,i as t};

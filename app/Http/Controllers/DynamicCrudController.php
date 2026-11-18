@@ -28,7 +28,7 @@ class DynamicCrudController extends Controller implements HasMiddleware
         $data = $this->handleFilesUpload($request, $table, $request->all(), $oldData);
         $record->fill($data)->save();
         $this->hooks->afterSave($table, $record, $oldData);
-        return $this->notify('Record ' . ($id ? 'updated' : 'created') . ' successfully.', ['id' => $record->getKey()]);
+        return $this->notify('Record ' . ($id ? 'updated' : 'created') . ' successfully.', data: ['id' => $record->getKey()]);
     }
     protected function remove(string $table, string|int|array $id)
     {

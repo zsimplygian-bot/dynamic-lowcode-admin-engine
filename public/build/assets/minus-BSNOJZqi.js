@@ -1,0 +1,1 @@
+import{i as e,t}from"./createLucideIcon-DfOHSAjh.js";var n=e({__iconNode:()=>r,default:()=>i}),r=[[`path`,{d:`M5 12h14`,key:`1ays0h`}]],i=t(`Minus`,r);export{n,i as t};

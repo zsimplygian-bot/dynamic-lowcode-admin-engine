@@ -4,19 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\DynamicModel;
 use App\Services\{ColumnMetadata, TableMetadata};
-use App\Traits\{HasColumnLabel, HasDynamicRelations};
+use App\Traits\{HasColumnLabel, HasDynamicRelations, HasCustomColumns}; // <-- 1. Agregas el Trait
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Cache, Schema};
 use Inertia\Inertia;
 
 class DynamicTableController extends Controller
 {
-    use HasColumnLabel, HasDynamicRelations;
+    use HasColumnLabel, HasDynamicRelations, HasCustomColumns; // <-- 2. Usas el Trait
 
     public function show(string $table) 
-    { 
-        return Inertia::render('dynamic-table', ['tableName' => $table]); 
+{ 
+    if ($table === 'audit') {
+        return Inertia::render('audit'); // Tu nueva página de auditoría
     }
+
+    return Inertia::render('dynamic-table', ['tableName' => $table]); 
+}
 
     public function columns(string $table)
     {
@@ -35,6 +39,11 @@ class DynamicTableController extends Controller
                     $isCheckbox = ColumnMetadata::inputType($name, $c['type']) === 'checkbox';
                     $cols[] = ['accessor' => $name, 'header' => $this->inferLabel($name, $comment) . ($isCheckbox ? '?' : '')];
                 }
+            }
+
+            // <-- 3. Inyecta la columna en la cabecera de la UI
+            foreach ($this->getCustomColumns($table) as $accessor => $cfg) {
+                $cols[] = ['accessor' => $accessor, 'header' => $cfg['header']];
             }
 
             if ($table !== 'audit') $cols[] = ['accessor' => 'created_at', 'header' => 'CREATED AT'];
@@ -70,11 +79,9 @@ class DynamicTableController extends Controller
         if (!$isAudit) {
             $tableId = TableMetadata::id($table);
 
-            // Relación con 's' para obtener fecha de creación
             $query->join('audit', fn ($j) => $j->on('audit.row', '=', "{$table}.id")
                   ->where('audit.table', $tableId)->where('audit.action', 's'))->addSelect('audit.at as created_at');
 
-            // Excluir registros cuyo estado de auditoría más reciente sea 'd' (eliminado)
             $query->whereNotExists(fn ($q) => $q->from('audit as a')
                 ->where('a.table', $tableId)
                 ->whereColumn('a.row', "{$table}.id")
@@ -87,6 +94,7 @@ class DynamicTableController extends Controller
               ->when($request->input('to'), fn ($q, $t) => $q->where($atCol, '<=', $t));
 
         $this->applyDynamicJoins($query, $table, $cols);
+        $this->applyCustomColumns($query, $table); // <-- 4. Aplica el selectRaw para calcular el precio
 
         $query->when(trim($request->input('search', '')), fn ($q, $s) => $q->where(function ($sub) use ($table, $localCols, $cols, $s) {
             foreach ($localCols as $col) $sub->orWhere("{$table}.{$col}", 'like', "%{$s}%");

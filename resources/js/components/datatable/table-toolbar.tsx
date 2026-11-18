@@ -4,21 +4,18 @@ import { SmartDropdown } from "@/components/smart-dropdown"
 import { NewRecordButton } from "@/components/new-record-button"
 import { ResetButton } from "@/components/reset-button"
 import { DatePicker } from "@/components/date-picker"
-import { AsyncState } from "@/components/async-state"
+import { Async } from "@/components/async-state"
 import { SearchInput } from "@/components/search-input"
 import { FormGroup, FieldConfig } from "@/components/form-group"
 import { useApi } from "@/hooks/use-api"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { useCan } from "@/hooks/use-can"
 const t = (s: string) => s
-
-async function exportTableToExcel(tableName: string, columns: any[], params?: Record<string, any>) {
+const exportTableToExcel = async (tableName: string, columns: any[], params?: Record<string, any>) => {
   if (!columns.length) return
   try {
-    const q = new URLSearchParams()
-    if (params) Object.entries(params).forEach(([k, v]) => v != null && v !== "" && q.append(k, String(v)))
-    const rawRes = await fetch(`/table/${tableName}/export?${q}`)
-    const json = await rawRes.json()
+    const q = new URLSearchParams(params ? Object.entries(params).filter(([_, v]) => v != null && v !== "").map(([k, v]) => [k, String(v)]) : [])
+    const json = await (await fetch(`/table/${tableName}/export?${q}`)).json()
     if (!json?.data?.length) return
     const XLSX = await import("xlsx")
     const ws = XLSX.utils.aoa_to_sheet([columns.map((c) => c.header), ...json.data.map((r: any) => columns.map((c) => r[c.accessor]))])
@@ -27,60 +24,35 @@ async function exportTableToExcel(tableName: string, columns: any[], params?: Re
     XLSX.writeFile(wb, `${tableName}_${Date.now()}.xlsx`)
   } catch (e) { console.error("Error al exportar:", e) }
 }
-
 function SearchFormContent({ tableName, appliedValues = {}, onApply, onClear, transformFields }: any) {
   const [vals, setVals] = useState(appliedValues)
   useEffect(() => setVals(appliedValues), [appliedValues])
-
   const [fields, setFields] = useLocalStorage<FieldConfig[]>(`dt_fields_${tableName}`, [])
-  const needsFields = !fields.length && Boolean(tableName)
-  const { data: fetchedFields, isLoading, error, refetch } = useApi<FieldConfig[]>(needsFields ? `/schema/${tableName}/fields?mode=filter` : null, { enabled: needsFields })
-  useEffect(() => { if (fetchedFields?.length) setFields(fetchedFields) }, [fetchedFields, setFields])
-
-  const formFields = useMemo(() => (transformFields ? transformFields(fields) : fields), [fields, transformFields])
+  const { data: fetchedFields, isLoading, error, refetch } = useApi<FieldConfig[]>(!fields.length && tableName ? `/schema/${tableName}/fields?mode=filter` : null)
+  useEffect(() => { if (fetchedFields?.length) setFields(fetchedFields) }, [fetchedFields])
+  const formFields = useMemo(() => transformFields ? transformFields(fields) : fields, [fields, transformFields])
   const hasValues = Object.values(vals).some((v) => v != null && v !== "")
-
   return (
     <div className="flex flex-col gap-2 min-w-[280px] p-1" onClick={(e) => e.stopPropagation()}>
-      <AsyncState isLoading={needsFields && isLoading} error={error} onRetry={refetch}>
+      <Async isLoading={!fields.length && Boolean(tableName) && isLoading} error={error} isEmpty={!formFields.length} emptyLabel="No fields" onRetry={refetch}>
         <div className="w-full pl-2 max-h-[380px] overflow-y-auto pr-1">
-          {!formFields.length ? (
-            <span className="text-xs text-muted-foreground px-2 py-4 block text-center">No hay campos disponibles para filtrar</span>
-          ) : (
-            <FormGroup fields={formFields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
-          )}
+          <FormGroup fields={formFields} values={vals} layout="horizontal" onChange={(k: string, v: any) => setVals((p: any) => ({ ...p, [k]: v }))} />
         </div>
         <div className="flex items-center gap-2 pt-1 border-t mt-1">
           <SmartButton variant="default" size="sm" icon="check" disabled={!hasValues} className="flex-1 justify-center" onClick={() => onApply(vals)} label="Apply" />
-          <ResetButton onReset={() => { setVals({}); onClear() }} canReset={hasValues} size="sm" variant="ghost" className="flex-1 justify-center" label="Clear" />
+          <ResetButton onReset={() => (setVals({}), onClear())} canReset={hasValues} size="sm" variant="ghost" className="flex-1 justify-center" label="Clear" />
         </div>
-      </AsyncState>
+      </Async>
     </div>
   )
 }
-
-export interface TableToolbarProps {
-  tableName: string; crudEndpoint?: string; readOnly?: boolean; search?: string; onSearch: (s: string) => void;
-  appliedSearchValues: Record<string, any>; onApplyFilter: (vals: any) => void; onClearFilter: () => void;
-  dateRange: { from?: string; to?: string }; onDateRangeChange: (r: any) => void; onReset: () => void; isFiltered: boolean;
-  columns: any[]; columnVisibility: Record<string, boolean>; onToggleColumn: (accessor: string) => void;
-  onResetColumnsVisibility?: () => void; onClearSelection?: () => void; onShowAllColumns?: () => void;
-  queryParams: Record<string, any>; selectedCount?: number; onDeleteSelected?: () => void; loading?: boolean; onRefresh?: () => void;
-  transformFilterFields?: (fields: FieldConfig[]) => FieldConfig[];
-}
-
-export function TableToolbar({
-  tableName, crudEndpoint, readOnly, search = "", onSearch, appliedSearchValues, onApplyFilter, onClearFilter,
-  dateRange, onDateRangeChange, onReset, isFiltered, columns, columnVisibility, onToggleColumn, onResetColumnsVisibility,
-  onClearSelection, onShowAllColumns, queryParams, selectedCount = 0, onDeleteSelected, onRefresh, transformFilterFields
-}: TableToolbarProps) {
-  const { isRole } = useCan()
+export interface TableToolbarProps { tableName: string; crudEndpoint?: string; readOnly?: boolean; search?: string; onSearch: (s: string) => void; appliedSearchValues: Record<string, any>; onApplyFilter: (vals: any) => void; onClearFilter: () => void; dateRange: { from?: string; to?: string }; onDateRangeChange: (r: any) => void; onReset: () => void; isFiltered: boolean; columns: any[]; columnVisibility: Record<string, boolean>; onToggleColumn: (accessor: string) => void; onResetColumnsVisibility?: () => void; onClearSelection?: () => void; onShowAllColumns?: () => void; queryParams: Record<string, any>; selectedCount?: number; onDeleteSelected?: () => void; loading?: boolean; onRefresh?: () => void; transformFilterFields?: (fields: FieldConfig[]) => FieldConfig[] }
+export function TableToolbar({ tableName, crudEndpoint, readOnly, search = "", onSearch, appliedSearchValues, onApplyFilter, onClearFilter, dateRange, onDateRangeChange, onReset, isFiltered, columns, columnVisibility, onToggleColumn, onResetColumnsVisibility, onClearSelection, onShowAllColumns, queryParams, selectedCount = 0, onDeleteSelected, onRefresh, transformFilterFields }: TableToolbarProps) {
+  const { isRole } = useCan(), isAdmin = isRole("admin")
   const [filteredColumns, setFilteredColumns] = useState(columns)
   useEffect(() => setFilteredColumns(columns), [columns])
   const activeCount = Object.values(appliedSearchValues).filter(Boolean).length
   const exportCols = columns.filter((c) => columnVisibility[c.accessor] ?? !c.hidden)
-  const isAdmin = isRole("admin")
-
   return (
     <div className="flex items-center gap-2 flex-wrap w-full flex-none">
       <NewRecordButton tableName={tableName} endpoint={crudEndpoint} onSuccess={onRefresh} disabled={readOnly || !isAdmin} />
@@ -94,7 +66,7 @@ export function TableToolbar({
         "-", { label: "Reset columns", icon: "rotate-ccw", alignContent: "center", action: onResetColumnsVisibility }
       ]} />
       <SmartDropdown label={t("Table Settings")} variant="outline" icon="sliders-horizontal" items={[{ label: t("Clear Selection"), icon: "check-square", disabled: selectedCount === 0, action: onClearSelection }, { label: t("Show All Columns"), icon: "eye-off", action: onShowAllColumns }]} />
-      {isRole("admin") && <SmartButton variant="outline" icon="settings" href={`/settings/table/${tableName}`} tooltip="Table Settings" />}
+      {isAdmin && <SmartButton variant="outline" icon="settings" href={`/settings/table/${tableName}`} tooltip="Table Settings" />}
       <ResetButton onReset={onReset} variant="outline" canReset={isFiltered} />
       {!readOnly && isAdmin && selectedCount > 0 && <SmartButton variant="destructive" size="sm" icon="trash-2" tooltip="Delete rows" label={`${selectedCount}`} onClick={onDeleteSelected} confirmation />}
     </div>

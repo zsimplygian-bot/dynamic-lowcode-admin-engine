@@ -1,54 +1,41 @@
-import React, { useState, memo } from "react"
+import React, { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "./ui/dialog"
 import { cn } from "@/lib/utils"
 
-export interface SmartModalProps {
-  open?: boolean; onOpenChange?: (open: boolean) => void; trigger?: React.ReactNode; title?: React.ReactNode;
-  description?: React.ReactNode; children?: React.ReactNode | ((props: { close: () => void }) => React.ReactNode);
-  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | string; color?: "blue" | "green" | "red" | "amber" | "gray" | string;
-  className?: string; style?: React.CSSProperties
+const SIZES = {
+  sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-2xl", xl: "sm:max-w-3xl",
+  "2xl": "sm:max-w-4xl", "3xl": "sm:max-w-5xl", "4xl": "sm:max-w-5xl lg:max-w-6xl", "5xl": "sm:max-w-6xl lg:max-w-7xl",
+  full: "sm:max-w-[96vw] w-[96vw]", fit: "sm:max-w-fit"
+} as const
+const COLORS = { blue: "border-t-blue-500", green: "border-t-green-500", red: "border-t-destructive", amber: "border-t-amber-500", gray: "border-t-slate-500" } as const
+
+export type SmartModalProps = Omit<React.ComponentProps<typeof Dialog>, "children"> & {
+  trigger?: React.ReactNode; title?: React.ReactNode; description?: React.ReactNode
+  size?: keyof typeof SIZES | string; color?: keyof typeof COLORS; className?: string
+  children?: React.ReactNode | ((props: { close: () => void }) => React.ReactNode)
 }
 
-const SIZE_MAP: Record<string, string> = { 
-  sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-3xl", 
-  "2xl": "max-w-4xl", "3xl": "max-w-5xl", "4xl": "sm:max-w-5xl lg:max-w-[1050px]", "5xl": "sm:max-w-6xl lg:max-w-[1250px]" 
-}
-
-const BORDER_COLORS: Record<string, string> = {
-  blue: "border-t-blue-500", green: "border-t-green-500", red: "border-t-destructive", amber: "border-t-amber-500", gray: "border-t-slate-500",
-}
-
-export const SmartModal = memo(({ open, onOpenChange, trigger, title, description, children, size = "sm", color, className = "", style, ...props }: SmartModalProps) => {
+export function SmartModal({ trigger, title, description, children, size = "sm", color, className, open, onOpenChange, ...props }: SmartModalProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
-  const isOpen = isControlled ? open : internalOpen
-
-  const handleOpenChange = (state: boolean) => {
-    if (!isControlled) setInternalOpen(state)
-    onOpenChange?.(state)
-  }
-
-  const close = () => handleOpenChange(false)
-  const sizeClass = SIZE_MAP[size] ?? (size.startsWith("max-w-") ? size : `max-w-${size}`)
+  const show = isControlled ? open : internalOpen
+  const handleOpen = (state: boolean) => { if (!isControlled) setInternalOpen(state); onOpenChange?.(state) }
+  const close = () => handleOpen(false)
+  const sizeClass = SIZES[size as keyof typeof SIZES] ?? size
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange} {...props}>
+    <Dialog open={show} onOpenChange={handleOpen} {...props}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent style={{ ...style, ...(color && !BORDER_COLORS[color] ? { borderTopColor: color } : {}) }} className={cn(sizeClass, "w-full flex max-h-[90dvh] flex-col overflow-hidden", color && "border-t-4", color && (BORDER_COLORS[color] ?? "border-t-primary"), className)}>
+      <DialogContent className={cn("w-full max-h-[90dvh] flex flex-col overflow-y-auto p-4 sm:p-6", sizeClass, color && `border-t-4 ${COLORS[color]}`, className)}>
         {(title || description) && (
-          <DialogHeader className="text-center sm:text-center shrink-0">
-            {title && <DialogTitle className="text-center">{title}</DialogTitle>}
-            {description && <DialogDescription className="text-center">{description}</DialogDescription>}
+          <DialogHeader className="text-center sm:text-center">
+            {title && <DialogTitle>{title}</DialogTitle>}
+            {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
-        {children && (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {typeof children === "function" ? children({ close }) : children}
-          </div>
-        )}
+        {typeof children === "function" ? children({ close }) : children}
       </DialogContent>
     </Dialog>
   )
-})
-SmartModal.displayName = "SmartModal"
+}
 export default SmartModal
