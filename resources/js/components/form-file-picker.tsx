@@ -6,13 +6,19 @@ import { cn } from "@/lib/utils"
 export interface FormFilePickerProps { id?: string; name?: string; value?: File | string | null; defaultValue?: string; accept?: string; required?: boolean; disabled?: boolean; className?: string; onChange?: (file: File | null) => void }
 export const FormFilePicker = ({ id, name, value, defaultValue, accept = "image/*", required, disabled, className, onChange }: FormFilePickerProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const fieldName = name ?? id ?? "file", current = value ?? defaultValue
+  const fieldName = name ?? id ?? "file"
+  const current = value ?? defaultValue
   const { previewUrl, fileName, isBlob } = useMemo(() => {
     if (current instanceof File) return { previewUrl: URL.createObjectURL(current), fileName: current.name, isBlob: true }
-    if (typeof current === "string" && current.startsWith("/")) return { previewUrl: current, fileName: current.split("/").pop()?.split("?")[0] ?? "archivo", isBlob: false }
+    if (typeof current === "string" && current.length > 0) {
+      const cleanName = current.split("/").pop()?.split("?")[0] ?? "archivo"
+      return { previewUrl: current, fileName: cleanName, isBlob: false }
+    }
     return { previewUrl: null, fileName: null, isBlob: false }
   }, [current])
-  useEffect(() => { return () => { if (isBlob && previewUrl) URL.revokeObjectURL(previewUrl) } }, [previewUrl, isBlob])
+  useEffect(() => {
+    return () => { if (isBlob && previewUrl) URL.revokeObjectURL(previewUrl) }
+  }, [previewUrl, isBlob])
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (inputRef.current) inputRef.current.value = ""
@@ -39,4 +45,4 @@ export const FormFilePicker = ({ id, name, value, defaultValue, accept = "image/
     </div>
   )
 }
-export default FormFilePicker 
+export default FormFilePicker

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { SmartButton } from "@/components/smart-button"
 import { SmartModal } from "@/components/smart-modal"
 import { useThumb } from "@/hooks/use-thumb"
-interface SmartImagePreviewProps { url?: string | null, size?: "sm" | "md" }
+interface SmartImagePreviewProps { url?: string | null; size?: "sm" | "md" }
 export const SmartImagePreview = memo(({ url, size = "md" }: SmartImagePreviewProps) => {
   const { thumbUrl, hdUrl } = useThumb(url)
   if (!thumbUrl) return null

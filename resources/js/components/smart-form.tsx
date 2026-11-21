@@ -29,7 +29,7 @@ export const SmartForm = ({ action, endpoint, mode = "s", tableName, recordId, f
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault(), e.stopPropagation()
     if (isDetail) return
-    transform((raw) => Object.fromEntries(fields.map((f) => [f.name!, raw[f.name!]])))
+    transform((raw) => mode === "d" ? { id: raw.id } : Object.fromEntries(fields.map((f) => [f.name!, raw[f.name!]])))
     form[config.method](targetUrl, { preserveScroll: true, forceFormData: fields.some((f) => f.type === "file"), onSuccess, onError, ...options })
   }
   return (

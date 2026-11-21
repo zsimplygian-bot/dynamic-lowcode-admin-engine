@@ -59,7 +59,7 @@ export const HistoriaForm = memo(({ mode, recordId, onSuccess, subtablas = DEFAU
                       <div key={act.id} className="p-3 rounded-2xl bg-muted/40 border flex flex-col gap-1.5 w-full text-xs">
                         <div className="flex items-center justify-between w-full">
                           <span className="font-bold text-sm text-foreground tracking-tight">{act.item}</span>
-                          {isEditable && <ActionButtons row_id={act.id} tableName={act.tabla} endpoint={`/crud/${act.tabla}`} size="xs" onSuccess={refetch} />}
+                          {isEditable && <ActionButtons row_id={act.id} tableName={act.tabla} endpoint={`/crud/${act.tabla}`} onSuccess={refetch} />}
                         </div>
                         {fields.length > 0 && (
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground uppercase text-[11px]">

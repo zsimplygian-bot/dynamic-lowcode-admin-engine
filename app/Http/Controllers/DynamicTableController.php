@@ -33,7 +33,7 @@ class DynamicTableController extends Controller
 
                 if ($isFk) {
                     $rel = substr($name, 0, -3);
-                    $cols[] = ['accessor' => $name, 'header' => $this->inferLabel($rel, $comment) . ' ID', 'hidden' => true];
+                    $cols[] = ['accessor' => $name, 'header' => $this->inferLabel($rel, $comment) . ' ID', 'hidden' => true];   
                     $cols[] = ['accessor' => $rel, 'header' => $this->inferLabel($rel, $comment)];
                 } else {
                     $isCheckbox = ColumnMetadata::inputType($name, $c['type']) === 'checkbox';

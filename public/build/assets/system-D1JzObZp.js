@@ -1,4 +1,4 @@
-import{a as e,n as t}from"./createLucideIcon-DfOHSAjh.js";import{d as n,p as r,u as i,x as a}from"./button-zJQjxE_p.js";import{C as o,N as s,i as c}from"./new-record-button-ZWPkavqe.js";import{t as l}from"./app-WfmipqH_.js";import{t as u}from"./smart-card-CNIjHZM2.js";var d=n(),f=e(t(),1),p=i(),m=e=>e,h=`Actúa como un arquitecto de bases de datos para mi motor dinámico Laravel/React/Inertia.
+import{a as e,n as t}from"./createLucideIcon-DfOHSAjh.js";import{d as n,p as r,u as i,x as a}from"./button-zJQjxE_p.js";import{C as o,N as s,i as c}from"./new-record-button-2VJsg0lZ.js";import{t as l}from"./app-CIXbdHRa.js";import{t as u}from"./smart-card-bpvOBjqz.js";var d=n(),f=e(t(),1),p=i(),m=e=>e,h=`Actúa como un arquitecto de bases de datos para mi motor dinámico Laravel/React/Inertia.
 Genera únicamente la sentencia SQL CREATE TABLE para la entidad que te indique, respetando rigurosamente estas reglas:
 
 Nombre de tabla: En minúsculas y siempre en singular (ej: paciente, cita, cliente).

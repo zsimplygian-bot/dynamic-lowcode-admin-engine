@@ -25,6 +25,7 @@ export const FormSelect = ({ id, name = "", value: valueProp, defaultValue, opti
   const { data: initialData, isLoading: loadingInit, error: errorInit } = useApi<any>(initialUrl)
   const { data, isLoading, error, refetch } = useApi(isAsync && isOpen && !cache.has(name) ? url : null)
   const loading = isAsync && (isLoading || Boolean(initialUrl && loadingInit))
+  const displayValue = loadingInit ? "" : selectedLabel
   useEffect(() => {
     if (initialData) {
       const items = Array.isArray(initialData) ? initialData : [initialData]
@@ -65,7 +66,7 @@ export const FormSelect = ({ id, name = "", value: valueProp, defaultValue, opti
       {name && <input type="hidden" name={name} value={targetId} />}
       <SmartPopover open={disabled || loadingInit ? false : isOpen} onOpenChange={disabled || loadingInit ? undefined : handleOpenChange} trigger={
         <div className="relative w-full">
-          <Input id={id} name={undefined} disabled={disabled || loadingInit} value={selectedLabel} placeholder={loadingInit ? "..." : placeholder} 
+          <Input id={id} name={undefined} disabled={disabled || loadingInit} value={displayValue} placeholder={loadingInit ? "..." : placeholder} 
             readOnly className={`pl-2.5 ${infoAction ? "pr-12" : "pr-7"} cursor-pointer text-left w-full text-ellipsis ${className}`} />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
             {infoAction && <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>{infoAction}</div>}

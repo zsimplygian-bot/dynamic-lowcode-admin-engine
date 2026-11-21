@@ -5,7 +5,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
-class DynamicValidationService
+class DynamicValidation
 {
     use HasNotify;
     private const FIELD_PRESETS = [

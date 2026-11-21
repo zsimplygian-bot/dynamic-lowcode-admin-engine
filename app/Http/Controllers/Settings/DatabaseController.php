@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
-use App\Services\Database;
+use App\Services\{Audit, Database};
 use App\Traits\{HasNotify, HasProtectedTables};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Artisan, Cache, Config, DB, Schema};
@@ -52,7 +52,7 @@ class DatabaseController extends Controller
     }
     public function export()
     {
-        $this->log('e');
+        Audit::log(action: 'e');
         $db = session('active_db');
         return response()->streamDownload(function () {
             foreach (Schema::getTables() as $table) {
@@ -70,20 +70,20 @@ class DatabaseController extends Controller
         }, "{$db}-" . date('Y-m-d_H-i-s') . '.sql', ['Content-Type' => 'application/sql']);
     }
     public function import(Request $request)
-{
-    $request->validate(['backup' => 'required|file']);
-    $keep = $request->boolean('keep_protected');
-    DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-    foreach (Schema::getTables() as $table) {
-        $t = $table['name'];
-        if (!$keep || !$this->isProtected($t)) DB::statement("DROP TABLE IF EXISTS `{$t}`");
+    {
+        $request->validate(['backup' => 'required|file']);
+        $keep = $request->boolean('keep_protected');
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        foreach (Schema::getTables() as $table) {
+            $t = $table['name'];
+            if (!$keep || !$this->isProtected($t)) DB::statement("DROP TABLE IF EXISTS `{$t}`");
+        }
+        $sql = preg_replace('/^mysqldump:.*$/m', '', file_get_contents($request->file('backup')->getRealPath()));
+        DB::unprepared($sql);
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Audit::log(action: 'i');
+        return $this->notify('Database restored successfully.');
     }
-    $sql = preg_replace('/^mysqldump:.*$/m', '', file_get_contents($request->file('backup')->getRealPath()));
-    DB::unprepared($sql);
-    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-    $this->log('i');
-    return $this->notify('Database restored successfully.');
-}
     public function purge()
     {
         foreach (Schema::getTableListing() as $table) {
@@ -92,5 +92,4 @@ class DatabaseController extends Controller
         }
         return $this->notify('Tables purged successfully.');
     }
-    private function log(string $a): void { DB::table('database_history')->insert(['action' => $a, 'user_id' => auth()->id(), 'ip_address' => request()->ip(), 'at' => now()]); }
 }
